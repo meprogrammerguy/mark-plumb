@@ -10,4 +10,4 @@ to install:
 
 Buy my Books on [Amazon](https://amazon.com/author/smithja)
 
-![](BookCover.jpg)
+![](BookCover.png)
