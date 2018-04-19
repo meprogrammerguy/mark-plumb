@@ -11,11 +11,13 @@ def main(argv):
     verbose = False
     test = False
     quote = ""
+    getkey = False
+    savekey = ""
     dbase = __file__
     dbase = dbase.replace(".py", ".db")
     dbase = dbase.replace("./", "")
     try:
-        opts, args = getopt.getopt(argv, "d:q:hvt", ["help", "verbose", "test", "quote=", "dbase="])
+        opts, args = getopt.getopt(argv, "s:gq:hvt", ["help", "verbose", "test", "quote=", "dbase=", "save_key=", "get_key"])
     except getopt.GetoptError as err:
         print(err)
         usage()
@@ -32,6 +34,10 @@ def main(argv):
             quote = a
         elif o in ("-d", "--dbase"):
             dbase = a
+        elif o in ("-g", "--get_key"):
+            getkey = True
+        elif o in ("-s", "--save_key"):
+            savekey = a
         else:
             assert False, "unhandled option"
     if (test):
@@ -41,10 +47,16 @@ def main(argv):
         else:
             print ("Test result - fail")
         exit()
+    if (savekey > ""):
+        saveResult = plumb.Save(savekey, dbase, verbose)
+        print ("saved.")
+        exit()
+    if (getkey):
+        keyResult = plumb.Key(dbase, verbose)
+        print ("key = {0}".format(keyResult))
+        exit()
     if (quote > ""):
-        quoteResult = plumb.Quote(quote, verbose)
-        print ("Quote")
-        print (dbase)
+        quoteResult = plumb.Quote(quote, dbase, verbose)
         exit()
     usage()
 
@@ -57,8 +69,10 @@ def usage():
     -h --help           Prints this help
     -v --verbose        Increases the information level
     -t --test           runs test routine to check calculations
-    -q --quote          get quote of ticker symbol
-    -d --dbase          database name (stock.db is the default)          
+    -q --quote          get stock quote of ticker symbol
+    -d --dbase          database name (stock.db is the default)
+    -s --save_key       stores the api key in database
+    -g --get_key        retrieves the api key from the database        
     """
     print (usage) 
 
