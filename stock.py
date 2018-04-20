@@ -11,13 +11,14 @@ def main(argv):
     verbose = False
     test = False
     quote = ""
+    company = ""
     getkey = False
     savekey = ""
     dbase = __file__
     dbase = dbase.replace(".py", ".db")
     dbase = dbase.replace("./", "")
     try:
-        opts, args = getopt.getopt(argv, "s:gq:hvt", ["help", "verbose", "test", "quote=", "dbase=", "save_key=", "get_key"])
+        opts, args = getopt.getopt(argv, "s:gq:hvtc:", ["help", "verbose", "test", "quote=", "dbase=", "save_key=", "get_key", "company="])
     except getopt.GetoptError as err:
         print(err)
         usage()
@@ -31,13 +32,15 @@ def main(argv):
             usage()
             exit()
         elif o in ("-q", "--quote"):
-            quote = a
+            quote = a.upper()
+        elif o in ("-c", "--company"):
+            company = a.upper()
         elif o in ("-d", "--dbase"):
-            dbase = a
+            dbase = a.upper()
         elif o in ("-g", "--get_key"):
             getkey = True
         elif o in ("-s", "--save_key"):
-            savekey = a
+            savekey = a.upper()
         else:
             assert False, "unhandled option"
     if (test):
@@ -58,6 +61,9 @@ def main(argv):
     if (quote > ""):
         quoteResult = plumb.Quote(quote, dbase, verbose)
         exit()
+    if (company > ""):
+        quoteResult = plumb.Company(company, verbose)
+        exit()
     usage()
 
 def usage():
@@ -69,10 +75,11 @@ def usage():
     -h --help           Prints this help
     -v --verbose        Increases the information level
     -t --test           runs test routine to check calculations
-    -q --quote          get stock quote of ticker symbol
+    -q --quote          get stock quote from ticker symbol
     -d --dbase          database name (stock.db is the default)
     -s --save_key       stores the api key in database
-    -g --get_key        retrieves the api key from the database        
+    -g --get_key        retrieves the api key from the database
+    -c --company        retrieves company data from ticker symbol        
     """
     print (usage) 
 

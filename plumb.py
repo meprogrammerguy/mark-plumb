@@ -7,11 +7,16 @@ import settings
 def Test(verbose):
     return False
 
-def Quote(quote, dbase, verbose):
-    print (dbase)
+def Quote(ticker, dbase, verbose):
+    print (ticker)
+    return {}
+
+def Company(ticker, verbose):
+    print (ticker)
     return {}
 
 def Save(key, dbase, verbose):
+    print (key)
     return True
 
 def Key(dbase, verbose):
