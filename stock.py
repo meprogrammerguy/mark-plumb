@@ -4,6 +4,7 @@ import sys, getopt
 import plumb
 import pdb
 import os
+import pprint
 
 import settings
 
@@ -62,7 +63,9 @@ def main(argv):
         quoteResult = plumb.Quote(quote, dbase, verbose)
         exit()
     if (company > ""):
-        quoteResult = plumb.Company(company, verbose)
+        companyResult = plumb.Company(company, verbose)
+        if (verbose):
+            pprint.pprint(companyResult)
         exit()
     usage()
 
