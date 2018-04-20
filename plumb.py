@@ -5,7 +5,6 @@ from bs4 import BeautifulSoup
 import html5lib
 import contextlib
 from urllib.request import urlopen
-import os
 import json
 
 import settings
