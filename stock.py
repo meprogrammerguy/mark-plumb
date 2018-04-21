@@ -53,14 +53,22 @@ def main(argv):
         exit()
     if (savekey > ""):
         saveResult = plumb.Save(savekey, dbase, verbose)
-        print ("saved.")
+        if (saveResult):
+            print ("saved.")
+        else:
+            print ("failed.")
         exit()
     if (getkey):
         keyResult = plumb.Key(dbase, verbose)
-        print ("key = {0}".format(keyResult))
+        if (keyResult):
+            print ("key = {0}".format(keyResult))
+        else:
+            print ("key was not returned.")
         exit()
     if (quote > ""):
         quoteResult = plumb.Quote(quote, dbase, verbose)
+        if (verbose):
+            pprint.pprint(quoteResult)
         exit()
     if (company > ""):
         companyResult = plumb.Company(company, verbose)
