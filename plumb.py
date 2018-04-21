@@ -10,6 +10,19 @@ import json
 import settings
 
 def Test(verbose):
+    count = 0
+    if (verbose):
+        print ("Test #1 - Company(AAPL)")
+    result = Company("AAPL", verbose)
+    if (result['companyName'] == "Apple Inc."):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (count == 1):
+        return True
     return False
 
 def Quote(ticker, dbase, verbose):
