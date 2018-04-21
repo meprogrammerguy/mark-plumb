@@ -65,7 +65,7 @@ def Save(key, dbase, verbose):
     try:
         conn = sqlite3.connect(db_file)
         if (verbose):
-            print("Save(3) sql: {0}".format(sqlite3.version))
+            print("Save(3) sqlite3: {0}".format(sqlite3.version))
     except Error as e:
         print("Save(4) {0}".format(e))
         return False
@@ -90,4 +90,17 @@ def Key(dbase, verbose):
             print ("Key(2) {0} file is missing, cannot return the key".format(db_file))
             print ("***\n")
         return ""
-    return ""
+    try:
+        conn = sqlite3.connect(db_file)
+        if (verbose):
+            print("Key(3) sqlite3: {0}".format(sqlite3.version))
+    except Error as e:
+        print("Key(4) {0}".format(e))
+        return False
+    c = conn.cursor()
+    c.execute("SELECT api_key FROM stocks WHERE id = 1")
+    answer = c.fetchone()
+    conn.close()
+    if (verbose):
+        print ("***\n")
+    return answer[0]
