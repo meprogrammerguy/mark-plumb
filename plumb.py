@@ -4,7 +4,7 @@ import pdb
 from bs4 import BeautifulSoup
 import html5lib
 import contextlib
-from urllib.request import urlopen
+import urllib.request
 import json
 
 import settings
@@ -21,11 +21,20 @@ def Company(ticker, verbose):
     if (verbose):
         print ("***")
         print ("Company(1) url: {0}".format(url))
-    with contextlib.closing(urlopen(url)) as page:
-        soup = BeautifulSoup(page, "html5lib")
+    try:
+        with contextlib.closing(urllib.request.urlopen(url)) as page:
+            soup = BeautifulSoup(page, "html5lib")
+    except urllib.error.HTTPError as err:
+        if err.code == 404:
+            if (verbose):
+                print ("Company(2) page not found for {0}".format(ticker))
+                print ("***\n")
+            return {}
+        else:
+            raise
     returnCompany = json.loads(str(soup.text))
     if (verbose):
-        print ("Company(2) {0} = {1}".format(ticker, returnCompany['companyName']))
+        print ("Company(3) {0} = {1}".format(ticker, returnCompany['companyName']))
         print ("***\n")
     return returnCompany
 
