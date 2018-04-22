@@ -16,7 +16,7 @@ import settings
 def Test(verbose):
     count = 0
     if (verbose):
-        print ("Test #1 - Company(AAPL)")
+        print ("Test #1 - Company(AAPL, verbose)")
     result = Company("AAPL", verbose)
     if (result['companyName'] == "Apple Inc."):
         if (verbose):
@@ -25,7 +25,31 @@ def Test(verbose):
     else:
         if (verbose):
             print ("\tfail.")
-    if (count == 1):
+    if (verbose):
+        print ("Test #2 - Save(TEST, test.db, verbose)")
+    result = Save("TEST","test.db", verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (verbose):
+        print ("Test #3 - Key(test.db, verbose)")
+    result = Key("test.db", verbose)
+    if (result == "TEST"):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    db_file = settings.data_path + "test.db"
+    os.unlink(db_file)
+    if (verbose):
+        print ("Test #3 - Cleanup, remove {0}".format(db_file))
+    if (count == 3):
         return True
     return False
 
