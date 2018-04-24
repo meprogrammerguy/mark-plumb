@@ -14,7 +14,8 @@ import getpass
 
 import settings
 
-def Test(verbose):
+#region stock
+def TestStock(verbose):
     count = 0
     if (verbose):
         print ("Test #1 - Company(AAPL, verbose)")
@@ -163,3 +164,4 @@ def Key(dbase, verbose):
     if (verbose):
         print ("***\n")
     return answer[0]
+#endregion stock
