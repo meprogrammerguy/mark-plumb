@@ -10,6 +10,7 @@ import os
 from pathlib import Path
 import sqlite3
 from sqlite3 import Error
+import getpass
 
 import settings
 
@@ -114,9 +115,11 @@ def Save(key, dbase, verbose):
         print("Save(4) {0}".format(e))
         return False
     c = conn.cursor()
-    c.execute("CREATE TABLE if not exists stocks (id, api_key)")
-    c.execute("INSERT OR IGNORE INTO stocks(id) VALUES(1)")
-    toUpdate = "UPDATE stocks SET api_key = '{0}' WHERE id = 1".format(key)
+    username = getpass.getuser()
+    c.execute("CREATE TABLE if not exists stocks (username, api_key)")
+    toExecute = "INSERT OR IGNORE INTO stocks(username) VALUES('{0}')".format(username)
+    c.execute(toExecute)
+    toUpdate = "UPDATE stocks SET api_key = '{0}' WHERE username = '{1}'".format(key, username)
     c.execute(toUpdate)
     conn.commit()
     conn.close()
@@ -142,7 +145,9 @@ def Key(dbase, verbose):
         print("Key(4) {0}".format(e))
         return False
     c = conn.cursor()
-    c.execute("SELECT api_key FROM stocks WHERE id = 1")
+    username = getpass.getuser()
+    toExecute = "SELECT api_key FROM stocks WHERE username = '{0}'".format(username)
+    c.execute(toExecute)
     answer = c.fetchone()
     conn.close()
     if (verbose):
