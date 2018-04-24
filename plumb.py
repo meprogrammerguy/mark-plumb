@@ -46,11 +46,21 @@ def Test(verbose):
     else:
         if (verbose):
             print ("\tfail.")
+    if (verbose):
+        print ("Test #4 - Quote(AAPL, test.db, verbose)")
+    result = Quote("AAPL", "test.db", verbose)
+    if (result['Meta Data']['2. Symbol'] == "AAPL"):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
     db_file = settings.data_path + "test.db"
     os.unlink(db_file)
     if (verbose):
         print ("Test #3 - Cleanup, remove {0}".format(db_file))
-    if (count == 3):
+    if (count == 4):
         return True
     return False
 
