@@ -11,6 +11,8 @@ def main(argv):
     test = False
     dbase = "folder.db"
     cash = ""
+    add = ""
+    remove = ""
     try:
         opts, args = getopt.getopt(argv, "d:c:hvt", ["help", "verbose", "test", "dbase=", "cash="])
     except getopt.GetoptError as err:
@@ -27,8 +29,12 @@ def main(argv):
             exit()
         elif o in ("-d", "--dbase"):
             dbase = a
+        elif o in ("-a", "--add"):
+            add = a.upper()
         elif o in ("-c", "--cash"):
             cash = a
+        elif o in ("-r", "--remove"):
+            remove = a.upper()
         else:
             assert False, "unhandled option"
     if (test):
@@ -38,6 +44,7 @@ def main(argv):
         else:
             print ("Test result - fail")
         exit()
+    print ("\tdbase: {0}".format(dbase))
     if (cash > ""):
         cashResult = plumb.Cash(cash, dbase, verbose)
         if (cashResult):
@@ -45,7 +52,20 @@ def main(argv):
         else:
             print ("failed.")
         exit()
-    print ("\tdbase: {0}".format(dbase))
+    if (add > ""):
+        addResult = plumb.Add(add, dbase, verbose)
+        if (addResult):
+            print ("added.")
+        else:
+            print ("failed.")
+        exit()
+    if (remove > ""):
+        removeResult = plumb.Remove(remove, dbase, verbose)
+        if (removeResult):
+            print ("removed.")
+        else:
+            print ("failed.")
+        exit()
     usage()
 
 def usage():

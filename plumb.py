@@ -170,6 +170,12 @@ def Key(dbase, verbose):
 def TestFolder(verbose):
     return False
 
+def Add(symbol, dbase, verbose):
+    return True
+
+def Remove(symbol, dbase, verbose):
+    return True
+
 def Cash(balance, dbase, verbose):
     username = getpass.getuser()
     db_file = username + "/"  + dbase
@@ -177,7 +183,7 @@ def Cash(balance, dbase, verbose):
         print ("***")
         print ("Cash(1) balance: {0}".format(balance))
         print ("Cash(2) dbase: {0}".format(db_file))
-    result = CreateDB("$", dbase, verbose)
+    result = CreateFolder("$", dbase, verbose)
     if (result):
         try:
             conn = sqlite3.connect(db_file)
@@ -189,8 +195,8 @@ def Cash(balance, dbase, verbose):
         c = conn.cursor()
         toUpdate = "UPDATE folder SET balance = {0} WHERE symbol = '$'".format(float(balance))
         c.execute(toUpdate)
-        r = {'companyName': 'CASH', 'description': 'Cash Account'}
-        json_string = json.dumps(r)
+        dict_string = {'companyName': 'CASH', 'description': 'Cash Account'}
+        json_string = json.dumps(dict_string)
         toUpdate = "UPDATE folder SET json_string = '{0}' WHERE symbol = '$'".format(json_string)
         c.execute(toUpdate)
         toUpdate = "UPDATE folder SET shares = {0} WHERE symbol = '$'".format(float(balance))
@@ -201,19 +207,19 @@ def Cash(balance, dbase, verbose):
         print ("***\n")
     return True
 
-def CreateDB(key, dbase, verbose):
+def CreateFolder(key, dbase, verbose):
     username = getpass.getuser()
     db_file = username + "/"  + dbase
     Path(username + "/").mkdir(parents=True, exist_ok=True) 
     if (verbose):
         print ("***")
-        print ("CreateDB(1) dbase: {0}".format(db_file))
+        print ("CreateFolder(1) dbase: {0}".format(db_file))
     try:
         conn = sqlite3.connect(db_file)
         if (verbose):
-            print("CreateDB(2) sqlite3: {0}".format(sqlite3.version))
+            print("CreateFolder(2) sqlite3: {0}".format(sqlite3.version))
     except Error as e:
-        print("CreateDB(3) {0}".format(e))
+        print("CreateFolder(3) {0}".format(e))
         return False
     c = conn.cursor()
     toCreate = "CREATE TABLE if not exists `folder` ( `symbol` TEXT NOT NULL UNIQUE, `json_string` TEXT, `balance` REAL, `shares` REAL, PRIMARY KEY(`symbol`) )"
