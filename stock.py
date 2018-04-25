@@ -15,7 +15,7 @@ def main(argv):
     savekey = ""
     dbase = "defaults.db"
     try:
-        opts, args = getopt.getopt(argv, "s:gq:hvtc:", ["help", "verbose", "test", "quote=", "dbase=", "save_key=", "get_key", "company="])
+        opts, args = getopt.getopt(argv, "d:s:gq:hvtc:", ["help", "verbose", "test", "quote=", "dbase=", "save_key=", "get_key", "company="])
     except getopt.GetoptError as err:
         print(err)
         usage()
@@ -33,7 +33,7 @@ def main(argv):
         elif o in ("-c", "--company"):
             company = a.upper()
         elif o in ("-d", "--dbase"):
-            dbase = a.upper()
+            dbase = a
         elif o in ("-g", "--get_key"):
             getkey = True
         elif o in ("-s", "--save_key"):

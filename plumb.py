@@ -164,3 +164,8 @@ def Key(dbase, verbose):
         print ("***\n")
     return answer[0]
 #endregion stock
+
+#region folder
+def TestFolder(verbose):
+    return False
+#endregion folder
