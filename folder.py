@@ -10,8 +10,9 @@ def main(argv):
     verbose = False
     test = False
     dbase = "folder.db"
+    cash = ""
     try:
-        opts, args = getopt.getopt(argv, "d:hvt", ["help", "verbose", "test", "dbase="])
+        opts, args = getopt.getopt(argv, "d:c:hvt", ["help", "verbose", "test", "dbase=", "cash="])
     except getopt.GetoptError as err:
         print(err)
         usage()
@@ -26,6 +27,8 @@ def main(argv):
             exit()
         elif o in ("-d", "--dbase"):
             dbase = a
+        elif o in ("-c", "--cash"):
+            cash = a
         else:
             assert False, "unhandled option"
     if (test):
@@ -34,6 +37,13 @@ def main(argv):
             print ("Test result - pass")
         else:
             print ("Test result - fail")
+        exit()
+    if (cash > ""):
+        cashResult = plumb.Cash(cash, dbase, verbose)
+        if (cashResult):
+            print ("balance updated.")
+        else:
+            print ("failed.")
         exit()
     print ("\tdbase: {0}".format(dbase))
     usage()
@@ -48,6 +58,12 @@ def usage():
     -v --verbose        Increases the information level
     -t --test           tests the folder routines
     -d --dbase          override database name (folder.db is the default)
+    -c --cash           enter your cash balance in dollars
+    -a --add            add company by ticker symbol
+    -r --remove         remove company by ticker symbol
+    -s --symbol         ticker symbol (used with --number or --balance)
+    -n --number         number of shared owned (used with --symbol)
+    -b --balance        balance in dollars (used with --symbol)
     """
     print (usage) 
 

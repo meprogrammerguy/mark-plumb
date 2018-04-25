@@ -126,7 +126,8 @@ def Save(key, dbase, verbose):
         print("Save(4) {0}".format(e))
         return False
     c = conn.cursor()
-    c.execute("CREATE TABLE if not exists defaults (username, api_key)")
+    toCreate = "CREATE TABLE if not exists 'defaults' ( `username` TEXT NOT NULL UNIQUE, `api_key` TEXT, PRIMARY KEY(`username`) )"
+    c.execute(toCreate)
     toExecute = "INSERT OR IGNORE INTO defaults(username) VALUES('{0}')".format(username)
     c.execute(toExecute)
     toUpdate = "UPDATE defaults SET api_key = '{0}' WHERE username = '{1}'".format(key, username)
@@ -168,4 +169,60 @@ def Key(dbase, verbose):
 #region folder
 def TestFolder(verbose):
     return False
+
+def Cash(balance, dbase, verbose):
+    username = getpass.getuser()
+    db_file = username + "/"  + dbase
+    if (verbose):
+        print ("***")
+        print ("Cash(1) balance: {0}".format(balance))
+        print ("Cash(2) dbase: {0}".format(db_file))
+    result = CreateDB("$", dbase, verbose)
+    if (result):
+        try:
+            conn = sqlite3.connect(db_file)
+            if (verbose):
+                print("Cash(3) sqlite3: {0}".format(sqlite3.version))
+        except Error as e:
+            print("Cash(4) {0}".format(e))
+            return False
+        c = conn.cursor()
+        toUpdate = "UPDATE folder SET balance = {0} WHERE symbol = '$'".format(float(balance))
+        c.execute(toUpdate)
+        r = {'companyName': 'CASH', 'description': 'Cash Account'}
+        json_string = json.dumps(r)
+        toUpdate = "UPDATE folder SET json_string = '{0}' WHERE symbol = '$'".format(json_string)
+        c.execute(toUpdate)
+        toUpdate = "UPDATE folder SET shares = {0} WHERE symbol = '$'".format(float(balance))
+        c.execute(toUpdate)
+        conn.commit()
+        conn.close()
+    if (verbose):
+        print ("***\n")
+    return True
+
+def CreateDB(key, dbase, verbose):
+    username = getpass.getuser()
+    db_file = username + "/"  + dbase
+    Path(username + "/").mkdir(parents=True, exist_ok=True) 
+    if (verbose):
+        print ("***")
+        print ("CreateDB(1) dbase: {0}".format(db_file))
+    try:
+        conn = sqlite3.connect(db_file)
+        if (verbose):
+            print("CreateDB(2) sqlite3: {0}".format(sqlite3.version))
+    except Error as e:
+        print("CreateDB(3) {0}".format(e))
+        return False
+    c = conn.cursor()
+    toCreate = "CREATE TABLE if not exists `folder` ( `symbol` TEXT NOT NULL UNIQUE, `json_string` TEXT, `balance` REAL, `shares` REAL, PRIMARY KEY(`symbol`) )"
+    c.execute(toCreate)
+    toExecute = "INSERT OR IGNORE INTO folder(symbol) VALUES('{0}')".format(key)
+    c.execute(toExecute)
+    conn.commit()
+    conn.close()
+    if (verbose):
+        print ("***\n")
+    return True
 #endregion folder
