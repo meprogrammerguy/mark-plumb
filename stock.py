@@ -98,9 +98,9 @@ def usage():
 
     -h --help           Prints this help
     -v --verbose        Increases the information level
-    -t --test           runs test routine to check calculations
+    -t --test           tests the stock routines
     -q --quote          get stock quote from ticker symbol
-    -d --dbase          default database name (defaults.db is the default)
+    -d --dbase          override database name (defaults.db is the default)
     -s --save_key       stores the api key in database
     -g --get_key        retrieves the api key from the database
     -c --company        retrieves company data from ticker symbol        
