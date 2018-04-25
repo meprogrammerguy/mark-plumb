@@ -6,6 +6,8 @@ import pdb
 import os
 import pprint
 
+import settings
+
 def main(argv):
     verbose = False
     test = False
@@ -13,7 +15,9 @@ def main(argv):
     company = ""
     getkey = False
     savekey = ""
-    dbase = "defaults.db"
+    dbase = __file__
+    dbase = dbase.replace(".py", ".db")
+    dbase = dbase.replace("./", "")
     try:
         opts, args = getopt.getopt(argv, "s:gq:hvtc:", ["help", "verbose", "test", "quote=", "dbase=", "save_key=", "get_key", "company="])
     except getopt.GetoptError as err:
@@ -47,7 +51,6 @@ def main(argv):
         else:
             print ("Test result - fail")
         exit()
-    print ("\tdbase: {0}".format(dbase))
     if (savekey > ""):
         saveResult = plumb.Save(savekey, dbase, verbose)
         if (saveResult):
@@ -66,27 +69,30 @@ def main(argv):
         quoteResult = plumb.Quote(quote, dbase, verbose)
         count = 0
         close = "?"
+        for key, values in quoteResult.items():
+            if (key == "Error Message"):
+                break
+            if (key != "Meta Data"):
+                for value in values.values():
+                    close = value['4. close']
+                    break
         if (verbose):
             pprint.pprint(quoteResult)
-        if (quoteResult):
-            for keys, values in quoteResult.items():
-                if (keys == "Error Message"):
-                    break
-                if (keys != "Meta Data"):
-                    for key, value in values.items():
-                        print ("\n{0} {1} close: {2}\n".format(keys, key, value['4. close']))
-                        break
         else:
-            print ("\nfailed.\n")
+            if (quoteResult):
+                print ("close: {0}".format(close))
+            else:
+                print ("failed.")
         exit()
     if (company > ""):
         companyResult = plumb.Company(company, verbose)
         if (verbose):
             pprint.pprint(companyResult)
-        if (companyResult):
-            print ("\nCompany {0} = {1}\n".format(company, companyResult['companyName']))
         else:
-            print ("\nfailed.\n")
+            if (companyResult):
+                print ("Company {0} = {1}".format(company, companyResult['companyName']))
+            else:
+                print ("failed.")
         exit()
     usage()
 
@@ -100,7 +106,7 @@ def usage():
     -v --verbose        Increases the information level
     -t --test           runs test routine to check calculations
     -q --quote          get stock quote from ticker symbol
-    -d --dbase          default database name (defaults.db is the default)
+    -d --dbase          database name (stock.db is the default)
     -s --save_key       stores the api key in database
     -g --get_key        retrieves the api key from the database
     -c --company        retrieves company data from ticker symbol        

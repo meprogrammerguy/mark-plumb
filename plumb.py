@@ -12,8 +12,6 @@ import sqlite3
 from sqlite3 import Error
 import getpass
 
-import settings
-
 #region stock
 def TestStock(verbose):
     count = 0
@@ -57,7 +55,8 @@ def TestStock(verbose):
     else:
         if (verbose):
             print ("\tfail.")
-    db_file = settings.data_path + "test.db"
+    username = getpass.getuser()
+    db_file = username + "/" + "test.db"
     os.unlink(db_file)
     if (verbose):
         print ("Test #3 - Cleanup, remove {0}".format(db_file))
@@ -112,8 +111,9 @@ def Company(ticker, verbose):
     return returnCompany
 
 def Save(key, dbase, verbose):
-    db_file = settings.data_path + dbase
-    Path(settings.data_path).mkdir(parents=True, exist_ok=True) 
+    username = getpass.getuser()
+    db_file = username + "/"  + dbase
+    Path(username + "/").mkdir(parents=True, exist_ok=True) 
     if (verbose):
         print ("***")
         print ("Save(1) key: {0}".format(key))
@@ -126,11 +126,10 @@ def Save(key, dbase, verbose):
         print("Save(4) {0}".format(e))
         return False
     c = conn.cursor()
-    username = getpass.getuser()
-    c.execute("CREATE TABLE if not exists stocks (username, api_key)")
-    toExecute = "INSERT OR IGNORE INTO stocks(username) VALUES('{0}')".format(username)
+    c.execute("CREATE TABLE if not exists defaults (username, api_key)")
+    toExecute = "INSERT OR IGNORE INTO defaults(username) VALUES('{0}')".format(username)
     c.execute(toExecute)
-    toUpdate = "UPDATE stocks SET api_key = '{0}' WHERE username = '{1}'".format(key, username)
+    toUpdate = "UPDATE defaults SET api_key = '{0}' WHERE username = '{1}'".format(key, username)
     c.execute(toUpdate)
     conn.commit()
     conn.close()
@@ -139,7 +138,8 @@ def Save(key, dbase, verbose):
     return True
 
 def Key(dbase, verbose):
-    db_file = settings.data_path + dbase
+    username = getpass.getuser()
+    db_file = username + "/" + dbase
     if (verbose):
         print ("***")
         print ("Key(1) dbase: {0}".format(db_file))
@@ -156,8 +156,7 @@ def Key(dbase, verbose):
         print("Key(4) {0}".format(e))
         return False
     c = conn.cursor()
-    username = getpass.getuser()
-    toExecute = "SELECT api_key FROM stocks WHERE username = '{0}'".format(username)
+    toExecute = "SELECT api_key FROM defaults WHERE username = '{0}'".format(username)
     c.execute(toExecute)
     answer = c.fetchone()
     conn.close()
