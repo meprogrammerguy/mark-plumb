@@ -90,6 +90,7 @@ def Quote(ticker, dbase, verbose):
     if (returnQuote):
         for keys, values in returnQuote.items():
             if (keys == "Error Message"):
+                closing = returnQuote
                 break
             if (keys != "Meta Data"):
                 for key, value in values.items():
@@ -136,12 +137,9 @@ def Save(key, dbase, verbose):
         print("Save(4) {0}".format(e))
         return False
     c = conn.cursor()
-    toCreate = "CREATE TABLE if not exists 'defaults' ( `username` TEXT NOT NULL UNIQUE, `api_key` TEXT, PRIMARY KEY(`username`) )"
-    c.execute(toCreate)
-    toExecute = "INSERT OR IGNORE INTO defaults(username) VALUES('{0}')".format(username)
-    c.execute(toExecute)
-    toUpdate = "UPDATE defaults SET api_key = '{0}' WHERE username = '{1}'".format(key, username)
-    c.execute(toUpdate)
+    c.execute("CREATE TABLE if not exists 'defaults' ( `username` TEXT NOT NULL UNIQUE, `api_key` TEXT, PRIMARY KEY(`username`) )")
+    c.execute("INSERT OR IGNORE INTO defaults(username) VALUES((?))", (username,))
+    c.execute("UPDATE defaults SET api_key = (?) WHERE username = (?)", (key, username,))
     conn.commit()
     conn.close()
     if (verbose):
@@ -167,8 +165,7 @@ def Key(dbase, verbose):
         print("Key(4) {0}".format(e))
         return False
     c = conn.cursor()
-    toExecute = "SELECT api_key FROM defaults WHERE username = '{0}'".format(username)
-    c.execute(toExecute)
+    c.execute("SELECT api_key FROM defaults WHERE username = (?)", (username,))
     answer = c.fetchone()
     conn.close()
     if (verbose):
@@ -181,9 +178,51 @@ def TestFolder(verbose):
     return False
 
 def Add(symbol, dbase, verbose):
+    username = getpass.getuser()
+    db_file = username + "/"  + dbase
+    if (verbose):
+        print ("***")
+        print ("Add(1) symbol: {0}".format(symbol))
+        print ("Add(2) dbase: {0}".format(db_file))
+    result = CreateFolder(symbol, dbase, verbose)
+    if (result):
+        try:
+            conn = sqlite3.connect(db_file)
+            if (verbose):
+                print("Add(3) sqlite3: {0}".format(sqlite3.version))
+        except Error as e:
+            print("Add(4) {0}".format(e))
+            return False
+        json_data = Company(symbol, verbose)
+        json_string = json.dumps(json_data)
+        c = conn.cursor()
+        c.execute("UPDATE folder SET json_string = (?) WHERE symbol = (?)", (json_string, symbol,))
+        conn.commit()
+        conn.close()
+    if (verbose):
+        print ("***\n")
     return True
 
 def Remove(symbol, dbase, verbose):
+    username = getpass.getuser()
+    db_file = username + "/"  + dbase
+    if (verbose):
+        print ("***")
+        print ("Remove(1) symbol: {0}".format(symbol))
+        print ("Remove(2) dbase: {0}".format(db_file))
+    try:
+        conn = sqlite3.connect(db_file)
+        if (verbose):
+            print("Remove(3) sqlite3: {0}".format(sqlite3.version))
+    except Error as e:
+        print("Remove(4) {0}".format(e))
+        return False
+    c = conn.cursor()
+    c.execute("DELETE FROM folder WHERE symbol=(?)", (symbol,))
+    conn.commit()
+    conn.close()
+    if (verbose):
+        print ("***\n")
     return True
 
 def Cash(balance, dbase, verbose):
@@ -203,14 +242,11 @@ def Cash(balance, dbase, verbose):
             print("Cash(4) {0}".format(e))
             return False
         c = conn.cursor()
-        toUpdate = "UPDATE folder SET balance = {0} WHERE symbol = '$'".format(float(balance))
-        c.execute(toUpdate)
-        dict_string = {'companyName': 'CASH', 'description': 'Cash Account'}
+        c.execute("UPDATE folder SET balance = ? WHERE symbol = '$'", (float(balance),))
+        dict_string = {'companyName': 'CASH', 'description': 'Cash Account', 'symbol': '$'}
         json_string = json.dumps(dict_string)
-        toUpdate = "UPDATE folder SET json_string = '{0}' WHERE symbol = '$'".format(json_string)
-        c.execute(toUpdate)
-        toUpdate = "UPDATE folder SET shares = {0} WHERE symbol = '$'".format(float(balance))
-        c.execute(toUpdate)
+        c.execute("UPDATE folder SET json_string = (?) WHERE symbol = '$'", (json_string,))
+        c.execute("UPDATE folder SET shares = ? WHERE symbol = '$'", (float(balance),))
         conn.commit()
         conn.close()
     if (verbose):
@@ -232,10 +268,8 @@ def CreateFolder(key, dbase, verbose):
         print("CreateFolder(3) {0}".format(e))
         return False
     c = conn.cursor()
-    toCreate = "CREATE TABLE if not exists `folder` ( `symbol` TEXT NOT NULL UNIQUE, `json_string` TEXT, `balance` REAL, `shares` REAL, PRIMARY KEY(`symbol`) )"
-    c.execute(toCreate)
-    toExecute = "INSERT OR IGNORE INTO folder(symbol) VALUES('{0}')".format(key)
-    c.execute(toExecute)
+    c.execute("CREATE TABLE if not exists 'folder' ( `symbol` TEXT NOT NULL UNIQUE, `json_string` TEXT, `balance` REAL, `shares` REAL, `price_time` TEXT, `price` REAL, PRIMARY KEY(`symbol`) )")
+    c.execute( "INSERT OR IGNORE INTO folder(symbol) VALUES((?))", (key,))
     conn.commit()
     conn.close()
     if (verbose):

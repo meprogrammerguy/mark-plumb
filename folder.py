@@ -14,7 +14,7 @@ def main(argv):
     add = ""
     remove = ""
     try:
-        opts, args = getopt.getopt(argv, "d:c:hvt", ["help", "verbose", "test", "dbase=", "cash="])
+        opts, args = getopt.getopt(argv, "a:r:d:c:hvt", ["help", "verbose", "test", "dbase=", "cash=", "add=", "remove="])
     except getopt.GetoptError as err:
         print(err)
         usage()
