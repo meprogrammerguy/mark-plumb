@@ -13,8 +13,11 @@ def main(argv):
     cash = ""
     add = ""
     remove = ""
+    symbol = ""
+    balance = ""
+    shares =""
     try:
-        opts, args = getopt.getopt(argv, "a:r:d:c:hvt", ["help", "verbose", "test", "dbase=", "cash=", "add=", "remove="])
+        opts, args = getopt.getopt(argv, "b:n:s:a:r:d:c:hvt", ["help", "verbose", "test", "dbase=", "cash=", "add=", "remove=", "symbol=", "balance=", "number="])
     except getopt.GetoptError as err:
         print(err)
         usage()
@@ -35,6 +38,12 @@ def main(argv):
             cash = a
         elif o in ("-r", "--remove"):
             remove = a.upper()
+        elif o in ("-s", "--symbol"):
+            symbol = a.upper()
+        elif o in ("-b", "--balance"):
+            balance = a
+        elif o in ("-n", "--number"):
+            shares = a
         else:
             assert False, "unhandled option"
     if (test):
@@ -66,6 +75,20 @@ def main(argv):
         else:
             print ("failed.")
         exit()
+    if (balance > "" and symbol > ""):
+        balanceResult = plumb.balance(symbol, balance, dbase, verbose)
+        if (balanceResult):
+            print ("balance updated.")
+        else:
+            print ("failed.")
+        exit()
+    if (shares > "" and symbol > ""):
+        sharesResult = plumb.Shares(symbol, shares, dbase, verbose)
+        if (sharesResult):
+            print ("shares updated.")
+        else:
+            print ("failed.")
+        exit()
     usage()
 
 def usage():
@@ -84,6 +107,7 @@ def usage():
     -s --symbol         ticker symbol (used with --number or --balance)
     -n --number         number of shared owned (used with --symbol)
     -b --balance        balance in dollars (used with --symbol)
+    -u --update         update all prices (to within 15 minutes)
     """
     print (usage) 
 

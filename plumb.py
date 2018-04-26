@@ -275,4 +275,9 @@ def CreateFolder(key, dbase, verbose):
     if (verbose):
         print ("***\n")
     return True
+def Shares(symbol, shares, dbase, verbose):
+    return True
+
+def Balance(symbol, balance, dbase, verbose):
+    return True
 #endregion folder
