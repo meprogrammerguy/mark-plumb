@@ -275,12 +275,81 @@ def CreateFolder(key, dbase, verbose):
     if (verbose):
         print ("***\n")
     return True
+
 def Shares(symbol, shares, dbase, verbose):
+    username = getpass.getuser()
+    db_file = username + "/"  + dbase
+    Path(username + "/").mkdir(parents=True, exist_ok=True) 
+    if (verbose):
+        print ("***")
+        print ("Shares(1) symbol: {0}".format(symbol))
+        print ("Shares(2) shares: {0}".format(shares))
+        print ("Shares(3) dbase: {0}".format(db_file))
+    result = Add(symbol, dbase, verbose)
+    if (result):
+        price = Quote(symbol, "defaults.db", verbose)
+        if (price):
+            try:
+                conn = sqlite3.connect(db_file)
+                if (verbose):
+                    print("Shares(4) sqlite3: {0}".format(sqlite3.version))
+            except Error as e:
+                print("Shares(5) {0}".format(e))
+                return False
+            c = conn.cursor()
+            c.execute("UPDATE folder SET shares = ? WHERE symbol = (?)", (shares, symbol,))
+            c.execute("UPDATE folder SET price_time = (?) WHERE symbol = (?)", (price['price_time'], symbol,))
+            c.execute("UPDATE folder SET price = ? WHERE symbol = (?)", (float(price['price']), symbol,))
+            balance = float(shares) * float(price['price'])
+            c.execute("UPDATE folder SET balance = ? WHERE symbol = (?)", (float(balance), symbol,))
+            conn.commit()
+            conn.close()
+    else:
+        if (verbose):
+            print ("***\n")
+        return False
+    if (verbose):
+        print ("***\n")
     return True
 
 def Balance(symbol, balance, dbase, verbose):
+    username = getpass.getuser()
+    db_file = username + "/"  + dbase
+    Path(username + "/").mkdir(parents=True, exist_ok=True) 
+    if (verbose):
+        print ("***")
+        print ("Balance(1) symbol: {0}".format(symbol))
+        print ("Balance(2) balance: {0}".format(balance))
+        print ("Balance(3) dbase: {0}".format(db_file))
+    result = Add(symbol, dbase, verbose)
+    if (result):
+        price = Quote(symbol, "defaults.db", verbose)
+        if (price):
+            try:
+                conn = sqlite3.connect(db_file)
+                if (verbose):
+                    print("Balance(4) sqlite3: {0}".format(sqlite3.version))
+            except Error as e:
+                print("Balance(5) {0}".format(e))
+                return False
+            c = conn.cursor()
+            shares = 1.0
+            if (float(price['price']) > 0):
+                shares = float(balance) / float(price['price'])
+            c.execute("UPDATE folder SET shares = ? WHERE symbol = (?)", (shares, symbol,))
+            c.execute("UPDATE folder SET price_time = (?) WHERE symbol = (?)", (price['price_time'], symbol,))
+            c.execute("UPDATE folder SET price = ? WHERE symbol = (?)", (float(price['price']), symbol,))
+            c.execute("UPDATE folder SET balance = ? WHERE symbol = (?)", (float(balance), symbol,))
+            conn.commit()
+            conn.close()
+    else:
+        if (verbose):
+            print ("***\n")
+        return False
+    if (verbose):
+        print ("***\n")
     return True
 
-def Update(dbase, verbose)
+def Update(dbase, verbose):
     return True
 #endregion folder

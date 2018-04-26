@@ -79,7 +79,7 @@ def main(argv):
             print ("failed.")
         exit()
     if (balance > "" and symbol > ""):
-        balanceResult = plumb.balance(symbol, balance, dbase, verbose)
+        balanceResult = plumb.Balance(symbol, balance, dbase, verbose)
         if (balanceResult):
             print ("balance updated.")
         else:
