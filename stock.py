@@ -64,20 +64,7 @@ def main(argv):
         exit()
     if (quote > ""):
         quoteResult = plumb.Quote(quote, dbase, verbose)
-        count = 0
-        close = "?"
-        if (verbose):
-            pprint.pprint(quoteResult)
-        if (quoteResult):
-            for keys, values in quoteResult.items():
-                if (keys == "Error Message"):
-                    break
-                if (keys != "Meta Data"):
-                    for key, value in values.items():
-                        print ("\n{0} {1} close: {2}\n".format(keys, key, value['4. close']))
-                        break
-        else:
-            print ("\nfailed.\n")
+        pprint.pprint(quoteResult)
         exit()
     if (company > ""):
         companyResult = plumb.Company(company, verbose)

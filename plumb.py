@@ -86,7 +86,17 @@ def Quote(ticker, dbase, verbose):
     returnQuote = json.loads(str(soup.text))
     if (verbose):
         print ("***\n")
-    return returnQuote
+    closing = {}
+    if (returnQuote):
+        for keys, values in returnQuote.items():
+            if (keys == "Error Message"):
+                break
+            if (keys != "Meta Data"):
+                for key, value in values.items():
+                    closing['price_time'] = key
+                    closing['price'] =  value['4. close']
+                    break
+    return closing
 
 def Company(ticker, verbose):
     url = "https://api.iextrading.com/1.0/stock/{0}/company".format(ticker)
