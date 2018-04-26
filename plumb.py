@@ -351,5 +351,26 @@ def Balance(symbol, balance, dbase, verbose):
     return True
 
 def Update(dbase, verbose):
+    username = getpass.getuser()
+    db_file = username + "/"  + dbase
+    Path(username + "/").mkdir(parents=True, exist_ok=True) 
+    if (verbose):
+        print ("***")
+        print ("Update(1) dbase: {0}".format(db_file))
+    try:
+        conn = sqlite3.connect(db_file)
+        if (verbose):
+            print("Update(2) sqlite3: {0}".format(sqlite3.version))
+    except Error as e:
+        print("Update(3) {0}".format(e))
+        return False
+    u = conn.cursor()
+    u.execute('SELECT symbol, balance FROM folder') 
+    for row in u:
+        if (row[0] != "$"):
+            result = Balance(row[0], str(row[1]), dbase, verbose)
+    conn.close()
+    if (verbose):
+        print ("***\n")
     return True
 #endregion folder
