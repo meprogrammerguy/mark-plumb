@@ -364,12 +364,14 @@ def Update(dbase, verbose):
     except Error as e:
         print("Update(3) {0}".format(e))
         return False
-    u = conn.cursor()
-    u.execute('SELECT symbol, balance FROM folder') 
-    for row in u:
+    c = conn.cursor()
+    c.execute('SELECT symbol, balance FROM folder') 
+    rows = c.fetchall()
+    conn.commit()
+    conn.close()
+    for row in rows:
         if (row[0] != "$"):
             result = Balance(row[0], str(row[1]), dbase, verbose)
-    conn.close()
     if (verbose):
         print ("***\n")
     return True
