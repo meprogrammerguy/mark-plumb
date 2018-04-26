@@ -280,4 +280,7 @@ def Shares(symbol, shares, dbase, verbose):
 
 def Balance(symbol, balance, dbase, verbose):
     return True
+
+def Update(dbase, verbose)
+    return True
 #endregion folder

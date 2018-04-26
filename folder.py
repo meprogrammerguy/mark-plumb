@@ -9,15 +9,16 @@ import pprint
 def main(argv):
     verbose = False
     test = False
+    update = False
     dbase = "folder.db"
     cash = ""
     add = ""
     remove = ""
     symbol = ""
     balance = ""
-    shares =""
+    shares = ""
     try:
-        opts, args = getopt.getopt(argv, "b:n:s:a:r:d:c:hvt", ["help", "verbose", "test", "dbase=", "cash=", "add=", "remove=", "symbol=", "balance=", "number="])
+        opts, args = getopt.getopt(argv, "ub:n:s:a:r:d:c:hvt", ["help", "verbose", "test", "dbase=", "cash=", "add=", "remove=", "symbol=", "balance=", "number=", "update"])
     except getopt.GetoptError as err:
         print(err)
         usage()
@@ -27,6 +28,8 @@ def main(argv):
             verbose = True
         elif o in ("-t", "--test"):
             test = True
+        elif o in ("-u", "--update"):
+            update = True
         elif o in ("-h", "--help"):
             usage()
             exit()
@@ -86,6 +89,13 @@ def main(argv):
         sharesResult = plumb.Shares(symbol, shares, dbase, verbose)
         if (sharesResult):
             print ("shares updated.")
+        else:
+            print ("failed.")
+        exit()
+    if (update):
+        updateResult = plumb.Update(dbase, verbose)
+        if (updateResult):
+            print ("prices updated.")
         else:
             print ("failed.")
         exit()
