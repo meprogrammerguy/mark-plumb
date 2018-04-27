@@ -18,7 +18,7 @@ import datetime
 def TestStock(verbose):
     count = 0
     if (verbose):
-        print ("Test #1 - Company(AAPL, verbose)")
+        print ("Test #1 - Company('AAPL', verbose)")
     result = Company("AAPL", verbose)
     if (result['companyName'] == "Apple Inc."):
         if (verbose):
@@ -28,7 +28,7 @@ def TestStock(verbose):
         if (verbose):
             print ("\tfail.")
     if (verbose):
-        print ("Test #2 - Save(TEST, test.db, verbose)")
+        print ("Test #2 - Save('TEST', 'test.db', verbose)")
     result = Save("TEST","test.db", verbose)
     if (result):
         if (verbose):
@@ -38,7 +38,7 @@ def TestStock(verbose):
         if (verbose):
             print ("\tfail.")
     if (verbose):
-        print ("Test #3 - Key(test.db, verbose)")
+        print ("Test #3 - Key('test.db', verbose)")
     result = Key("test.db", verbose)
     if (result == "TEST"):
         if (verbose):
@@ -48,7 +48,7 @@ def TestStock(verbose):
         if (verbose):
             print ("\tfail.")
     if (verbose):
-        print ("Test #4 - Quote(AAPL, test.db, verbose)")
+        print ("Test #4 - Quote('AAPL', 'test.db', verbose)")
     result = Quote("AAPL", "test.db", verbose)
     if (result['Meta Data']['2. Symbol'] == "AAPL"):
         if (verbose):
