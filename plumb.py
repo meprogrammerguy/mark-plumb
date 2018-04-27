@@ -61,7 +61,7 @@ def TestStock(verbose):
     db_file = username + "/" + "test.db"
     os.unlink(db_file)
     if (verbose):
-        print ("Test #3 - Cleanup, remove {0}".format(db_file))
+        print ("Cleanup, remove {0}".format(db_file))
     if (count == 4):
         return True
     return False
@@ -177,6 +177,74 @@ def Key(dbase, verbose):
 
 #region folder
 def TestFolder(verbose):
+    count = 0
+    if (verbose):
+        print ("Test #1 - Add('M', 'test.db', verbose)")
+    result = Add("M", "test.db", verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (verbose):
+        print ("Test #2 - Remove('M', 'test.db', verbose)")
+    result = Remove("M", "test.db", verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (verbose):
+        print ("Test #3 - Cash(5000, 'test.db', verbose)")
+    result = Cash(5000, "test.db", verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (verbose):
+        print ("Test #4 - Shares('MMM', 50, 'test.db', verbose)")
+    result = Shares("MMM", 50, "test.db", verbose)
+    if (result['status']):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (verbose):
+        print ("Test #5 - Balance('AAPL', 5000, 'test.db', verbose)")
+    result = Balance("AAPL", 5000, "test.db", verbose)
+    if (result['status']):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (verbose):
+        print ("Test #6 - Update('test.db', verbose)")
+    result = Update("test.db", verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    username = getpass.getuser()
+    db_file = username + "/" + "test.db"
+    os.unlink(db_file)
+    if (verbose):
+        print ("Cleanup, remove {0}".format(db_file))
+    if (count == 6):
+        return True
     return False
 
 def Add(symbol, dbase, verbose):
