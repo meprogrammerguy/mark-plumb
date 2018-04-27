@@ -11,6 +11,8 @@ from pathlib import Path
 import sqlite3
 from sqlite3 import Error
 import getpass
+import time
+import datetime
 
 #region stock
 def TestStock(verbose):
@@ -197,6 +199,7 @@ def Add(symbol, dbase, verbose):
         json_string = json.dumps(json_data)
         c = conn.cursor()
         c.execute("UPDATE folder SET json_string = (?) WHERE symbol = (?)", (json_string, symbol,))
+        c.execute("UPDATE folder SET update_time = (?) WHERE symbol = (?)", (datetime.datetime.now(), symbol,))
         conn.commit()
         conn.close()
     if (verbose):
@@ -247,6 +250,9 @@ def Cash(balance, dbase, verbose):
         json_string = json.dumps(dict_string)
         c.execute("UPDATE folder SET json_string = (?) WHERE symbol = '$'", (json_string,))
         c.execute("UPDATE folder SET shares = ? WHERE symbol = '$'", (float(balance),))
+        c.execute("UPDATE folder SET update_time = (?) WHERE symbol = '$'", (datetime.datetime.now(),))
+        c.execute("UPDATE folder SET price_time = (?) WHERE symbol = '$'", (datetime.datetime.now(),))
+        c.execute("UPDATE folder SET price = 1.00 WHERE symbol = '$'")
         conn.commit()
         conn.close()
     if (verbose):
@@ -268,7 +274,7 @@ def CreateFolder(key, dbase, verbose):
         print("CreateFolder(3) {0}".format(e))
         return False
     c = conn.cursor()
-    c.execute("CREATE TABLE if not exists 'folder' ( `symbol` TEXT NOT NULL UNIQUE, `json_string` TEXT, `balance` REAL, `shares` REAL, `price_time` TEXT, `price` REAL, PRIMARY KEY(`symbol`) )")
+    c.execute("CREATE TABLE if not exists 'folder' ( `symbol` TEXT NOT NULL UNIQUE, `json_string` TEXT, `balance` REAL, `shares` REAL, `update_time` TEXT, `price_time` TEXT, `price` REAL, PRIMARY KEY(`symbol`) )")
     c.execute( "INSERT OR IGNORE INTO folder(symbol) VALUES((?))", (key,))
     conn.commit()
     conn.close()
@@ -310,6 +316,7 @@ def Shares(symbol, shares, dbase, verbose):
             c.execute("UPDATE folder SET price = ? WHERE symbol = (?)", (float(price['price']), symbol,))
             balance = float(shares) * float(price['price'])
             c.execute("UPDATE folder SET balance = ? WHERE symbol = (?)", (float(balance), symbol,))
+            c.execute("UPDATE folder SET update_time = (?) WHERE symbol = (?)", (datetime.datetime.now(), symbol,))
             conn.commit()
             conn.close()
     else:
@@ -354,12 +361,13 @@ def Balance(symbol, balance, dbase, verbose):
                 return result
             c = conn.cursor()
             shares = 1.0
-            if (float(price['price']) > 0):
+            if float(price['price']) > 0:
                 shares = float(balance) / float(price['price'])
             c.execute("UPDATE folder SET shares = ? WHERE symbol = (?)", (shares, symbol,))
             c.execute("UPDATE folder SET price_time = (?) WHERE symbol = (?)", (price['price_time'], symbol,))
             c.execute("UPDATE folder SET price = ? WHERE symbol = (?)", (float(price['price']), symbol,))
             c.execute("UPDATE folder SET balance = ? WHERE symbol = (?)", (float(balance), symbol,))
+            c.execute("UPDATE folder SET update_time = (?) WHERE symbol = (?)", (datetime.datetime.now(), symbol,))
             conn.commit()
             conn.close()
     else:
