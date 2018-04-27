@@ -78,17 +78,23 @@ def main(argv):
         else:
             print ("failed.")
         exit()
-    if (balance > "" and symbol > ""):
+    if (balance > ""):
+        if (symbol == ""):
+            print ("\tWarning, to update the balance you also need a --symbol switch")
+            exit()
         balanceResult = plumb.Balance(symbol, balance, dbase, verbose)
-        if (balanceResult):
-            print ("balance updated.")
+        if (balanceResult['status']):
+            print ("symbol: {0}, current shares: {1}".format(symbol, balanceResult['shares']))
         else:
             print ("failed.")
         exit()
-    if (shares > "" and symbol > ""):
+    if (shares > ""):
+        if (symbol == ""):
+            print ("\tWarning, to update the shares you also need a --symbol switch")
+            exit()
         sharesResult = plumb.Shares(symbol, shares, dbase, verbose)
-        if (sharesResult):
-            print ("shares updated.")
+        if (sharesResult['status']):
+            print ("symbol: {0}, current balance: {1}".format(symbol, sharesResult['balance']))
         else:
             print ("failed.")
         exit()
@@ -107,8 +113,8 @@ def usage():
     **  Folder Tool  **
     *******************
 
-    -h --help           Prints this help
-    -v --verbose        Increases the information level
+    -h --help           prints this help
+    -v --verbose        increases the information level
     -t --test           tests the folder routines
     -d --dbase          override database name (folder.db is the default)
     -c --cash           enter your cash balance in dollars

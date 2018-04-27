@@ -277,6 +277,7 @@ def CreateFolder(key, dbase, verbose):
     return True
 
 def Shares(symbol, shares, dbase, verbose):
+    result = {}
     username = getpass.getuser()
     db_file = username + "/"  + dbase
     Path(username + "/").mkdir(parents=True, exist_ok=True) 
@@ -285,8 +286,13 @@ def Shares(symbol, shares, dbase, verbose):
         print ("Shares(1) symbol: {0}".format(symbol))
         print ("Shares(2) shares: {0}".format(shares))
         print ("Shares(3) dbase: {0}".format(db_file))
-    result = Add(symbol, dbase, verbose)
-    if (result):
+    if (symbol == ""):
+        print ("Error: symbol cannot be blank")
+        result['status'] = False
+        result['balance'] = 0
+        return result
+    resultAdd = Add(symbol, dbase, verbose)
+    if (resultAdd):
         price = Quote(symbol, "defaults.db", verbose)
         if (price):
             try:
@@ -295,7 +301,9 @@ def Shares(symbol, shares, dbase, verbose):
                     print("Shares(4) sqlite3: {0}".format(sqlite3.version))
             except Error as e:
                 print("Shares(5) {0}".format(e))
-                return False
+                result['status'] = False
+                result['balance'] = 0
+                return result
             c = conn.cursor()
             c.execute("UPDATE folder SET shares = ? WHERE symbol = (?)", (shares, symbol,))
             c.execute("UPDATE folder SET price_time = (?) WHERE symbol = (?)", (price['price_time'], symbol,))
@@ -307,12 +315,17 @@ def Shares(symbol, shares, dbase, verbose):
     else:
         if (verbose):
             print ("***\n")
-        return False
+        result['status'] = False
+        result['balance'] = 0
+        return result
     if (verbose):
         print ("***\n")
-    return True
+    result['status'] = True
+    result['balance'] = balance
+    return result
 
 def Balance(symbol, balance, dbase, verbose):
+    result = {}
     username = getpass.getuser()
     db_file = username + "/"  + dbase
     Path(username + "/").mkdir(parents=True, exist_ok=True) 
@@ -321,8 +334,13 @@ def Balance(symbol, balance, dbase, verbose):
         print ("Balance(1) symbol: {0}".format(symbol))
         print ("Balance(2) balance: {0}".format(balance))
         print ("Balance(3) dbase: {0}".format(db_file))
-    result = Add(symbol, dbase, verbose)
-    if (result):
+    if (symbol == ""):
+        print ("Error: symbol cannot be blank")
+        result['status'] = False
+        result['shares'] = 0
+        return result
+    resultAdd = Add(symbol, dbase, verbose)
+    if (resultAdd):
         price = Quote(symbol, "defaults.db", verbose)
         if (price):
             try:
@@ -331,7 +349,9 @@ def Balance(symbol, balance, dbase, verbose):
                     print("Balance(4) sqlite3: {0}".format(sqlite3.version))
             except Error as e:
                 print("Balance(5) {0}".format(e))
-                return False
+                result['status'] = False
+                result['shares'] = 0
+                return result
             c = conn.cursor()
             shares = 1.0
             if (float(price['price']) > 0):
@@ -345,10 +365,14 @@ def Balance(symbol, balance, dbase, verbose):
     else:
         if (verbose):
             print ("***\n")
-        return False
+        result['status'] = False
+        result['shares'] = 0
+        return result
     if (verbose):
         print ("***\n")
-    return True
+    result['status'] = True
+    result['shares'] = shares
+    return result
 
 def Update(dbase, verbose):
     username = getpass.getuser()
@@ -365,13 +389,16 @@ def Update(dbase, verbose):
         print("Update(3) {0}".format(e))
         return False
     c = conn.cursor()
-    c.execute('SELECT symbol, balance FROM folder') 
+    c.execute('SELECT symbol, shares, balance FROM folder') 
     rows = c.fetchall()
     conn.commit()
     conn.close()
     for row in rows:
         if (row[0] != "$"):
-            result = Balance(row[0], str(row[1]), dbase, verbose)
+            result = Shares(row[0], str(row[1]), dbase, verbose)
+            if (result['status']):
+                if (verbose):
+                    print ("symbol: {0}, current shares: {1}, previous balance: {2}, current balance: {3}".format(row[0], row[1], row[2], result['balance']))
     if (verbose):
         print ("***\n")
     return True
