@@ -17,6 +17,7 @@ import datetime
 #region stock
 def TestStock(verbose):
     count = 0
+    key =  Key(False)
     if (verbose):
         print ("Test #1 - Company('AAPL', verbose)")
     result = Company("AAPL", verbose)
@@ -57,7 +58,17 @@ def TestStock(verbose):
     else:
         if (verbose):
             print ("\tfail.")
-    if (count == 4):
+    if (verbose):
+        print ("Test #5 - Save(key, False)")
+    result = Save(key, False)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (count == 5):
         return True
     return False
 
@@ -209,9 +220,9 @@ def GetInterval(verbose):
     answer = GetDefaults(verbose)
     if (verbose):
         print ("***\n")
-    if (not answer[1]):
+    if (not answer['interval']):
         return 15
-    return answer[1]
+    return answer['interval']
 
 def Folder(folder, verbose):
     username = getpass.getuser()
@@ -252,7 +263,7 @@ def Key(verbose):
     answer = GetDefaults(verbose)
     if (verbose):
         print ("***\n")
-    return answer[0]
+    return answer['api_key']
 
 def GetDefaults(verbose):
     username = getpass.getuser()
@@ -274,7 +285,9 @@ def GetDefaults(verbose):
         return False
     c = conn.cursor()
     c.execute("SELECT api_key, interval, aim_folder, daemon_seconds FROM defaults WHERE username = (?)", (username,))
-    answer = c.fetchone()
+    keys = list(map(lambda x: x[0], c.description))
+    values = c.fetchone()
+    answer = dict(zip(keys, values))
     conn.close()
     if (verbose):
         print ("***\n")

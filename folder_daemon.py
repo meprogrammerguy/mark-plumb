@@ -11,16 +11,16 @@ import plumb
 def do_something():
     while True:
         defaults = plumb.GetDefaults(False)
-        if (defaults[2] is None):
+        if (defaults['aim_folder'] is None):
             plumb.Update("folder.db", False)
         else:
-            plumb.Update(defaults[2], False)
+            plumb.Update(defaults['aim_folder'], False)
         with open("/tmp/folder_daemon.txt", "w") as f:
-            f.write("pid: {0}, {1} updated on: {2} for user: {3}. (sleeping for {4} seconds)".format(os.getpid(), defaults[2], time.ctime(), getpass.getuser(), defaults[3]))
-        if (defaults[3] is None):
+            f.write("pid: {0}, {1} updated on: {2} for user: {3}. (sleeping for {4} seconds)".format(os.getpid(), defaults['aim_folder'], time.ctime(), getpass.getuser(), defaults['daemon_seconds']))
+        if (defaults['daemon_seconds'] is None):
             time.sleep(1200)        # 20 minutes (1200 seconds)
         else:
-            time.sleep(defaults[3])
+            time.sleep(defaults['daemon_seconds'])
 
 def run():
     with daemon.DaemonContext(working_directory=os.getcwd()):
