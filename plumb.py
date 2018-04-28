@@ -213,6 +213,31 @@ def GetInterval(verbose):
         return 15
     return answer[1]
 
+def Folder(folder, verbose):
+    username = getpass.getuser()
+    db_file = username + "/"  + "defaults.db"
+    Path(username + "/").mkdir(parents=True, exist_ok=True) 
+    if (verbose):
+        print ("***")
+        print ("Folder(1) folder: {0}".format(folder))
+        print ("Folder(2) dbase: {0}".format(db_file))
+    result = CreateDefaults(verbose)
+    if (result):
+        try:
+            conn = sqlite3.connect(db_file)
+            if (verbose):
+                print("Folder(3) sqlite3: {0}".format(sqlite3.version))
+        except Error as e:
+            print("Folder(4) {0}".format(e))
+            return False
+        c = conn.cursor()
+        c.execute("UPDATE defaults SET aim_folder = (?) WHERE username = (?)", (folder, username,))
+        conn.commit()
+        conn.close()
+    if (verbose):
+        print ("***\n")
+    return True
+
 def Key(verbose):
     username = getpass.getuser()
     db_file = username + "/" + "defaults.db"

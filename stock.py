@@ -17,8 +17,10 @@ def main(argv):
     update_interval = False
     daemon = 1200
     update_daemon = False
+    folder = "folder.db"
+    update_folder = False
     try:
-        opts, args = getopt.getopt(argv, "d:i:s:gq:hvtc:", ["help", "verbose", "test", "quote=", "save_key=", "get_key", "company=", "interval=", "daemon="])
+        opts, args = getopt.getopt(argv, "f:d:i:s:gq:hvtc:", ["help", "verbose", "test", "quote=", "save_key=", "get_key", "company=", "interval=", "daemon=", "folder="])
     except getopt.GetoptError as err:
         print(err)
         usage()
@@ -59,6 +61,9 @@ def main(argv):
             getkey = True
         elif o in ("-s", "--save_key"):
             savekey = a.upper()
+        elif o in ("-f", "--folder"):
+            folder = a
+            update_folder = True
         else:
             assert False, "unhandled option"
     if (test):
@@ -77,6 +82,13 @@ def main(argv):
         exit()
     if (update_daemon):
         result = plumb.Daemon(daemon, verbose)
+        if (result):
+            print ("saved.")
+        else:
+            print ("failed.")
+        exit()
+    if (update_folder):
+        result = plumb.Folder(folder, verbose)
         if (result):
             print ("saved.")
         else:
@@ -125,7 +137,8 @@ def usage():
     -g --get_key        retrieves the api key from the database
     -c --company        retrieves company data from ticker symbol
     -i --interval       saves the time interval (default is 15 minutes)
-    -d --daemon         saves the daemon seconds (default is 1200)        
+    -d --daemon         saves the daemon seconds (default is 1200)
+    -f --folder         saves the stock db name (default is folder.db)        
     """
     print (usage) 
 
