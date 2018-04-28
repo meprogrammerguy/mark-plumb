@@ -13,11 +13,12 @@ def main(argv):
     company = ""
     getkey = False
     savekey = ""
-    dbase = "defaults.db"
     interval = 15
     update_interval = False
+    daemon = 1200
+    update_daemon = False
     try:
-        opts, args = getopt.getopt(argv, "i:d:s:gq:hvtc:", ["help", "verbose", "test", "quote=", "dbase=", "save_key=", "get_key", "company=", "interval="])
+        opts, args = getopt.getopt(argv, "d:i:s:gq:hvtc:", ["help", "verbose", "test", "quote=", "save_key=", "get_key", "company=", "interval=", "daemon="])
     except getopt.GetoptError as err:
         print(err)
         usage()
@@ -40,12 +41,20 @@ def main(argv):
                 update_interval = True
             else:
                 interval = 15
+        elif o in ("-d", "--daemon"):
+            if (a.isnumeric()):
+                daemon = int(a)
+                if (daemon > 1200):
+                    daemon = 1200
+                if (daemon < 60):
+                    daemon = 60
+                update_daemon = True
+            else:
+                daemon = 1200
         elif o in ("-q", "--quote"):
             quote = a.upper()
         elif o in ("-c", "--company"):
             company = a.upper()
-        elif o in ("-d", "--dbase"):
-            dbase = a
         elif o in ("-g", "--get_key"):
             getkey = True
         elif o in ("-s", "--save_key"):
@@ -59,30 +68,36 @@ def main(argv):
         else:
             print ("Test result - fail")
         exit()
-    print ("\tdbase: {0}".format(dbase))
     if (update_interval):
-        result = plumb.Interval(interval, dbase, verbose)
+        result = plumb.Interval(interval, verbose)
+        if (result):
+            print ("saved.")
+        else:
+            print ("failed.")
+        exit()
+    if (update_daemon):
+        result = plumb.Daemon(daemon, verbose)
         if (result):
             print ("saved.")
         else:
             print ("failed.")
         exit()
     if (savekey > ""):
-        saveResult = plumb.Save(savekey, dbase, verbose)
+        saveResult = plumb.Save(savekey, verbose)
         if (saveResult):
             print ("saved.")
         else:
             print ("failed.")
         exit()
     if (getkey):
-        keyResult = plumb.Key(dbase, verbose)
+        keyResult = plumb.Key(verbose)
         if (keyResult):
             print ("key = {0}".format(keyResult))
         else:
             print ("key was not returned.")
         exit()
     if (quote > ""):
-        quoteResult = plumb.Quote(quote, dbase, verbose)
+        quoteResult = plumb.Quote(quote, verbose)
         pprint.pprint(quoteResult)
         exit()
     if (company > ""):
@@ -106,11 +121,11 @@ def usage():
     -v --verbose        increases the information level
     -t --test           tests the stock routines
     -q --quote          get stock quote from ticker symbol
-    -d --dbase          override database name (defaults.db is the default)
     -s --save_key       stores the api key in database
     -g --get_key        retrieves the api key from the database
     -c --company        retrieves company data from ticker symbol
-    -i --interval       saves the time interval (default is 15 minutes)        
+    -i --interval       saves the time interval (default is 15 minutes)
+    -d --daemon         saves the daemon seconds (default is 1200)        
     """
     print (usage) 
 
