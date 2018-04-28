@@ -50,7 +50,7 @@ def TestStock(verbose):
     if (verbose):
         print ("Test #4 - Quote('AAPL', 'test.db', verbose)")
     result = Quote("AAPL", "test.db", verbose)
-    if (result['Meta Data']['2. Symbol'] == "AAPL"):
+    if (result['symbol'] == "AAPL"):
         if (verbose):
             print ("\tpass.")
         count += 1
@@ -100,6 +100,7 @@ def Quote(ticker, dbase, verbose):
                     closing['price_time'] = key
                     closing['price'] =  value['4. close']
                     break
+        closing['symbol'] = returnQuote['Meta Data']['2. Symbol']
     return closing
 
 def Company(ticker, verbose):
