@@ -68,7 +68,8 @@ def TestStock(verbose):
 
 def Quote(ticker, dbase, verbose):
     key = Key(dbase, verbose)
-    url = "https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol={0}&interval=15min&apikey={1}".format(ticker, key)
+    interval = GetInterval(dbase, verbose)
+    url = "https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol={0}&interval={1}min&apikey={2}".format(ticker, interval, key)
     if (verbose):
         print ("***")
         print ("Quote(1) key: {0}".format(key))
@@ -139,7 +140,7 @@ def Save(key, dbase, verbose):
         print("Save(4) {0}".format(e))
         return False
     c = conn.cursor()
-    c.execute("CREATE TABLE if not exists 'defaults' ( `username` TEXT NOT NULL UNIQUE, `api_key` TEXT, PRIMARY KEY(`username`) )")
+    c.execute("CREATE TABLE if not exists 'defaults' ( `username` TEXT NOT NULL UNIQUE, `api_key` TEXT, `interval` INTEGER, PRIMARY KEY(`username`) )")
     c.execute("INSERT OR IGNORE INTO defaults(username) VALUES((?))", (username,))
     c.execute("UPDATE defaults SET api_key = (?) WHERE username = (?)", (key, username,))
     conn.commit()
@@ -147,6 +148,59 @@ def Save(key, dbase, verbose):
     if (verbose):
         print ("***\n")
     return True
+
+def Interval(interval, dbase, verbose):
+    username = getpass.getuser()
+    db_file = username + "/"  + dbase
+    Path(username + "/").mkdir(parents=True, exist_ok=True) 
+    if (verbose):
+        print ("***")
+        print ("Interval(1) interval: {0}".format(interval))
+        print ("Interval(2) dbase: {0}".format(db_file))
+    try:
+        conn = sqlite3.connect(db_file)
+        if (verbose):
+            print("Interval(3) sqlite3: {0}".format(sqlite3.version))
+    except Error as e:
+        print("Interval(4) {0}".format(e))
+        return False
+    c = conn.cursor()
+    c.execute("CREATE TABLE if not exists 'defaults' ( `username` TEXT NOT NULL UNIQUE, `api_key` TEXT, `interval` INTEGER, PRIMARY KEY(`username`) )")
+    c.execute("INSERT OR IGNORE INTO defaults(username) VALUES((?))", (username,))
+    c.execute("UPDATE defaults SET interval = ? WHERE username = (?)", (interval, username,))
+    conn.commit()
+    conn.close()
+    if (verbose):
+        print ("***\n")
+    return True
+
+def GetInterval(dbase, verbose):
+    username = getpass.getuser()
+    db_file = username + "/" + dbase
+    if (verbose):
+        print ("***")
+        print ("GetInterval(1) dbase: {0}".format(db_file))
+    if (not os.path.exists(db_file)):
+        if (verbose):
+            print ("GetInterval(2) {0} file is missing, cannot return the interval".format(db_file))
+            print ("***\n")
+        return ""
+    try:
+        conn = sqlite3.connect(db_file)
+        if (verbose):
+            print("GetInterval(3) sqlite3: {0}".format(sqlite3.version))
+    except Error as e:
+        print("GetInterval(4) {0}".format(e))
+        return False
+    c = conn.cursor()
+    c.execute("SELECT interval FROM defaults WHERE username = (?)", (username,))
+    answer = c.fetchone()
+    conn.close()
+    if (verbose):
+        print ("***\n")
+    if (not answer[0]):
+        return 15
+    return answer[0]
 
 def Key(dbase, verbose):
     username = getpass.getuser()

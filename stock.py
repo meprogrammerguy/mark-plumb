@@ -14,8 +14,10 @@ def main(argv):
     getkey = False
     savekey = ""
     dbase = "defaults.db"
+    interval = 15
+    update_interval = False
     try:
-        opts, args = getopt.getopt(argv, "d:s:gq:hvtc:", ["help", "verbose", "test", "quote=", "dbase=", "save_key=", "get_key", "company="])
+        opts, args = getopt.getopt(argv, "i:d:s:gq:hvtc:", ["help", "verbose", "test", "quote=", "dbase=", "save_key=", "get_key", "company=", "interval="])
     except getopt.GetoptError as err:
         print(err)
         usage()
@@ -28,6 +30,16 @@ def main(argv):
         elif o in ("-h", "--help"):
             usage()
             exit()
+        elif o in ("-i", "--interval"):
+            if (a.isnumeric()):
+                interval = int(a)
+                if (interval > 60):
+                    interval = 60
+                if (interval < 1):
+                    interval = 1
+                update_interval = True
+            else:
+                interval = 15
         elif o in ("-q", "--quote"):
             quote = a.upper()
         elif o in ("-c", "--company"):
@@ -48,6 +60,13 @@ def main(argv):
             print ("Test result - fail")
         exit()
     print ("\tdbase: {0}".format(dbase))
+    if (update_interval):
+        result = plumb.Interval(interval, dbase, verbose)
+        if (result):
+            print ("saved.")
+        else:
+            print ("failed.")
+        exit()
     if (savekey > ""):
         saveResult = plumb.Save(savekey, dbase, verbose)
         if (saveResult):
@@ -83,14 +102,15 @@ def usage():
     **  Stock Tool  **
     ******************
 
-    -h --help           Prints this help
-    -v --verbose        Increases the information level
+    -h --help           prints this help
+    -v --verbose        increases the information level
     -t --test           tests the stock routines
     -q --quote          get stock quote from ticker symbol
     -d --dbase          override database name (defaults.db is the default)
     -s --save_key       stores the api key in database
     -g --get_key        retrieves the api key from the database
-    -c --company        retrieves company data from ticker symbol        
+    -c --company        retrieves company data from ticker symbol
+    -i --interval       saves the time interval (default is 15 minutes)        
     """
     print (usage) 
 
