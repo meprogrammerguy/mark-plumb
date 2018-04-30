@@ -93,7 +93,7 @@ def main(argv):
             print ("failed.")
         exit()
     if (savekey > ""):
-        saveResult = plumb.Save(savekey, verbose)
+        saveResult = plumb.Key(savekey, verbose)
         if (saveResult):
             print ("saved.")
         else:

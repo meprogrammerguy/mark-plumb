@@ -83,7 +83,17 @@ def TestStock(verbose):
         if (verbose):
             print ("\tfail.")
     if (verbose):
-        print ("Test #7 - Quote('AAPL', verbose)")
+        print ("Test #7 - Folder('folder.db', False)")
+    result = Folder("folder.db", False)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (verbose):
+        print ("Test #8 - Quote('AAPL', verbose)")
     result = Quote("AAPL", verbose)
     if (result and result['symbol'] == "AAPL"):
         if (verbose):
@@ -93,13 +103,14 @@ def TestStock(verbose):
         if (verbose):
             print ("\tfail.")
     if (verbose):
-        print ("Test #8 - GetDefaults(False)")
+        print ("Test #9 - GetDefaults(False)")
     result = GetDefaults(False)
     if (result['api_key'] == "TEST"
         and result['interval'] == 15
         and result['daemon_seconds'] == 1200
         and result['begin_time'] == "8:30AM"
-        and result['end_time'] == "03:00PM"):
+        and result['end_time'] == "03:00PM"
+        and result['aim_folder'] == "folder.db"):
         if (verbose):
             print ("\tpass.")
         count += 1
@@ -107,7 +118,7 @@ def TestStock(verbose):
         if (verbose):
             print ("\tfail.")
     if (verbose):
-        print ("Test #9 - Key(<reset key back>, False)")
+        print ("Test #10 - Key(<reset key back>, False)")
     result = Key(defaults['api_key'], False)
     if (result):
         if (verbose):
@@ -116,7 +127,7 @@ def TestStock(verbose):
     else:
         if (verbose):
             print ("\tfail.")
-    if (count == 9):
+    if (count == 10):
         return True
     return False
 
@@ -363,8 +374,19 @@ def End(end, verbose):
 #region folder
 def TestFolder(verbose):
     count = 0
+    defaults = GetDefaults(verbose)
     if (verbose):
-        print ("Test #1 - Add('M', 'test.db', verbose)")
+        print ("Test #1 - Folder('test.db', verbose)")
+    result = Folder("test.db", verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (verbose):
+        print ("Test #2 - Add('M', 'test.db', verbose)")
     result = Add("M", "test.db", verbose)
     if (result):
         if (verbose):
@@ -374,7 +396,7 @@ def TestFolder(verbose):
         if (verbose):
             print ("\tfail.")
     if (verbose):
-        print ("Test #2 - Remove('M', 'test.db', verbose)")
+        print ("Test #3 - Remove('M', 'test.db', verbose)")
     result = Remove("M", "test.db", verbose)
     if (result):
         if (verbose):
@@ -384,7 +406,7 @@ def TestFolder(verbose):
         if (verbose):
             print ("\tfail.")
     if (verbose):
-        print ("Test #3 - Cash(5000, 'test.db', verbose)")
+        print ("Test #4 - Cash(5000, 'test.db', verbose)")
     result = Cash(5000, "test.db", verbose)
     if (result):
         if (verbose):
@@ -394,7 +416,7 @@ def TestFolder(verbose):
         if (verbose):
             print ("\tfail.")
     if (verbose):
-        print ("Test #4 - Shares('MMM', 50, 'test.db', verbose)")
+        print ("Test #5 - Shares('MMM', 50, 'test.db', verbose)")
     result = Shares("MMM", 50, "test.db", verbose)
     if (result['status']):
         if (verbose):
@@ -404,7 +426,7 @@ def TestFolder(verbose):
         if (verbose):
             print ("\tfail.")
     if (verbose):
-        print ("Test #5 - Balance('AAPL', 5000, 'test.db', verbose)")
+        print ("Test #6 - Balance('AAPL', 5000, 'test.db', verbose)")
     result = Balance("AAPL", 5000, "test.db", verbose)
     if (result['status']):
         if (verbose):
@@ -414,7 +436,7 @@ def TestFolder(verbose):
         if (verbose):
             print ("\tfail.")
     if (verbose):
-        print ("Test #6 - Update('test.db', verbose)")
+        print ("Test #7 - Update('test.db', verbose)")
     result = Update("test.db", verbose)
     if (result):
         if (verbose):
@@ -428,7 +450,17 @@ def TestFolder(verbose):
     os.unlink(db_file)
     if (verbose):
         print ("Cleanup, remove {0}".format(db_file))
-    if (count == 6):
+    if (verbose):
+        print ("Test #8 - Folder(<reset back db name>, verbose)")
+    result = Folder(defaults['aim_folder'], verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (count == 8):
         return True
     return False
 

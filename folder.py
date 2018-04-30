@@ -10,7 +10,7 @@ def main(argv):
     verbose = False
     test = False
     update = False
-    dbase = "folder.db"
+    folder = ""
     cash = ""
     add = ""
     remove = ""
@@ -18,7 +18,7 @@ def main(argv):
     balance = ""
     shares = ""
     try:
-        opts, args = getopt.getopt(argv, "ub:n:s:a:r:d:c:hvt", ["help", "verbose", "test", "dbase=", "cash=", "add=", "remove=", "symbol=", "balance=", "number=", "update"])
+        opts, args = getopt.getopt(argv, "ub:n:s:a:r:f:c:hvt", ["help", "verbose", "test", "folder=", "cash=", "add=", "remove=", "symbol=", "balance=", "number=", "update"])
     except getopt.GetoptError as err:
         print(err)
         usage()
@@ -33,8 +33,8 @@ def main(argv):
         elif o in ("-h", "--help"):
             usage()
             exit()
-        elif o in ("-d", "--dbase"):
-            dbase = a
+        elif o in ("-f", "--folder"):
+            folder = a
         elif o in ("-a", "--add"):
             add = a.upper()
         elif o in ("-c", "--cash"):
@@ -56,7 +56,15 @@ def main(argv):
         else:
             print ("Test result - fail")
         exit()
-    print ("\tdbase: {0}".format(dbase))
+    defaults = plumb.GetDefaults(verbose)
+    dbase = defaults['aim_folder']
+    if (folder > ""):
+        folderResult = plumb.Folder(folder, verbose)
+        if (folderResult):
+            print ("updated.")
+        else:
+            print ("failed.")
+        exit()
     if (cash > ""):
         cashResult = plumb.Cash(cash, dbase, verbose)
         if (cashResult):
@@ -116,14 +124,14 @@ def usage():
     -h --help           prints this help
     -v --verbose        increases the information level
     -t --test           tests the folder routines
-    -d --dbase          override database name (folder.db is the default)
+    -f --folder         save database name (folder.db is the default)
     -c --cash           enter your cash balance in dollars
     -a --add            add company by ticker symbol
     -r --remove         remove company by ticker symbol
     -s --symbol         ticker symbol (used with --number or --balance)
-    -n --number         number of shared owned (used with --symbol)
+    -n --number         number of shares owned (used with --symbol)
     -b --balance        balance in dollars (used with --symbol)
-    -u --update         update all prices (to within 15 minutes)
+    -u --update         update all prices (to within default interval minutes)
     """
     print (usage) 
 
