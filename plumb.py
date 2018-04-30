@@ -285,7 +285,7 @@ def GetDefaults(verbose):
         print("GetDefaults(4) {0}".format(e))
         return False
     c = conn.cursor()
-    c.execute("SELECT api_key, interval, aim_folder, daemon_seconds, begin_time, end_time FROM defaults WHERE username = (?)", (username,))
+    c.execute("SELECT * FROM defaults WHERE username = (?)", (username,))
     keys = list(map(lambda x: x[0], c.description))
     values = c.fetchone()
     answer = dict(zip(keys, values))
@@ -308,7 +308,7 @@ def CreateDefaults(verbose):
         print("CreateDefaults(3) {0}".format(e))
         return False
     c = conn.cursor()
-    c.execute("CREATE TABLE if not exists 'defaults' ( `username` TEXT NOT NULL UNIQUE, `api_key` TEXT, `interval` INTEGER, `aim_folder` TEXT, `daemon_seconds` INTEGER, `begin_time` TEXT, `end_time` TEXT, PRIMARY KEY(`username`) )")
+    c.execute("CREATE TABLE if not exists 'defaults' ( `username` TEXT NOT NULL UNIQUE, `api_key` TEXT, `interval` INTEGER, `aim_folder` TEXT, `daemon_seconds` INTEGER, `begin_time` TEXT, `end_time` TEXT, `aim_dbase` TEXT, PRIMARY KEY(`username`) )")
     c.execute( "INSERT OR IGNORE INTO defaults(username) VALUES((?))", (username,))
     conn.commit()
     conn.close()
@@ -379,48 +379,6 @@ def TestFolder(verbose):
     else:
         if (verbose):
             print ("\tfail.")
-    if (verbose):
-        print ("Test #2 - Add('M', verbose)")
-    result = Add("M", verbose)
-    if (result):
-        if (verbose):
-            print ("\tpass.")
-        count += 1
-    else:
-        if (verbose):
-            print ("\tfail.")
-    if (verbose):
-        print ("Test #3 - Remove('M', verbose)")
-    result = Remove("M", verbose)
-    if (result):
-        if (verbose):
-            print ("\tpass.")
-        count += 1
-    else:
-        if (verbose):
-            print ("\tfail.")
-    if (verbose):
-        print ("Test #4 - Cash(5000, verbose)")
-    result = Cash(5000, verbose)
-    if (result):
-        if (verbose):
-            print ("\tpass.")
-        count += 1
-    else:
-        if (verbose):
-            print ("\tfail.")
-    if (verbose):
-        print ("Test #5 - Shares('MMM', 50, verbose)")
-    result = Shares("MMM", 50, verbose)
-    if (result['status']):
-        if (verbose):
-            print ("\tpass.")
-        count += 1
-    else:
-        if (verbose):
-            print ("\tfail.")
-    if (verbose):
-        print ("Test #6 - Balance('AAPL', 5000, verbose)")
     result = Balance("AAPL", 5000, verbose)
     if (result['status']):
         if (verbose):
@@ -441,9 +399,10 @@ def TestFolder(verbose):
             print ("\tfail.")
     username = getpass.getuser()
     db_file = username + "/" + "test.db"
-    os.unlink(db_file)
-    if (verbose):
-        print ("Cleanup, remove {0}".format(db_file))
+    if (os.path.exists(db_file)):
+        os.unlink(db_file)
+        if (verbose):
+            print ("Cleanup, remove {0}".format(db_file))
     if (verbose):
         print ("Test #8 - Folder(<reset back db name>, verbose)")
     result = Folder(defaults['aim_folder'], verbose)
@@ -723,4 +682,60 @@ def Folder(folder, verbose):
 #endregion folder
 
 #region aim
+def TestAIM(location, verbose):
+    count = 0
+    defaults = GetDefaults(verbose)
+    if (verbose):
+        print ("Test #1 - AIM('test.db', verbose)")
+    result = AIM("test.db", verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    username = getpass.getuser()
+    db_file = username + "/" + "test.db"
+    if (os.path.exists(db_file)):
+        os.unlink(db_file)
+        if (verbose):
+            print ("Cleanup, remove {0}".format(db_file))
+    if (verbose):
+        print ("Test #2 - AIM(<reset back db name>, verbose)")
+    result = AIM(defaults['aim_dbase'], verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (count == 2):
+        return True
+    return False
+
+def AIM(aim, verbose):
+    username = getpass.getuser()
+    db_file = os.getcwd() + "/"  + "defaults.db"
+    if (verbose):
+        print ("***")
+        print ("AIM(1) aim: {0}".format(aim))
+        print ("AIM(2) dbase: {0}".format(db_file))
+    result = CreateDefaults(verbose)
+    if (result):
+        try:
+            conn = sqlite3.connect(db_file)
+            if (verbose):
+                print("AIM(3) sqlite3: {0}".format(sqlite3.version))
+        except Error as e:
+            print("AIM(4) {0}".format(e))
+            return False
+        c = conn.cursor()
+        c.execute("UPDATE defaults SET aim_dbase = (?) WHERE username = (?)", (aim, username,))
+        conn.commit()
+        conn.close()
+    if (verbose):
+        print ("***\n")
+    return True
 #endregion aim

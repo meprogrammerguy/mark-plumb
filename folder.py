@@ -56,16 +56,16 @@ def main(argv):
         else:
             print ("Test result - fail")
         exit()
-    defaults = plumb.GetDefaults(verbose)
-    if defaults['aim_folder'] is None:
-        print ("\tWarning, please use --folder switch to set the folder database name")
-        exit()
     if (folder > ""):
         folderResult = plumb.Folder(folder, verbose)
         if (folderResult):
             print ("updated.")
         else:
             print ("failed.")
+        exit()
+    defaults = plumb.GetDefaults(verbose)
+    if defaults['aim_folder'] is None:
+        print ("\tWarning, please use --folder switch to set the folder database name")
         exit()
     if (cash > ""):
         cashResult = plumb.Cash(cash, verbose)
