@@ -196,8 +196,7 @@ def Company(ticker, verbose):
 
 def Key(key, verbose):
     username = getpass.getuser()
-    db_file = username + "/"  + "defaults.db"
-    Path(username + "/").mkdir(parents=True, exist_ok=True) 
+    db_file = os.getcwd() + "/"  + "defaults.db"
     if (verbose):
         print ("***")
         print ("Key(1) key: {0}".format(key))
@@ -221,8 +220,7 @@ def Key(key, verbose):
 
 def Interval(interval, verbose):
     username = getpass.getuser()
-    db_file = username + "/"  + "defaults.db"
-    Path(username + "/").mkdir(parents=True, exist_ok=True) 
+    db_file = os.getcwd() + "/"  + "defaults.db"
     if (verbose):
         print ("***")
         print ("Interval(1) interval: {0}".format(interval))
@@ -246,8 +244,7 @@ def Interval(interval, verbose):
 
 def Daemon(seconds, verbose):
     username = getpass.getuser()
-    db_file = username + "/"  + "defaults.db"
-    Path(username + "/").mkdir(parents=True, exist_ok=True) 
+    db_file = os.getcwd() + "/"  + "defaults.db"
     if (verbose):
         print ("***")
         print ("Daemon(1) seconds: {0}".format(seconds))
@@ -271,7 +268,7 @@ def Daemon(seconds, verbose):
 
 def GetDefaults(verbose):
     username = getpass.getuser()
-    db_file = username + "/" + "defaults.db"
+    db_file = os.getcwd() + "/"  + "defaults.db"
     if (verbose):
         print ("***")
         print ("GetDefaults(1) dbase: {0}".format(db_file))
@@ -299,8 +296,7 @@ def GetDefaults(verbose):
 
 def CreateDefaults(verbose):
     username = getpass.getuser()
-    db_file = username + "/"  + "defaults.db"
-    Path(username + "/").mkdir(parents=True, exist_ok=True) 
+    db_file = os.getcwd() + "/"  + "defaults.db"
     if (verbose):
         print ("***")
         print ("CreateDefaults(1) dbase: {0}".format(db_file))
@@ -322,8 +318,7 @@ def CreateDefaults(verbose):
 
 def Begin(begin, verbose):
     username = getpass.getuser()
-    db_file = username + "/"  + "defaults.db"
-    Path(username + "/").mkdir(parents=True, exist_ok=True) 
+    db_file = os.getcwd() + "/"  + "defaults.db"
     if (verbose):
         print ("***")
         print ("Begin(1) begin: {0}".format(begin))
@@ -347,8 +342,7 @@ def Begin(begin, verbose):
 
 def End(end, verbose):
     username = getpass.getuser()
-    db_file = username + "/"  + "defaults.db"
-    Path(username + "/").mkdir(parents=True, exist_ok=True) 
+    db_file = os.getcwd() + "/"  + "defaults.db"
     if (verbose):
         print ("***")
         print ("End(1) end: {0}".format(end))
@@ -705,8 +699,7 @@ def Update(verbose):
 
 def Folder(folder, verbose):
     username = getpass.getuser()
-    db_file = username + "/"  + "defaults.db"
-    Path(username + "/").mkdir(parents=True, exist_ok=True) 
+    db_file = os.getcwd() + "/"  + "defaults.db"
     if (verbose):
         print ("***")
         print ("Folder(1) folder: {0}".format(folder))
