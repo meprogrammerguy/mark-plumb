@@ -57,7 +57,9 @@ def main(argv):
             print ("Test result - fail")
         exit()
     defaults = plumb.GetDefaults(verbose)
-    dbase = defaults['aim_folder']
+    if defaults['aim_folder'] is None:
+        print ("\tWarning, please use --folder switch to set the folder database name")
+        exit()
     if (folder > ""):
         folderResult = plumb.Folder(folder, verbose)
         if (folderResult):
@@ -66,21 +68,21 @@ def main(argv):
             print ("failed.")
         exit()
     if (cash > ""):
-        cashResult = plumb.Cash(cash, dbase, verbose)
+        cashResult = plumb.Cash(cash, verbose)
         if (cashResult):
             print ("balance updated.")
         else:
             print ("failed.")
         exit()
     if (add > ""):
-        addResult = plumb.Add(add, dbase, verbose)
+        addResult = plumb.Add(add, verbose)
         if (addResult):
             print ("added.")
         else:
             print ("failed.")
         exit()
     if (remove > ""):
-        removeResult = plumb.Remove(remove, dbase, verbose)
+        removeResult = plumb.Remove(remove, verbose)
         if (removeResult):
             print ("removed.")
         else:
@@ -90,7 +92,7 @@ def main(argv):
         if (symbol == ""):
             print ("\tWarning, to update the balance you also need a --symbol switch")
             exit()
-        balanceResult = plumb.Balance(symbol, balance, dbase, verbose)
+        balanceResult = plumb.Balance(symbol, balance, verbose)
         if (balanceResult['status']):
             print ("symbol: {0}, current shares: {1}".format(symbol, balanceResult['shares']))
         else:
@@ -100,14 +102,14 @@ def main(argv):
         if (symbol == ""):
             print ("\tWarning, to update the shares you also need a --symbol switch")
             exit()
-        sharesResult = plumb.Shares(symbol, shares, dbase, verbose)
+        sharesResult = plumb.Shares(symbol, shares, verbose)
         if (sharesResult['status']):
             print ("symbol: {0}, current balance: {1}".format(symbol, sharesResult['balance']))
         else:
             print ("failed.")
         exit()
     if (update):
-        updateResult = plumb.Update(dbase, verbose)
+        updateResult = plumb.Update(verbose)
         if (updateResult):
             print ("prices updated.")
         else:
@@ -124,7 +126,7 @@ def usage():
     -h --help           prints this help
     -v --verbose        increases the information level
     -t --test           tests the folder routines
-    -f --folder         save database name (folder.db is the default)
+    -f --folder         save database name
     -c --cash           enter your cash balance in dollars
     -a --add            add company by ticker symbol
     -r --remove         remove company by ticker symbol

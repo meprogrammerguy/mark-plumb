@@ -31,10 +31,7 @@ def do_something():
             et = datetime.strptime(end, '%H:%M').time()
         filename = "/tmp/{0}_folder_daemon.txt".format(getpass.getuser())
         if weekno < 5 and ct > bt and ct < et:
-            if (defaults['aim_folder'] is None):
-                plumb.Update("folder.db", False)
-            else:
-                plumb.Update(defaults['aim_folder'], False)
+            plumb.Update(False)
             with open(filename, "w") as f:
                 f.write("pid: {0}, {1} updated on: {2}. (sleeping for {3} seconds)".format(os.getpid(), defaults['aim_folder'], time.ctime(), defaults['daemon_seconds']))
         else:

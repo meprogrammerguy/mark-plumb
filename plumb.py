@@ -386,8 +386,8 @@ def TestFolder(verbose):
         if (verbose):
             print ("\tfail.")
     if (verbose):
-        print ("Test #2 - Add('M', 'test.db', verbose)")
-    result = Add("M", "test.db", verbose)
+        print ("Test #2 - Add('M', verbose)")
+    result = Add("M", verbose)
     if (result):
         if (verbose):
             print ("\tpass.")
@@ -396,8 +396,8 @@ def TestFolder(verbose):
         if (verbose):
             print ("\tfail.")
     if (verbose):
-        print ("Test #3 - Remove('M', 'test.db', verbose)")
-    result = Remove("M", "test.db", verbose)
+        print ("Test #3 - Remove('M', verbose)")
+    result = Remove("M", verbose)
     if (result):
         if (verbose):
             print ("\tpass.")
@@ -406,8 +406,8 @@ def TestFolder(verbose):
         if (verbose):
             print ("\tfail.")
     if (verbose):
-        print ("Test #4 - Cash(5000, 'test.db', verbose)")
-    result = Cash(5000, "test.db", verbose)
+        print ("Test #4 - Cash(5000, verbose)")
+    result = Cash(5000, verbose)
     if (result):
         if (verbose):
             print ("\tpass.")
@@ -416,8 +416,8 @@ def TestFolder(verbose):
         if (verbose):
             print ("\tfail.")
     if (verbose):
-        print ("Test #5 - Shares('MMM', 50, 'test.db', verbose)")
-    result = Shares("MMM", 50, "test.db", verbose)
+        print ("Test #5 - Shares('MMM', 50, verbose)")
+    result = Shares("MMM", 50, verbose)
     if (result['status']):
         if (verbose):
             print ("\tpass.")
@@ -426,8 +426,8 @@ def TestFolder(verbose):
         if (verbose):
             print ("\tfail.")
     if (verbose):
-        print ("Test #6 - Balance('AAPL', 5000, 'test.db', verbose)")
-    result = Balance("AAPL", 5000, "test.db", verbose)
+        print ("Test #6 - Balance('AAPL', 5000, verbose)")
+    result = Balance("AAPL", 5000, verbose)
     if (result['status']):
         if (verbose):
             print ("\tpass.")
@@ -436,8 +436,8 @@ def TestFolder(verbose):
         if (verbose):
             print ("\tfail.")
     if (verbose):
-        print ("Test #7 - Update('test.db', verbose)")
-    result = Update("test.db", verbose)
+        print ("Test #7 - Update(verbose)")
+    result = Update(verbose)
     if (result):
         if (verbose):
             print ("\tpass.")
@@ -464,14 +464,15 @@ def TestFolder(verbose):
         return True
     return False
 
-def Add(symbol, dbase, verbose):
+def Add(symbol, verbose):
+    defaults = GetDefaults(verbose)
     username = getpass.getuser()
-    db_file = username + "/"  + dbase
+    db_file = username + "/"  + defaults['aim_folder']
     if (verbose):
         print ("***")
         print ("Add(1) symbol: {0}".format(symbol))
         print ("Add(2) dbase: {0}".format(db_file))
-    result = CreateFolder(symbol, dbase, verbose)
+    result = CreateFolder(symbol, verbose)
     if (result):
         try:
             conn = sqlite3.connect(db_file)
@@ -491,9 +492,10 @@ def Add(symbol, dbase, verbose):
         print ("***\n")
     return True
 
-def Remove(symbol, dbase, verbose):
+def Remove(symbol, verbose):
+    defaults = GetDefaults(verbose)
     username = getpass.getuser()
-    db_file = username + "/"  + dbase
+    db_file = username + "/"  + defaults['aim_folder']
     if (verbose):
         print ("***")
         print ("Remove(1) symbol: {0}".format(symbol))
@@ -513,14 +515,15 @@ def Remove(symbol, dbase, verbose):
         print ("***\n")
     return True
 
-def Cash(balance, dbase, verbose):
+def Cash(balance, verbose):
+    defaults = GetDefaults(verbose)
     username = getpass.getuser()
-    db_file = username + "/"  + dbase
+    db_file = username + "/"  + defaults['aim_folder']
     if (verbose):
         print ("***")
         print ("Cash(1) balance: {0}".format(balance))
         print ("Cash(2) dbase: {0}".format(db_file))
-    result = CreateFolder("$", dbase, verbose)
+    result = CreateFolder("$", verbose)
     if (result):
         try:
             conn = sqlite3.connect(db_file)
@@ -544,9 +547,10 @@ def Cash(balance, dbase, verbose):
         print ("***\n")
     return True
 
-def CreateFolder(key, dbase, verbose):
+def CreateFolder(key, verbose):
+    defaults = GetDefaults(verbose)
     username = getpass.getuser()
-    db_file = username + "/"  + dbase
+    db_file = username + "/"  + defaults['aim_folder']
     Path(username + "/").mkdir(parents=True, exist_ok=True) 
     if (verbose):
         print ("***")
@@ -567,10 +571,11 @@ def CreateFolder(key, dbase, verbose):
         print ("***\n")
     return True
 
-def Shares(symbol, shares, dbase, verbose):
+def Shares(symbol, shares, verbose):
     result = {}
+    defaults = GetDefaults(verbose)
     username = getpass.getuser()
-    db_file = username + "/"  + dbase
+    db_file = username + "/"  + defaults['aim_folder']
     Path(username + "/").mkdir(parents=True, exist_ok=True) 
     if (verbose):
         print ("***")
@@ -582,7 +587,7 @@ def Shares(symbol, shares, dbase, verbose):
         result['status'] = False
         result['balance'] = 0
         return result
-    resultAdd = Add(symbol, dbase, verbose)
+    resultAdd = Add(symbol, verbose)
     if (resultAdd):
         price = Quote(symbol, verbose)
         if (price):
@@ -616,10 +621,11 @@ def Shares(symbol, shares, dbase, verbose):
     result['balance'] = balance
     return result
 
-def Balance(symbol, balance, dbase, verbose):
+def Balance(symbol, balance, verbose):
     result = {}
+    defaults = GetDefaults(verbose)
     username = getpass.getuser()
-    db_file = username + "/"  + dbase
+    db_file = username + "/"  + defaults['aim_folder']
     Path(username + "/").mkdir(parents=True, exist_ok=True) 
     if (verbose):
         print ("***")
@@ -631,7 +637,7 @@ def Balance(symbol, balance, dbase, verbose):
         result['status'] = False
         result['shares'] = 0
         return result
-    resultAdd = Add(symbol, dbase, verbose)
+    resultAdd = Add(symbol, verbose)
     if (resultAdd):
         price = Quote(symbol, verbose)
         if (price):
@@ -667,9 +673,10 @@ def Balance(symbol, balance, dbase, verbose):
     result['shares'] = shares
     return result
 
-def Update(dbase, verbose):
+def Update(verbose):
+    defaults = GetDefaults(verbose)
     username = getpass.getuser()
-    db_file = username + "/"  + dbase
+    db_file = username + "/"  + defaults['aim_folder']
     Path(username + "/").mkdir(parents=True, exist_ok=True) 
     if (verbose):
         print ("***")
@@ -688,7 +695,7 @@ def Update(dbase, verbose):
     conn.close()
     for row in rows:
         if (row[0] != "$"):
-            result = Shares(row[0], str(row[1]), dbase, verbose)
+            result = Shares(row[0], str(row[1]), verbose)
             if (result['status']):
                 if (verbose):
                     print ("symbol: {0}, current shares: {1}, previous balance: {2}, current balance: {3}".format(row[0], row[1], row[2], result['balance']))
