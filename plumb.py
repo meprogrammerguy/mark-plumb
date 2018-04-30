@@ -17,8 +17,12 @@ import datetime
 #region stock
 def TestStock(verbose):
     count = 0
-    key =  Key(False)
+    defaults =  GetDefaults(False)
     if (verbose):
+        print ("***")
+        print ("\tRunning tests will preserve your API key")
+        print ("\tbut will reset everything else back to default settings.")
+        print ("***\n")
         print ("Test #1 - Company('AAPL', verbose)")
     result = Company("AAPL", verbose)
     if (result['companyName'] == "Apple Inc."):
@@ -29,8 +33,8 @@ def TestStock(verbose):
         if (verbose):
             print ("\tfail.")
     if (verbose):
-        print ("Test #2 - Save('TEST', verbose)")
-    result = Save("TEST", verbose)
+        print ("Test #2 - Key('TEST', verbose)")
+    result = Key("TEST", verbose)
     if (result):
         if (verbose):
             print ("\tpass.")
@@ -39,9 +43,9 @@ def TestStock(verbose):
         if (verbose):
             print ("\tfail.")
     if (verbose):
-        print ("Test #3 - Key(verbose)")
-    result = Key(verbose)
-    if (result == "TEST"):
+        print ("Test #3 - Interval(15, False)")
+    result = Interval(15, False)
+    if (result):
         if (verbose):
             print ("\tpass.")
         count += 1
@@ -49,9 +53,39 @@ def TestStock(verbose):
         if (verbose):
             print ("\tfail.")
     if (verbose):
-        print ("Test #4 - Quote('AAPL', verbose)")
+        print ("Test #4 - Daemon(1200, False)")
+    result = Daemon(1200, False)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (verbose):
+        print ("Test #5 - Begin('8:30AM', False)")
+    result = Begin("8:30AM", False)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (verbose):
+        print ("Test #6 - End('03:00PM', False)")
+    result = End("03:00PM", False)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (verbose):
+        print ("Test #7 - Quote('AAPL', verbose)")
     result = Quote("AAPL", verbose)
-    if (result['symbol'] == "AAPL"):
+    if (result and result['symbol'] == "AAPL"):
         if (verbose):
             print ("\tpass.")
         count += 1
@@ -59,8 +93,22 @@ def TestStock(verbose):
         if (verbose):
             print ("\tfail.")
     if (verbose):
-        print ("Test #5 - Save(key, False)")
-    result = Save(key, False)
+        print ("Test #8 - GetDefaults(False)")
+    result = GetDefaults(False)
+    if (result['api_key'] == "TEST"
+        and result['interval'] == 15
+        and result['daemon_seconds'] == 1200
+        and result['begin_time'] == "8:30AM"
+        and result['end_time'] == "03:00PM"):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (verbose):
+        print ("Test #9 - Key(<reset key back>, False)")
+    result = Key(defaults['api_key'], False)
     if (result):
         if (verbose):
             print ("\tpass.")
@@ -68,26 +116,30 @@ def TestStock(verbose):
     else:
         if (verbose):
             print ("\tfail.")
-    if (count == 5):
+    if (count == 9):
         return True
     return False
 
 def Quote(ticker, verbose):
-    key = Key(verbose)
-    interval = GetInterval(verbose)
-    url = "https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol={0}&interval={1}min&apikey={2}".format(ticker, interval, key)
+    defaults = GetDefaults(verbose)
+    url = "https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol={0}&interval={1}min&apikey={2}".format(ticker, defaults['interval'], defaults['api_key'])
     if (verbose):
         print ("***")
-        print ("Quote(1) key: {0}".format(key))
-        print ("Quote(2) ticker: {0}".format(ticker))
-        print ("Quote(3) url: {0}".format(url))
+        print ("Quote(1) ticker: {0}".format(ticker))
+        print ("Quote(2) interval: {0}".format(defaults['interval']))
+        print ("Quote(3) key: {0}".format(defaults['api_key']))
+        print ("Quote(4) URL: {0}".format(url))
     try:
         with contextlib.closing(urllib.request.urlopen(url)) as page:
             soup = BeautifulSoup(page, "html5lib")
     except urllib.error.HTTPError as err:
         if err.code == 404:
             if (verbose):
-                print ("Quote(4) page not found for {0}".format(ticker))
+                print ("Quote(5) page not found for {0}".format(ticker))
+                print ("***\n")
+        if err.code == 503:
+            if (verbose):
+                print ("Quote(6) service unavailable for {0}".format(ticker))
                 print ("***\n")
             return {}
         else:
@@ -114,7 +166,7 @@ def Company(ticker, verbose):
     if (verbose):
         print ("***")
         print ("Company(1) ticker: {0}".format(ticker))
-        print ("Company(2) url: {0}".format(url))
+        print ("Company(2) URL: {0}".format(url))
     try:
         with contextlib.closing(urllib.request.urlopen(url)) as page:
             soup = BeautifulSoup(page, "html5lib")
@@ -131,22 +183,22 @@ def Company(ticker, verbose):
         print ("***\n")
     return returnCompany
 
-def Save(key, verbose):
+def Key(key, verbose):
     username = getpass.getuser()
     db_file = username + "/"  + "defaults.db"
     Path(username + "/").mkdir(parents=True, exist_ok=True) 
     if (verbose):
         print ("***")
-        print ("Save(1) key: {0}".format(key))
-        print ("Save(2) dbase: {0}".format(db_file))
+        print ("Key(1) key: {0}".format(key))
+        print ("Key(2) dbase: {0}".format(db_file))
     result = CreateDefaults(verbose)
     if (result):
         try:
             conn = sqlite3.connect(db_file)
             if (verbose):
-                print("Save(3) sqlite3: {0}".format(sqlite3.version))
+                print("Key(3) sqlite3: {0}".format(sqlite3.version))
         except Error as e:
-            print("Save(4) {0}".format(e))
+            print("Key(4) {0}".format(e))
             return False
         c = conn.cursor()
         c.execute("UPDATE defaults SET api_key = (?) WHERE username = (?)", (key, username,))
@@ -181,13 +233,13 @@ def Interval(interval, verbose):
         print ("***\n")
     return True
 
-def Daemon(daemon, verbose):
+def Daemon(seconds, verbose):
     username = getpass.getuser()
     db_file = username + "/"  + "defaults.db"
     Path(username + "/").mkdir(parents=True, exist_ok=True) 
     if (verbose):
         print ("***")
-        print ("Daemon(1) interval: {0}".format(interval))
+        print ("Daemon(1) seconds: {0}".format(seconds))
         print ("Daemon(2) dbase: {0}".format(db_file))
     result = CreateDefaults(verbose)
     if (result):
@@ -199,71 +251,12 @@ def Daemon(daemon, verbose):
             print("Daemon(4) {0}".format(e))
             return False
         c = conn.cursor()
-        c.execute("UPDATE defaults SET daemon_seconds = ? WHERE username = (?)", (daemon, username,))
+        c.execute("UPDATE defaults SET daemon_seconds = ? WHERE username = (?)", (seconds, username,))
         conn.commit()
         conn.close()
     if (verbose):
         print ("***\n")
     return True
-
-def GetInterval(verbose):
-    username = getpass.getuser()
-    db_file = username + "/" + "defaults.db"
-    if (verbose):
-        print ("***")
-        print ("GetInterval(1) dbase: {0}".format(db_file))
-    if (not os.path.exists(db_file)):
-        if (verbose):
-            print ("GetInterval(2) {0} file is missing, cannot return the interval".format(db_file))
-            print ("***\n")
-        return ""
-    answer = GetDefaults(verbose)
-    if (verbose):
-        print ("***\n")
-    if (not answer['interval']):
-        return 15
-    return answer['interval']
-
-def Folder(folder, verbose):
-    username = getpass.getuser()
-    db_file = username + "/"  + "defaults.db"
-    Path(username + "/").mkdir(parents=True, exist_ok=True) 
-    if (verbose):
-        print ("***")
-        print ("Folder(1) folder: {0}".format(folder))
-        print ("Folder(2) dbase: {0}".format(db_file))
-    result = CreateDefaults(verbose)
-    if (result):
-        try:
-            conn = sqlite3.connect(db_file)
-            if (verbose):
-                print("Folder(3) sqlite3: {0}".format(sqlite3.version))
-        except Error as e:
-            print("Folder(4) {0}".format(e))
-            return False
-        c = conn.cursor()
-        c.execute("UPDATE defaults SET aim_folder = (?) WHERE username = (?)", (folder, username,))
-        conn.commit()
-        conn.close()
-    if (verbose):
-        print ("***\n")
-    return True
-
-def Key(verbose):
-    username = getpass.getuser()
-    db_file = username + "/" + "defaults.db"
-    if (verbose):
-        print ("***")
-        print ("Key(1) dbase: {0}".format(db_file))
-    if (not os.path.exists(db_file)):
-        if (verbose):
-            print ("Key(2) {0} file is missing, cannot return the key".format(db_file))
-            print ("***\n")
-        return ""
-    answer = GetDefaults(verbose)
-    if (verbose):
-        print ("***\n")
-    return answer['api_key']
 
 def GetDefaults(verbose):
     username = getpass.getuser()
@@ -284,7 +277,7 @@ def GetDefaults(verbose):
         print("GetDefaults(4) {0}".format(e))
         return False
     c = conn.cursor()
-    c.execute("SELECT api_key, interval, aim_folder, daemon_seconds FROM defaults WHERE username = (?)", (username,))
+    c.execute("SELECT api_key, interval, aim_folder, daemon_seconds, begin_time, end_time FROM defaults WHERE username = (?)", (username,))
     keys = list(map(lambda x: x[0], c.description))
     values = c.fetchone()
     answer = dict(zip(keys, values))
@@ -308,10 +301,60 @@ def CreateDefaults(verbose):
         print("CreateDefaults(3) {0}".format(e))
         return False
     c = conn.cursor()
-    c.execute("CREATE TABLE if not exists 'defaults' ( `username` TEXT NOT NULL UNIQUE, `api_key` TEXT, `interval` INTEGER, `aim_folder` TEXT, `daemon_seconds` INTEGER, PRIMARY KEY(`username`) )")
+    c.execute("CREATE TABLE if not exists 'defaults' ( `username` TEXT NOT NULL UNIQUE, `api_key` TEXT, `interval` INTEGER, `aim_folder` TEXT, `daemon_seconds` INTEGER, `begin_time` TEXT, `end_time` TEXT, PRIMARY KEY(`username`) )")
     c.execute( "INSERT OR IGNORE INTO defaults(username) VALUES((?))", (username,))
     conn.commit()
     conn.close()
+    if (verbose):
+        print ("***\n")
+    return True
+
+def Begin(begin, verbose):
+    username = getpass.getuser()
+    db_file = username + "/"  + "defaults.db"
+    Path(username + "/").mkdir(parents=True, exist_ok=True) 
+    if (verbose):
+        print ("***")
+        print ("Begin(1) begin: {0}".format(begin))
+        print ("Begin(2) dbase: {0}".format(db_file))
+    result = CreateDefaults(verbose)
+    if (result):
+        try:
+            conn = sqlite3.connect(db_file)
+            if (verbose):
+                print("Begin(3) sqlite3: {0}".format(sqlite3.version))
+        except Error as e:
+            print("Begin(4) {0}".format(e))
+            return False
+        c = conn.cursor()
+        c.execute("UPDATE defaults SET begin_time = (?) WHERE username = (?)", (begin, username,))
+        conn.commit()
+        conn.close()
+    if (verbose):
+        print ("***\n")
+    return True
+
+def End(end, verbose):
+    username = getpass.getuser()
+    db_file = username + "/"  + "defaults.db"
+    Path(username + "/").mkdir(parents=True, exist_ok=True) 
+    if (verbose):
+        print ("***")
+        print ("End(1) end: {0}".format(end))
+        print ("End(2) dbase: {0}".format(db_file))
+    result = CreateDefaults(verbose)
+    if (result):
+        try:
+            conn = sqlite3.connect(db_file)
+            if (verbose):
+                print("End(3) sqlite3: {0}".format(sqlite3.version))
+        except Error as e:
+            print("End(4) {0}".format(e))
+            return False
+        c = conn.cursor()
+        c.execute("UPDATE defaults SET end_time = (?) WHERE username = (?)", (end, username,))
+        conn.commit()
+        conn.close()
     if (verbose):
         print ("***\n")
     return True
@@ -620,4 +663,32 @@ def Update(dbase, verbose):
     if (verbose):
         print ("***\n")
     return True
+
+def Folder(folder, verbose):
+    username = getpass.getuser()
+    db_file = username + "/"  + "defaults.db"
+    Path(username + "/").mkdir(parents=True, exist_ok=True) 
+    if (verbose):
+        print ("***")
+        print ("Folder(1) folder: {0}".format(folder))
+        print ("Folder(2) dbase: {0}".format(db_file))
+    result = CreateDefaults(verbose)
+    if (result):
+        try:
+            conn = sqlite3.connect(db_file)
+            if (verbose):
+                print("Folder(3) sqlite3: {0}".format(sqlite3.version))
+        except Error as e:
+            print("Folder(4) {0}".format(e))
+            return False
+        c = conn.cursor()
+        c.execute("UPDATE defaults SET aim_folder = (?) WHERE username = (?)", (folder, username,))
+        conn.commit()
+        conn.close()
+    if (verbose):
+        print ("***\n")
+    return True
 #endregion folder
+
+#region aim
+#endregion aim

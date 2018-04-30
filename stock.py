@@ -5,22 +5,22 @@ import plumb
 import pdb
 import os
 import pprint
+from datetime import datetime
 
 def main(argv):
     verbose = False
     test = False
     quote = ""
     company = ""
-    getkey = False
     savekey = ""
     interval = 15
     update_interval = False
     daemon = 1200
     update_daemon = False
-    folder = "folder.db"
-    update_folder = False
+    begin = ""
+    end = ""
     try:
-        opts, args = getopt.getopt(argv, "f:d:i:s:gq:hvtc:", ["help", "verbose", "test", "quote=", "save_key=", "get_key", "company=", "interval=", "daemon=", "folder="])
+        opts, args = getopt.getopt(argv, "b:e:d:i:k:q:hvtc:", ["help", "verbose", "test", "quote=", "key=", "company=", "interval=", "daemon=", "begin=", "end="])
     except getopt.GetoptError as err:
         print(err)
         usage()
@@ -57,13 +57,18 @@ def main(argv):
             quote = a.upper()
         elif o in ("-c", "--company"):
             company = a.upper()
-        elif o in ("-g", "--get_key"):
-            getkey = True
-        elif o in ("-s", "--save_key"):
+        elif o in ("-k", "--key"):
             savekey = a.upper()
-        elif o in ("-f", "--folder"):
-            folder = a
-            update_folder = True
+        elif o in ("-b", "--begin"):
+            begin = a
+            result, begin = timecheck(begin)
+            if (not result):
+                result, begin = timecheck("8:30AM")
+        elif o in ("-e", "--end"):
+            end = a
+            result, end = timecheck(end)
+            if (not result):
+                result, end = timecheck("03:00PM")
         else:
             assert False, "unhandled option"
     if (test):
@@ -87,13 +92,6 @@ def main(argv):
         else:
             print ("failed.")
         exit()
-    if (update_folder):
-        result = plumb.Folder(folder, verbose)
-        if (result):
-            print ("saved.")
-        else:
-            print ("failed.")
-        exit()
     if (savekey > ""):
         saveResult = plumb.Save(savekey, verbose)
         if (saveResult):
@@ -101,12 +99,19 @@ def main(argv):
         else:
             print ("failed.")
         exit()
-    if (getkey):
-        keyResult = plumb.Key(verbose)
-        if (keyResult):
-            print ("key = {0}".format(keyResult))
+    if (begin > ""):
+        beginResult = plumb.Begin(begin, verbose)
+        if (beginResult):
+            print ("saved.")
         else:
-            print ("key was not returned.")
+            print ("failed.")
+        exit()
+    if (end > ""):
+        endResult = plumb.End(end, verbose)
+        if (endResult):
+            print ("saved.")
+        else:
+            print ("failed.")
         exit()
     if (quote > ""):
         quoteResult = plumb.Quote(quote, verbose)
@@ -123,6 +128,14 @@ def main(argv):
         exit()
     usage()
 
+def timecheck(theTime):
+    timeformat = "%H:%M%p"
+    try:
+        validtime = datetime.datetime.strptime(theTime, timeformat)
+        return True, validtime
+    except ValueError:
+        return False, "bad"
+
 def usage():
     usage = """
     ******************
@@ -132,13 +145,13 @@ def usage():
     -h --help           prints this help
     -v --verbose        increases the information level
     -t --test           tests the stock routines
-    -q --quote          get stock quote from ticker symbol
-    -s --save_key       stores the api key in database
-    -g --get_key        retrieves the api key from the database
     -c --company        retrieves company data from ticker symbol
+    -q --quote          get stock quote from ticker symbol
+    -k --key            saves the stock page API key
     -i --interval       saves the time interval (default is 15 minutes)
     -d --daemon         saves the daemon seconds (default is 1200)
-    -f --folder         saves the stock db name (default is folder.db)        
+    -b --begin          saves the beginning bell time (defaults to 8:30AM)
+    -e --end            saves the ending bell time (defaults to 3:00PM)         
     """
     print (usage) 
 
