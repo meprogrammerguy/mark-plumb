@@ -93,7 +93,17 @@ def TestStock(verbose):
         if (verbose):
             print ("\tfail.")
     if (verbose):
-        print ("Test #8 - Quote('AAPL', verbose)")
+        print ("Test #8 - AIM('aim.db', False)")
+    result = AIM("aim.db", False)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (verbose):
+        print ("Test #9 - Quote('AAPL', verbose)")
     result = Quote("AAPL", verbose)
     if (result and result['symbol'] == "AAPL"):
         if (verbose):
@@ -103,14 +113,15 @@ def TestStock(verbose):
         if (verbose):
             print ("\tfail.")
     if (verbose):
-        print ("Test #9 - GetDefaults(False)")
+        print ("Test #10 - GetDefaults(False)")
     result = GetDefaults(False)
     if (result['api_key'] == "TEST"
         and result['interval'] == 15
         and result['daemon_seconds'] == 1200
         and result['begin_time'] == "8:30AM"
         and result['end_time'] == "03:00PM"
-        and result['aim_folder'] == "folder.db"):
+        and result['folder_dbase'] == "folder.db"
+        and result['aim_dbase'] == "aim.db"):
         if (verbose):
             print ("\tpass.")
         count += 1
@@ -118,7 +129,7 @@ def TestStock(verbose):
         if (verbose):
             print ("\tfail.")
     if (verbose):
-        print ("Test #10 - Key(<reset key back>, False)")
+        print ("Test #11 - Key(<reset key back>, False)")
     result = Key(defaults['api_key'], False)
     if (result):
         if (verbose):
@@ -127,7 +138,7 @@ def TestStock(verbose):
     else:
         if (verbose):
             print ("\tfail.")
-    if (count == 10):
+    if (count == 11):
         return True
     return False
 
@@ -308,7 +319,7 @@ def CreateDefaults(verbose):
         print("CreateDefaults(3) {0}".format(e))
         return False
     c = conn.cursor()
-    c.execute("CREATE TABLE if not exists 'defaults' ( `username` TEXT NOT NULL UNIQUE, `api_key` TEXT, `interval` INTEGER, `aim_folder` TEXT, `daemon_seconds` INTEGER, `begin_time` TEXT, `end_time` TEXT, `aim_dbase` TEXT, PRIMARY KEY(`username`) )")
+    c.execute("CREATE TABLE if not exists 'defaults' ( `username` TEXT NOT NULL UNIQUE, `api_key` TEXT, `interval` INTEGER, `folder_dbase` TEXT, `daemon_seconds` INTEGER, `begin_time` TEXT, `end_time` TEXT, `aim_dbase` TEXT, PRIMARY KEY(`username`) )")
     c.execute( "INSERT OR IGNORE INTO defaults(username) VALUES((?))", (username,))
     conn.commit()
     conn.close()
@@ -379,6 +390,18 @@ def TestFolder(verbose):
     else:
         if (verbose):
             print ("\tfail.")
+    if (verbose):
+        print ("Test #2 - Cash(5000, verbose)")
+    result = Cash(5000, verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (verbose):
+        print ("Test #3 - Balance('AAPL', 5000, verbose)")
     result = Balance("AAPL", 5000, verbose)
     if (result['status']):
         if (verbose):
@@ -388,8 +411,28 @@ def TestFolder(verbose):
         if (verbose):
             print ("\tfail.")
     if (verbose):
-        print ("Test #7 - Update(verbose)")
+        print ("Test #4 - Shares('AAPL', 50, verbose)")
+    result = Shares("AAPL", 50, verbose)
+    if (result['status']):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (verbose):
+        print ("Test #5 - Update(verbose)")
     result = Update(verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (verbose):
+        print ("Test #6 - Remove('AAPL', verbose)")
+    result = Remove("AAPL", verbose)
     if (result):
         if (verbose):
             print ("\tpass.")
@@ -404,8 +447,8 @@ def TestFolder(verbose):
         if (verbose):
             print ("Cleanup, remove {0}".format(db_file))
     if (verbose):
-        print ("Test #8 - Folder(<reset back db name>, verbose)")
-    result = Folder(defaults['aim_folder'], verbose)
+        print ("Test #7 - Folder(<reset back db name>, verbose)")
+    result = Folder(defaults['folder_dbase'], verbose)
     if (result):
         if (verbose):
             print ("\tpass.")
@@ -413,14 +456,14 @@ def TestFolder(verbose):
     else:
         if (verbose):
             print ("\tfail.")
-    if (count == 8):
+    if (count == 7):
         return True
     return False
 
 def Add(symbol, verbose):
     defaults = GetDefaults(verbose)
     username = getpass.getuser()
-    db_file = username + "/"  + defaults['aim_folder']
+    db_file = username + "/"  + defaults['folder_dbase']
     if (verbose):
         print ("***")
         print ("Add(1) symbol: {0}".format(symbol))
@@ -448,7 +491,7 @@ def Add(symbol, verbose):
 def Remove(symbol, verbose):
     defaults = GetDefaults(verbose)
     username = getpass.getuser()
-    db_file = username + "/"  + defaults['aim_folder']
+    db_file = username + "/"  + defaults['folder_dbase']
     if (verbose):
         print ("***")
         print ("Remove(1) symbol: {0}".format(symbol))
@@ -471,7 +514,7 @@ def Remove(symbol, verbose):
 def Cash(balance, verbose):
     defaults = GetDefaults(verbose)
     username = getpass.getuser()
-    db_file = username + "/"  + defaults['aim_folder']
+    db_file = username + "/"  + defaults['folder_dbase']
     if (verbose):
         print ("***")
         print ("Cash(1) balance: {0}".format(balance))
@@ -503,7 +546,7 @@ def Cash(balance, verbose):
 def CreateFolder(key, verbose):
     defaults = GetDefaults(verbose)
     username = getpass.getuser()
-    db_file = username + "/"  + defaults['aim_folder']
+    db_file = username + "/"  + defaults['folder_dbase']
     Path(username + "/").mkdir(parents=True, exist_ok=True) 
     if (verbose):
         print ("***")
@@ -528,7 +571,7 @@ def Shares(symbol, shares, verbose):
     result = {}
     defaults = GetDefaults(verbose)
     username = getpass.getuser()
-    db_file = username + "/"  + defaults['aim_folder']
+    db_file = username + "/"  + defaults['folder_dbase']
     Path(username + "/").mkdir(parents=True, exist_ok=True) 
     if (verbose):
         print ("***")
@@ -578,7 +621,7 @@ def Balance(symbol, balance, verbose):
     result = {}
     defaults = GetDefaults(verbose)
     username = getpass.getuser()
-    db_file = username + "/"  + defaults['aim_folder']
+    db_file = username + "/"  + defaults['folder_dbase']
     Path(username + "/").mkdir(parents=True, exist_ok=True) 
     if (verbose):
         print ("***")
@@ -629,7 +672,7 @@ def Balance(symbol, balance, verbose):
 def Update(verbose):
     defaults = GetDefaults(verbose)
     username = getpass.getuser()
-    db_file = username + "/"  + defaults['aim_folder']
+    db_file = username + "/"  + defaults['folder_dbase']
     Path(username + "/").mkdir(parents=True, exist_ok=True) 
     if (verbose):
         print ("***")
@@ -673,7 +716,7 @@ def Folder(folder, verbose):
             print("Folder(4) {0}".format(e))
             return False
         c = conn.cursor()
-        c.execute("UPDATE defaults SET aim_folder = (?) WHERE username = (?)", (folder, username,))
+        c.execute("UPDATE defaults SET folder_dbase = (?) WHERE username = (?)", (folder, username,))
         conn.commit()
         conn.close()
     if (verbose):

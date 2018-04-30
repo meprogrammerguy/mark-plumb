@@ -33,7 +33,7 @@ def do_something():
         if weekno < 5 and ct > bt and ct < et:
             plumb.Update(False)
             with open(filename, "w") as f:
-                f.write("pid: {0}, {1} updated on: {2}. (sleeping for {3} seconds)".format(os.getpid(), defaults['aim_folder'], time.ctime(), defaults['daemon_seconds']))
+                f.write("pid: {0}, {1} updated on: {2}. (sleeping for {3} seconds)".format(os.getpid(), defaults['folder_dbase'], time.ctime(), defaults['daemon_seconds']))
         else:
             with open(filename, "w") as f:
                 f.write("pid: {0}, open: {1}, close: {2}".format(os.getpid(), bt, et))

@@ -64,7 +64,7 @@ def main(argv):
             print ("failed.")
         exit()
     defaults = plumb.GetDefaults(verbose)
-    if defaults['aim_folder'] is None:
+    if defaults['folder_dbase'] is None:
         print ("\tWarning, please use --folder switch to set the folder database name")
         exit()
     if (cash > ""):
