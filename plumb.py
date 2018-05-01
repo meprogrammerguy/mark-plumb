@@ -16,6 +16,7 @@ import datetime
 
 #region stock
 def Quote(ticker, verbose):
+    result = {}
     defaults = GetDefaults(verbose)
     url = "https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol={0}&interval={1}min&apikey={2}".format(ticker, defaults['interval'], defaults['api_key'])
     if (verbose):
@@ -28,15 +29,18 @@ def Quote(ticker, verbose):
         with contextlib.closing(urllib.request.urlopen(url)) as page:
             soup = BeautifulSoup(page, "html5lib")
     except urllib.error.HTTPError as err:
+        result['exception'] = err
+        result['status'] = False
         if err.code == 404:
             if (verbose):
                 print ("Quote(5) page not found for {0}".format(ticker))
                 print ("***\n")
-        if err.code == 503:
+            return result
+        elif err.code == 503:
             if (verbose):
                 print ("Quote(6) service unavailable for {0}".format(ticker))
                 print ("***\n")
-            return {}
+            return result
         else:
             raise
     returnQuote = json.loads(str(soup.text))
@@ -53,7 +57,11 @@ def Quote(ticker, verbose):
                     closing['price_time'] = key
                     closing['price'] =  value['4. close']
                     break
-        closing['symbol'] = returnQuote['Meta Data']['2. Symbol']
+        if "Meta Data" in returnQuote:
+            closing['symbol'] = returnQuote['Meta Data']['2. Symbol']
+        else:
+            closing['exception'] = returnQuote
+        closing['status'] = True
     return closing
 
 def Company(ticker, verbose):
@@ -369,14 +377,16 @@ def Shares(symbol, shares, verbose):
         print ("Shares(2) shares: {0}".format(shares))
         print ("Shares(3) dbase: {0}".format(db_file))
     if (symbol == ""):
-        print ("Error: symbol cannot be blank")
+        e = "Error: symbol cannot be blank"
+        print (e)
         result['status'] = False
         result['balance'] = 0
+        result['exception'] = e
         return result
     resultAdd = Add(symbol, verbose)
     if (resultAdd):
         price = Quote(symbol, verbose)
-        if (price):
+        if (price['status']):
             try:
                 conn = sqlite3.connect(db_file)
                 if (verbose):
@@ -385,6 +395,7 @@ def Shares(symbol, shares, verbose):
                 print("Shares(5) {0}".format(e))
                 result['status'] = False
                 result['balance'] = 0
+                result['exception'] = e
                 return result
             c = conn.cursor()
             c.execute("UPDATE folder SET shares = ? WHERE symbol = (?)", (shares, symbol,))
@@ -395,11 +406,17 @@ def Shares(symbol, shares, verbose):
             c.execute("UPDATE folder SET update_time = (?) WHERE symbol = (?)", (datetime.datetime.now(), symbol,))
             conn.commit()
             conn.close()
+        else:
+            result['exception'] = price['exception']
+            result['status'] = False
+            result['balance'] = 0
+            return result
     else:
         if (verbose):
             print ("***\n")
         result['status'] = False
         result['balance'] = 0
+        result['exception'] = "Error on Add()"
         return result
     if (verbose):
         print ("***\n")
@@ -419,14 +436,16 @@ def Balance(symbol, balance, verbose):
         print ("Balance(2) balance: {0}".format(balance))
         print ("Balance(3) dbase: {0}".format(db_file))
     if (symbol == ""):
-        print ("Error: symbol cannot be blank")
+        e = "Error: symbol cannot be blank"
+        print (e)
         result['status'] = False
         result['shares'] = 0
+        result['exception'] = e
         return result
     resultAdd = Add(symbol, verbose)
     if (resultAdd):
         price = Quote(symbol, verbose)
-        if (price):
+        if (price['status']):
             try:
                 conn = sqlite3.connect(db_file)
                 if (verbose):
@@ -435,6 +454,7 @@ def Balance(symbol, balance, verbose):
                 print("Balance(5) {0}".format(e))
                 result['status'] = False
                 result['shares'] = 0
+                result['exception'] = e
                 return result
             c = conn.cursor()
             shares = 1.0
@@ -447,11 +467,17 @@ def Balance(symbol, balance, verbose):
             c.execute("UPDATE folder SET update_time = (?) WHERE symbol = (?)", (datetime.datetime.now(), symbol,))
             conn.commit()
             conn.close()
+        else:
+            result['exception'] = price['exception']
+            result['status'] = False
+            result['shares'] = 0
+            return result
     else:
         if (verbose):
             print ("***\n")
         result['status'] = False
         result['shares'] = 0
+        result['exception'] = "Error on Add()"
         return result
     if (verbose):
         print ("***\n")
@@ -473,7 +499,7 @@ def Update(verbose):
             print("Update(2) sqlite3: {0}".format(sqlite3.version))
     except Error as e:
         print("Update(3) {0}".format(e))
-        return False
+        return False, e
     c = conn.cursor()
     c.execute('SELECT symbol, shares, balance FROM folder') 
     rows = c.fetchall()
@@ -487,7 +513,7 @@ def Update(verbose):
                     print ("symbol: {0}, current shares: {1}, previous balance: {2}, current balance: {3}".format(row[0], row[1], row[2], result['balance']))
     if (verbose):
         print ("***\n")
-    return True
+    return True, ""
 
 def Folder(folder, verbose):
     username = getpass.getuser()
@@ -631,7 +657,7 @@ def TestStock(verbose):
     if (verbose):
         print ("Test #9 - Quote('AAPL', verbose)")
     result = Quote("AAPL", verbose)
-    if (result and result['symbol'] == "AAPL"):
+    if (result['status'] and result['symbol'] == "AAPL"):
         if (verbose):
             print ("\tpass.")
         count += 1
