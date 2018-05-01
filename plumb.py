@@ -15,133 +15,6 @@ import time
 import datetime
 
 #region stock
-def TestStock(verbose):
-    count = 0
-    defaults =  GetDefaults(False)
-    if (verbose):
-        print ("***")
-        print ("\tRunning tests will preserve your API key")
-        print ("\tbut will reset everything else back to default settings.")
-        print ("***\n")
-        print ("Test #1 - Company('AAPL', verbose)")
-    result = Company("AAPL", verbose)
-    if (result['companyName'] == "Apple Inc."):
-        if (verbose):
-            print ("\tpass.")
-        count += 1
-    else:
-        if (verbose):
-            print ("\tfail.")
-    if (verbose):
-        print ("Test #2 - Key('TEST', verbose)")
-    result = Key("TEST", verbose)
-    if (result):
-        if (verbose):
-            print ("\tpass.")
-        count += 1
-    else:
-        if (verbose):
-            print ("\tfail.")
-    if (verbose):
-        print ("Test #3 - Interval(15, False)")
-    result = Interval(15, False)
-    if (result):
-        if (verbose):
-            print ("\tpass.")
-        count += 1
-    else:
-        if (verbose):
-            print ("\tfail.")
-    if (verbose):
-        print ("Test #4 - Daemon(1200, False)")
-    result = Daemon(1200, False)
-    if (result):
-        if (verbose):
-            print ("\tpass.")
-        count += 1
-    else:
-        if (verbose):
-            print ("\tfail.")
-    if (verbose):
-        print ("Test #5 - Begin('8:30AM', False)")
-    result = Begin("8:30AM", False)
-    if (result):
-        if (verbose):
-            print ("\tpass.")
-        count += 1
-    else:
-        if (verbose):
-            print ("\tfail.")
-    if (verbose):
-        print ("Test #6 - End('03:00PM', False)")
-    result = End("03:00PM", False)
-    if (result):
-        if (verbose):
-            print ("\tpass.")
-        count += 1
-    else:
-        if (verbose):
-            print ("\tfail.")
-    if (verbose):
-        print ("Test #7 - Folder('folder.db', False)")
-    result = Folder("folder.db", False)
-    if (result):
-        if (verbose):
-            print ("\tpass.")
-        count += 1
-    else:
-        if (verbose):
-            print ("\tfail.")
-    if (verbose):
-        print ("Test #8 - AIM('aim.db', False)")
-    result = AIM("aim.db", False)
-    if (result):
-        if (verbose):
-            print ("\tpass.")
-        count += 1
-    else:
-        if (verbose):
-            print ("\tfail.")
-    if (verbose):
-        print ("Test #9 - Quote('AAPL', verbose)")
-    result = Quote("AAPL", verbose)
-    if (result and result['symbol'] == "AAPL"):
-        if (verbose):
-            print ("\tpass.")
-        count += 1
-    else:
-        if (verbose):
-            print ("\tfail.")
-    if (verbose):
-        print ("Test #10 - GetDefaults(False)")
-    result = GetDefaults(False)
-    if (result['api_key'] == "TEST"
-        and result['interval'] == 15
-        and result['daemon_seconds'] == 1200
-        and result['begin_time'] == "8:30AM"
-        and result['end_time'] == "03:00PM"
-        and result['folder_dbase'] == "folder.db"
-        and result['aim_dbase'] == "aim.db"):
-        if (verbose):
-            print ("\tpass.")
-        count += 1
-    else:
-        if (verbose):
-            print ("\tfail.")
-    if (verbose):
-        print ("Test #11 - Key(<reset key back>, False)")
-    result = Key(defaults['api_key'], False)
-    if (result):
-        if (verbose):
-            print ("\tpass.")
-        count += 1
-    else:
-        if (verbose):
-            print ("\tfail.")
-    if (count == 11):
-        return True
-    return False
-
 def Quote(ticker, verbose):
     defaults = GetDefaults(verbose)
     url = "https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol={0}&interval={1}min&apikey={2}".format(ticker, defaults['interval'], defaults['api_key'])
@@ -377,89 +250,6 @@ def End(end, verbose):
 #endregion stock
 
 #region folder
-def TestFolder(verbose):
-    count = 0
-    defaults = GetDefaults(verbose)
-    if (verbose):
-        print ("Test #1 - Folder('test.db', verbose)")
-    result = Folder("test.db", verbose)
-    if (result):
-        if (verbose):
-            print ("\tpass.")
-        count += 1
-    else:
-        if (verbose):
-            print ("\tfail.")
-    if (verbose):
-        print ("Test #2 - Cash(5000, verbose)")
-    result = Cash(5000, verbose)
-    if (result):
-        if (verbose):
-            print ("\tpass.")
-        count += 1
-    else:
-        if (verbose):
-            print ("\tfail.")
-    if (verbose):
-        print ("Test #3 - Balance('AAPL', 5000, verbose)")
-    result = Balance("AAPL", 5000, verbose)
-    if (result['status']):
-        if (verbose):
-            print ("\tpass.")
-        count += 1
-    else:
-        if (verbose):
-            print ("\tfail.")
-    if (verbose):
-        print ("Test #4 - Shares('AAPL', 50, verbose)")
-    result = Shares("AAPL", 50, verbose)
-    if (result['status']):
-        if (verbose):
-            print ("\tpass.")
-        count += 1
-    else:
-        if (verbose):
-            print ("\tfail.")
-    if (verbose):
-        print ("Test #5 - Update(verbose)")
-    result = Update(verbose)
-    if (result):
-        if (verbose):
-            print ("\tpass.")
-        count += 1
-    else:
-        if (verbose):
-            print ("\tfail.")
-    if (verbose):
-        print ("Test #6 - Remove('AAPL', verbose)")
-    result = Remove("AAPL", verbose)
-    if (result):
-        if (verbose):
-            print ("\tpass.")
-        count += 1
-    else:
-        if (verbose):
-            print ("\tfail.")
-    username = getpass.getuser()
-    db_file = username + "/" + "test.db"
-    if (os.path.exists(db_file)):
-        os.unlink(db_file)
-        if (verbose):
-            print ("Cleanup, remove {0}".format(db_file))
-    if (verbose):
-        print ("Test #7 - Folder(<reset back db name>, verbose)")
-    result = Folder(defaults['folder_dbase'], verbose)
-    if (result):
-        if (verbose):
-            print ("\tpass.")
-        count += 1
-    else:
-        if (verbose):
-            print ("\tfail.")
-    if (count == 7):
-        return True
-    return False
-
 def Add(symbol, verbose):
     defaults = GetDefaults(verbose)
     username = getpass.getuser()
@@ -725,6 +515,242 @@ def Folder(folder, verbose):
 #endregion folder
 
 #region aim
+def AIM(aim, verbose):
+    username = getpass.getuser()
+    db_file = os.getcwd() + "/"  + "defaults.db"
+    if (verbose):
+        print ("***")
+        print ("AIM(1) aim: {0}".format(aim))
+        print ("AIM(2) dbase: {0}".format(db_file))
+    result = CreateDefaults(verbose)
+    if (result):
+        try:
+            conn = sqlite3.connect(db_file)
+            if (verbose):
+                print("AIM(3) sqlite3: {0}".format(sqlite3.version))
+        except Error as e:
+            print("AIM(4) {0}".format(e))
+            return False
+        c = conn.cursor()
+        c.execute("UPDATE defaults SET aim_dbase = (?) WHERE username = (?)", (aim, username,))
+        conn.commit()
+        conn.close()
+    if (verbose):
+        print ("***\n")
+    return True
+#endregion aim
+
+#region tests
+def TestStock(verbose):
+    count = 0
+    defaults =  GetDefaults(False)
+    if (verbose):
+        print ("***")
+        print ("\tRunning tests will preserve your API key")
+        print ("\tbut will reset everything else back to default settings.")
+        print ("***\n")
+        print ("Test #1 - Company('AAPL', verbose)")
+    result = Company("AAPL", verbose)
+    if (result['companyName'] == "Apple Inc."):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (verbose):
+        print ("Test #2 - Key('TEST', verbose)")
+    result = Key("TEST", verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (verbose):
+        print ("Test #3 - Interval(15, False)")
+    result = Interval(15, False)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (verbose):
+        print ("Test #4 - Daemon(1200, False)")
+    result = Daemon(1200, False)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (verbose):
+        print ("Test #5 - Begin('8:30AM', False)")
+    result = Begin("8:30AM", False)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (verbose):
+        print ("Test #6 - End('03:00PM', False)")
+    result = End("03:00PM", False)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (verbose):
+        print ("Test #7 - Folder('folder.db', False)")
+    result = Folder("folder.db", False)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (verbose):
+        print ("Test #8 - AIM('aim.db', False)")
+    result = AIM("aim.db", False)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (verbose):
+        print ("Test #9 - Quote('AAPL', verbose)")
+    result = Quote("AAPL", verbose)
+    if (result and result['symbol'] == "AAPL"):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (verbose):
+        print ("Test #10 - GetDefaults(False)")
+    result = GetDefaults(False)
+    if (result['api_key'] == "TEST"
+        and result['interval'] == 15
+        and result['daemon_seconds'] == 1200
+        and result['begin_time'] == "8:30AM"
+        and result['end_time'] == "03:00PM"
+        and result['folder_dbase'] == "folder.db"
+        and result['aim_dbase'] == "aim.db"):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (verbose):
+        print ("Test #11 - Key(<reset key back>, False)")
+    result = Key(defaults['api_key'], False)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (count == 11):
+        return True
+    return False
+
+def TestFolder(verbose):
+    count = 0
+    defaults = GetDefaults(verbose)
+    if (verbose):
+        print ("Test #1 - Folder('test.db', verbose)")
+    result = Folder("test.db", verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (verbose):
+        print ("Test #2 - Cash(5000, verbose)")
+    result = Cash(5000, verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (verbose):
+        print ("Test #3 - Balance('AAPL', 5000, verbose)")
+    result = Balance("AAPL", 5000, verbose)
+    if (result['status']):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (verbose):
+        print ("Test #4 - Shares('AAPL', 50, verbose)")
+    result = Shares("AAPL", 50, verbose)
+    if (result['status']):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (verbose):
+        print ("Test #5 - Update(verbose)")
+    result = Update(verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (verbose):
+        print ("Test #6 - Remove('AAPL', verbose)")
+    result = Remove("AAPL", verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    username = getpass.getuser()
+    db_file = username + "/" + "test.db"
+    if (os.path.exists(db_file)):
+        os.unlink(db_file)
+        if (verbose):
+            print ("Cleanup, remove {0}".format(db_file))
+    if (verbose):
+        print ("Test #7 - Folder(<reset back db name>, verbose)")
+    result = Folder(defaults['folder_dbase'], verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (count == 7):
+        return True
+    return False
+
 def TestAIM(location, verbose):
     count = 0
     defaults = GetDefaults(verbose)
@@ -757,28 +783,4 @@ def TestAIM(location, verbose):
     if (count == 2):
         return True
     return False
-
-def AIM(aim, verbose):
-    username = getpass.getuser()
-    db_file = os.getcwd() + "/"  + "defaults.db"
-    if (verbose):
-        print ("***")
-        print ("AIM(1) aim: {0}".format(aim))
-        print ("AIM(2) dbase: {0}".format(db_file))
-    result = CreateDefaults(verbose)
-    if (result):
-        try:
-            conn = sqlite3.connect(db_file)
-            if (verbose):
-                print("AIM(3) sqlite3: {0}".format(sqlite3.version))
-        except Error as e:
-            print("AIM(4) {0}".format(e))
-            return False
-        c = conn.cursor()
-        c.execute("UPDATE defaults SET aim_dbase = (?) WHERE username = (?)", (aim, username,))
-        conn.commit()
-        conn.close()
-    if (verbose):
-        print ("***\n")
-    return True
-#endregion aim
+#endregion tests

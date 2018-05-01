@@ -54,8 +54,8 @@ def usage():
     **  AIM Tool  **
     ****************
 
-    -h --help           Prints this help
-    -v --verbose        Increases the information level
+    -h --help           prints this help
+    -v --verbose        increases the information level
     -t --test           runs test routine to check calculations
     -a --aim            save the database name
     """

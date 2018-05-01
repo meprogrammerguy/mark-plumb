@@ -31,12 +31,16 @@ def do_something():
             et = datetime.strptime(end, '%H:%M').time()
         filename = "/tmp/{0}_folder_daemon.txt".format(getpass.getuser())
         if weekno < 5 and ct > bt and ct < et:
-            plumb.Update(False)
+            try:
+                plumb.Update(False)
+            except Exception as e:
+                with open(filename, "w") as f:
+                    f.write("pid: {0}, exception: {1}, continuing".format(os.getpid(), e))
             with open(filename, "w") as f:
                 f.write("pid: {0}, {1} updated on: {2}. (sleeping for {3} seconds)".format(os.getpid(), defaults['folder_dbase'], time.ctime(), defaults['daemon_seconds']))
         else:
             with open(filename, "w") as f:
-                f.write("pid: {0}, open: {1}, close: {2}".format(os.getpid(), bt, et))
+                f.write("pid: {0}, now: {1}, open: {2}, close: {3}".format(os.getpid(), ct, bt, et))
         if (defaults['daemon_seconds'] is None):
             time.sleep(1200)        # 20 minutes (1200 seconds)
         else:
