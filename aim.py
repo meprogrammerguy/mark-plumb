@@ -45,7 +45,7 @@ def main(argv):
         else:
             print ("failed.")
         exit()
-    defaults = plumb.GetDefaults(verbose)
+    defaults = plumb.GetDefaults(False)
     if defaults['aim_dbase'] is None:
         print ("\tWarning, please use --aim switch to set the AIM database name")
         exit()

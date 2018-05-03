@@ -817,9 +817,9 @@ def TestFolder(verbose):
 
 def TestAIM(location, verbose):
     count = 0
-    defaults = GetDefaults(verbose)
+    defaults = GetDefaults(False)
     status, tests = LoadTest(location, verbose)
-    if (status and defaults > ""):
+    if (status and (defaults is not None)):
         if (verbose):
             print ("Test #1 - AIM('test.db', verbose)")
         result = AIM("test.db", verbose)
@@ -851,5 +851,10 @@ def TestAIM(location, verbose):
     return False
 
 def LoadTest(location, verbose):
+    defaults = GetDefaults(False)
+    test_dir = defaults['test_directory'] + location
+    if not os.path.isdir(test_dir):
+        print ("test directory: {0} does not exist".format(test_dir))
+        return False, {}
     return True, {}
 #endregion tests
