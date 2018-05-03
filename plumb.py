@@ -13,6 +13,7 @@ from sqlite3 import Error
 import getpass
 import time
 import datetime
+import re
 
 #region stock
 def Quote(ticker, verbose):
@@ -850,11 +851,33 @@ def TestAIM(location, verbose):
             return True
     return False
 
+def GetIndex(item):
+    filename = os.path.basename(str(item))
+    idx = re.findall(r'\d+', str(filename))
+    if (len(idx) == 0):
+        idx.append("0")
+    return int(idx[0])
+
+def GetFiles(path, templatename):
+    A = []
+    for p in Path(path).glob(templatename):
+        A.append(str(p))
+    file_list = []
+    for item in range(0, 17):
+        file_list.append("?")
+    for item in A:
+        idx = GetIndex(item)
+        file_list[idx] = item
+    file_list = [x for x in file_list if x != "?"]
+    return file_list
+
 def LoadTest(location, verbose):
     defaults = GetDefaults(False)
     test_dir = defaults['test_directory'] + location
     if not os.path.isdir(test_dir):
         print ("test directory: {0} does not exist".format(test_dir))
         return False, {}
+    file_list = GetFiles(test_dir, "*.csv")
+    pdb.set_trace()
     return True, {}
 #endregion tests
