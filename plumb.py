@@ -59,9 +59,10 @@ def Quote(ticker, verbose):
                     break
         if "Meta Data" in returnQuote:
             closing['symbol'] = returnQuote['Meta Data']['2. Symbol']
+            closing['status'] = True
         else:
             closing['exception'] = returnQuote
-        closing['status'] = True
+            closing['status'] = False
     return closing
 
 def Company(ticker, verbose):
@@ -780,33 +781,38 @@ def TestFolder(verbose):
 def TestAIM(location, verbose):
     count = 0
     defaults = GetDefaults(verbose)
-    if (verbose):
-        print ("Test #1 - AIM('test.db', verbose)")
-    result = AIM("test.db", verbose)
-    if (result):
+    status, tests = LoadTest(location, verbose)
+    if (status):
         if (verbose):
-            print ("\tpass.")
-        count += 1
-    else:
+            print ("Test #1 - AIM('test.db', verbose)")
+        result = AIM("test.db", verbose)
+        if (result):
+            if (verbose):
+                print ("\tpass.")
+            count += 1
+        else:
+            if (verbose):
+                print ("\tfail.")
+        username = getpass.getuser()
+        db_file = username + "/" + "test.db"
+        if (os.path.exists(db_file)):
+            os.unlink(db_file)
+            if (verbose):
+                print ("Cleanup, remove {0}".format(db_file))
         if (verbose):
-            print ("\tfail.")
-    username = getpass.getuser()
-    db_file = username + "/" + "test.db"
-    if (os.path.exists(db_file)):
-        os.unlink(db_file)
-        if (verbose):
-            print ("Cleanup, remove {0}".format(db_file))
-    if (verbose):
-        print ("Test #2 - AIM(<reset back db name>, verbose)")
-    result = AIM(defaults['aim_dbase'], verbose)
-    if (result):
-        if (verbose):
-            print ("\tpass.")
-        count += 1
-    else:
-        if (verbose):
-            print ("\tfail.")
-    if (count == 2):
-        return True
+            print ("Test #2 - AIM(<reset back db name>, verbose)")
+        result = AIM(defaults['aim_dbase'], verbose)
+        if (result):
+            if (verbose):
+                print ("\tpass.")
+            count += 1
+        else:
+            if (verbose):
+                print ("\tfail.")
+        if (count == 2):
+            return True
     return False
+
+def LoadTest(location, verbose):
+    return True, {}
 #endregion tests
