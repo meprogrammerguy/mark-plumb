@@ -201,7 +201,7 @@ def CreateDefaults(verbose):
         print("CreateDefaults(3) {0}".format(e))
         return False
     c = conn.cursor()
-    c.execute("CREATE TABLE if not exists 'defaults' ( `username` TEXT NOT NULL UNIQUE, `api_key` TEXT, `interval` INTEGER, `folder_dbase` TEXT, `daemon_seconds` INTEGER, `begin_time` TEXT, `end_time` TEXT, `aim_dbase` TEXT, PRIMARY KEY(`username`) )")
+    c.execute("CREATE TABLE if not exists 'defaults' ( `username` TEXT NOT NULL UNIQUE, `api_key` TEXT, `interval` INTEGER, `folder_dbase` TEXT, `daemon_seconds` INTEGER, `begin_time` TEXT, `end_time` TEXT, `aim_dbase` TEXT, `test_directory` TEXT, PRIMARY KEY(`username`) )")
     c.execute( "INSERT OR IGNORE INTO defaults(username) VALUES((?))", (username,))
     conn.commit()
     conn.close()
@@ -565,6 +565,32 @@ def AIM(aim, verbose):
     if (verbose):
         print ("***\n")
     return True
+
+def Directory(location, verbose):
+    if (not location.endswith("/")):
+        location = location + "/"
+    username = getpass.getuser()
+    db_file = os.getcwd() + "/"  + "defaults.db"
+    if (verbose):
+        print ("***")
+        print ("Directory(1) location: {0}".format(location))
+        print ("Directory(2) dbase: {0}".format(db_file))
+    result = CreateDefaults(verbose)
+    if (result):
+        try:
+            conn = sqlite3.connect(db_file)
+            if (verbose):
+                print("Directory(3) sqlite3: {0}".format(sqlite3.version))
+        except Error as e:
+            print("Directory(4) {0}".format(e))
+            return False
+        c = conn.cursor()
+        c.execute("UPDATE defaults SET test_directory = (?) WHERE username = (?)", (location, username,))
+        conn.commit()
+        conn.close()
+    if (verbose):
+        print ("***\n")
+    return True
 #endregion aim
 
 #region tests
@@ -656,7 +682,17 @@ def TestStock(verbose):
         if (verbose):
             print ("\tfail.")
     if (verbose):
-        print ("Test #9 - Quote('AAPL', verbose)")
+        print ("Test #9 - Directory('test/', False)")
+    result = Directory("test/", False)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (verbose):
+        print ("Test #10 - Quote('AAPL', verbose)")
     result = Quote("AAPL", verbose)
     if (result['status'] and result['symbol'] == "AAPL"):
         if (verbose):
@@ -666,7 +702,7 @@ def TestStock(verbose):
         if (verbose):
             print ("\tfail.")
     if (verbose):
-        print ("Test #10 - GetDefaults(False)")
+        print ("Test #11 - GetDefaults(False)")
     result = GetDefaults(False)
     if (result['api_key'] == "TEST"
         and result['interval'] == 15
@@ -674,7 +710,8 @@ def TestStock(verbose):
         and result['begin_time'] == "8:30AM"
         and result['end_time'] == "03:00PM"
         and result['folder_dbase'] == "folder.db"
-        and result['aim_dbase'] == "aim.db"):
+        and result['aim_dbase'] == "aim.db"
+        and result['test_directory'] == "test/"):
         if (verbose):
             print ("\tpass.")
         count += 1
@@ -682,7 +719,7 @@ def TestStock(verbose):
         if (verbose):
             print ("\tfail.")
     if (verbose):
-        print ("Test #11 - Key(<reset key back>, False)")
+        print ("Test #12 - Key(<reset key back>, False)")
     result = Key(defaults['api_key'], False)
     if (result):
         if (verbose):
@@ -691,7 +728,7 @@ def TestStock(verbose):
     else:
         if (verbose):
             print ("\tfail.")
-    if (count == 11):
+    if (count == 12):
         return True
     return False
 
@@ -782,7 +819,7 @@ def TestAIM(location, verbose):
     count = 0
     defaults = GetDefaults(verbose)
     status, tests = LoadTest(location, verbose)
-    if (status):
+    if (status and defaults > ""):
         if (verbose):
             print ("Test #1 - AIM('test.db', verbose)")
         result = AIM("test.db", verbose)

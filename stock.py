@@ -20,7 +20,7 @@ def main(argv):
     begin = ""
     end = ""
     try:
-        opts, args = getopt.getopt(argv, "b:e:d:i:k:q:hvtc:", ["help", "verbose", "test", "quote=", "key=", "company=", "interval=", "daemon=", "begin=", "end="])
+        opts, args = getopt.getopt(argv, "b:e:s:i:k:q:hvtc:", ["help", "verbose", "test", "quote=", "key=", "company=", "interval=", "seconds=", "begin=", "end="])
     except getopt.GetoptError as err:
         print(err)
         usage()
@@ -43,7 +43,7 @@ def main(argv):
                 update_interval = True
             else:
                 interval = 15
-        elif o in ("-d", "--daemon"):
+        elif o in ("-s", "--seconds"):
             if (a.isnumeric()):
                 daemon = int(a)
                 if (daemon > 1200):
@@ -53,6 +53,8 @@ def main(argv):
                 update_daemon = True
             else:
                 daemon = 1200
+        elif o in ("-d", "--directory"):
+            test_dir_ = a
         elif o in ("-q", "--quote"):
             quote = a.upper()
         elif o in ("-c", "--company"):
@@ -149,9 +151,9 @@ def usage():
     -q --quote          get stock quote from ticker symbol
     -k --key            saves the stock page API key
     -i --interval       saves the time interval (default is 15 minutes)
-    -d --daemon         saves the daemon seconds (default is 1200)
+    -s --seconds        saves the daemon seconds (default is 1200)
     -b --begin          saves the beginning bell time (defaults to 8:30AM)
-    -e --end            saves the ending bell time (defaults to 3:00PM)         
+    -e --end            saves the ending bell time (defaults to 3:00PM)
     """
     print (usage) 
 
