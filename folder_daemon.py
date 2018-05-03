@@ -30,11 +30,15 @@ def do_something():
         else:
             et = datetime.strptime(end, '%H:%M').time()
         filename = "/tmp/{0}_folder_daemon.txt".format(getpass.getuser())
+        errname = "/tmp/{0}_folder_daemon_error.txt".format(getpass.getuser())
         if weekno < 5 and ct > bt and ct < et:
             try:
-                plumb.Update(False)
+                result, resultError = plumb.Update(False)
+                if not result:
+                    with open(filename, "a") as f:
+                        f.write("pid: {0}, error: {1}, continuing".format(os.getpid(), resultError))
             except Exception as e:
-                with open(filename, "w") as f:
+                with open(filename, "a") as f:
                     f.write("pid: {0}, exception: {1}, continuing".format(os.getpid(), e))
             with open(filename, "w") as f:
                 f.write("pid: {0}, {1} updated on: {2}. (sleeping for {3} seconds)".format(os.getpid(), defaults['folder_dbase'], time.ctime(), defaults['daemon_seconds']))
