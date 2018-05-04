@@ -12,8 +12,11 @@ def main(argv):
     aim = ""
     test_dir = ""
     safe = ""
+    cash = ""
+    balance = ""
+    now = False
     try:
-        opts, args = getopt.getopt(argv, "d:a::hvt:", ["help", "verbose", "test=", "aim=", "directory=", "safe="])
+        opts, args = getopt.getopt(argv, "c:b:nd:a::hvt:", ["help", "verbose", "test=", "aim=", "directory=", "safe=", "now", "cash=", "balance="])
     except getopt.GetoptError as err:
         print(err)
         usage()
@@ -32,6 +35,12 @@ def main(argv):
             test_dir = a
         elif o in ("-s", "--safe"):
             safe = a
+        elif o in ("-c", "--cash"):
+            cash = a
+        elif o in ("-b", "--balance"):
+            balance = a
+        elif o in ("-n", "--now"):
+            now = True
         else:
             assert False, "unhandled option"
     if (test_dir > ""):
@@ -72,6 +81,27 @@ def main(argv):
         else:
             print ("failed.")
         exit()
+    if (cash > ""):
+        cashResult = plumb.AIMCash(float(cash), verbose)
+        if (cashResult):
+            print ("updated.")
+        else:
+            print ("failed.")
+        exit()
+    if (balance > ""):
+        stockResult = plumb.AIMStock(float(balance), verbose)
+        if (stockResult):
+            print ("updated.")
+        else:
+            print ("failed.")
+        exit()
+    if (now):
+        nowResult = plumb.AIMDate(verbose)
+        if (nowResult):
+             print ("updated.")
+        else:
+            print ("failed.")
+        exit()
     usage()
 
 def usage():
@@ -85,6 +115,9 @@ def usage():
     -t --test           runs test routine to check calculations
     -a --aim            save the database name
     -d --directory      save the test directory (default is test)
+    -c --cash           save starting cash
+    -b --balance        save starting stock value
+    -n --now            save aim plan date
     -s --safe           returns 10% of Stock Value
     """
     print (usage) 

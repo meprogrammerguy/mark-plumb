@@ -204,7 +204,7 @@ def CreateDefaults(verbose):
         print("CreateDefaults(3) {0}".format(e))
         return False
     c = conn.cursor()
-    c.execute("CREATE TABLE if not exists 'defaults' ( `username` TEXT NOT NULL UNIQUE, `api_key` TEXT, `interval` INTEGER, `folder_dbase` TEXT, `daemon_seconds` INTEGER, `begin_time` TEXT, `end_time` TEXT, `aim_dbase` TEXT, `test_directory` TEXT, PRIMARY KEY(`username`) )")
+    c.execute("CREATE TABLE if not exists 'defaults' ( `username` TEXT NOT NULL UNIQUE, `api_key` TEXT, `interval` INTEGER, `daemon_seconds` INTEGER, `begin_time` TEXT, `end_time` TEXT, `aim_dbase` TEXT, `folder_dbase` TEXT, `test_directory` TEXT, `aim_cash` REAL, `aim_stock_value` REAL, `aim_date` TEXT, PRIMARY KEY(`username`) )")
     c.execute( "INSERT OR IGNORE INTO defaults(username) VALUES((?))", (username,))
     conn.commit()
     conn.close()
@@ -589,6 +589,78 @@ def Directory(location, verbose):
             return False
         c = conn.cursor()
         c.execute("UPDATE defaults SET test_directory = (?) WHERE username = (?)", (location, username,))
+        conn.commit()
+        conn.close()
+    if (verbose):
+        print ("***\n")
+    return True
+
+def AIMCash(cash, verbose):
+    username = getpass.getuser()
+    db_file = os.getcwd() + "/"  + "defaults.db"
+    if (verbose):
+        print ("***")
+        print ("AIMCash(1) cash: {0}".format(cash))
+        print ("AIMCash(2) dbase: {0}".format(db_file))
+    result = CreateDefaults(verbose)
+    if (result):
+        try:
+            conn = sqlite3.connect(db_file)
+            if (verbose):
+                print("AIMCash(3) sqlite3: {0}".format(sqlite3.version))
+        except Error as e:
+            print("AIMCash(4) {0}".format(e))
+            return False
+        c = conn.cursor()
+        c.execute("UPDATE defaults SET aim_cash = ? WHERE username = (?)", (cash, username,))
+        conn.commit()
+        conn.close()
+    if (verbose):
+        print ("***\n")
+    return True
+
+def AIMStock(stock, verbose):
+    username = getpass.getuser()
+    db_file = os.getcwd() + "/"  + "defaults.db"
+    if (verbose):
+        print ("***")
+        print ("AIMStock(1) stockvalue: {0}".format(stock))
+        print ("AIMStock(2) dbase: {0}".format(db_file))
+    result = CreateDefaults(verbose)
+    if (result):
+        try:
+            conn = sqlite3.connect(db_file)
+            if (verbose):
+                print("AIMStock(3) sqlite3: {0}".format(sqlite3.version))
+        except Error as e:
+            print("AIMStock(4) {0}".format(e))
+            return False
+        c = conn.cursor()
+        c.execute("UPDATE defaults SET aim_stock_value = ? WHERE username = (?)", (stock, username,))
+        conn.commit()
+        conn.close()
+    if (verbose):
+        print ("***\n")
+    return True
+
+def AIMDate(verbose):
+    username = getpass.getuser()
+    db_file = os.getcwd() + "/"  + "defaults.db"
+    if (verbose):
+        print ("***")
+        print ("AIMDate(1) dbase: {0}".format(db_file))
+    result = CreateDefaults(verbose)
+    if (result):
+        try:
+            conn = sqlite3.connect(db_file)
+            if (verbose):
+                print("AIMDate(3) sqlite3: {0}".format(sqlite3.version))
+        except Error as e:
+            print("AIMDate(4) {0}".format(e))
+            return False
+        c = conn.cursor()
+        cd = datetime.datetime.now()
+        c.execute("UPDATE defaults SET aim_date = (?) WHERE username = (?)", (cd.strftime("%Y/%m/%d"), username,))
         conn.commit()
         conn.close()
     if (verbose):
