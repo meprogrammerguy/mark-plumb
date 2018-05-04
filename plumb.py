@@ -595,11 +595,20 @@ def Directory(location, verbose):
         print ("***\n")
     return True
 
-def Safe(stockvalue, verbose):            
+def Safe(stockvalue, verbose): 
+    if (verbose):
+        print ("***")
+        print ("Safe(1) stockvalue: {0}".format(stockvalue))
+        print ("***\n")           
     answer = math.ceil(stockvalue/10.-.4)
     return answer
 
 def PortfolioValue(cash, stockvalue, verbose):
+    if (verbose):
+        print ("***")
+        print ("PortfolioValue(1) cash: {0}".format(cash))
+        print ("PortfolioValue(2) stockvalue: {0}".format(stockvalue))
+        print ("***\n")
     return (cash + stockvalue) 
 #endregion aim
 
