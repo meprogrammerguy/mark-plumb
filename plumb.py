@@ -15,6 +15,7 @@ import time
 import datetime
 import re
 import csv
+import math
 
 #region stock
 def Quote(ticker, verbose):
@@ -593,6 +594,10 @@ def Directory(location, verbose):
     if (verbose):
         print ("***\n")
     return True
+
+def Safe(stockvalue, verbose):            
+    answer = math.ceil(stockvalue/10.-.4)
+    return answer
 #endregion aim
 
 #region tests
@@ -820,10 +825,10 @@ def TestFolder(verbose):
 def TestAIM(location, verbose):
     count = 0
     defaults = GetDefaults(False)
-    status, tests = LoadTest(location, verbose)
+    status, keys, rows = LoadTest(location, verbose)
     if (status and (defaults is not None)):
         if (verbose):
-            print ("Test #1 - AIM('test.db', verbose)")
+            print ("Test #{0} - AIM('test.db', verbose)".format(count + 1))
         result = AIM("test.db", verbose)
         if (result):
             if (verbose):
@@ -832,6 +837,21 @@ def TestAIM(location, verbose):
         else:
             if (verbose):
                 print ("\tfail.")
+        if (verbose):
+            print ("testing {0} spreadsheet rows".format(len(rows)))
+        for item in rows.items():
+            index = item[0]
+            column = dict(zip(keys, item[1]))
+            if (verbose):
+                print ("Test #{0} - Safe(<Stock Value>, verbose)".format(count + 1))
+            result = Safe(float(column['Stock Value']), verbose)
+            if (result == float(column['Safe'])):
+                if (verbose):
+                    print ("\tSafe({0}) - pass.".format(index))
+                count += 1
+            else:
+                if (verbose):
+                    print ("\tSafe({0}) - expected: {1}, calculated: {2}, fail.".format(index, column['Safe'], result))
         username = getpass.getuser()
         db_file = username + "/" + "test.db"
         if (os.path.exists(db_file)):
@@ -839,7 +859,7 @@ def TestAIM(location, verbose):
             if (verbose):
                 print ("Cleanup, remove {0}".format(db_file))
         if (verbose):
-            print ("Test #2 - AIM(<reset back db name>, verbose)")
+            print ("Test #{0} - AIM(<reset back db name>, verbose)".format(count + 1))
         result = AIM(defaults['aim_dbase'], verbose)
         if (result):
             if (verbose):
@@ -848,7 +868,7 @@ def TestAIM(location, verbose):
         else:
             if (verbose):
                 print ("\tfail.")
-        if (count == 2):
+        if (count == 93):
             return True
     return False
 
