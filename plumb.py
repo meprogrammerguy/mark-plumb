@@ -14,6 +14,7 @@ import getpass
 import time
 import datetime
 import re
+import csv
 
 #region stock
 def Quote(ticker, verbose):
@@ -875,9 +876,23 @@ def LoadTest(location, verbose):
     defaults = GetDefaults(False)
     test_dir = defaults['test_directory'] + location
     if not os.path.isdir(test_dir):
-        print ("test directory: {0} does not exist".format(test_dir))
-        return False, {}
+        print ("test directory: {0} does not exist - cannot continue.".format(test_dir))
+        return False, [], {}
     file_list = GetFiles(test_dir, "*.csv")
-    pdb.set_trace()
-    return True, {}
+    if not file_list:
+        print ("could not find any .csv files - cannot continue.")
+        return False, [], {}
+    keys = []
+    values = {}
+    index = -1
+    for f in file_list:
+        with open(f, mode='r') as infile:
+            reader = csv.reader(infile)
+            for item in reader:
+                if (not keys):
+                    keys = item
+                if item[0] != "Stock Price":
+                    index += 1
+                    values[index] = item               
+    return True, keys, values
 #endregion tests
