@@ -598,6 +598,9 @@ def Directory(location, verbose):
 def Safe(stockvalue, verbose):            
     answer = math.ceil(stockvalue/10.-.4)
     return answer
+
+def PortfolioValue(cash, stockvalue, verbose):
+    return (cash + stockvalue) 
 #endregion aim
 
 #region tests
@@ -852,6 +855,16 @@ def TestAIM(location, verbose):
             else:
                 if (verbose):
                     print ("\tSafe({0}) - expected: {1}, calculated: {2}, fail.".format(index, column['Safe'], result))
+            if (verbose):
+                print ("Test #{0} - PortfolioValue(<Cash>, <Stock Value>, verbose)".format(count + 1))
+            result = PortfolioValue(float(column['Cash']), float(column['Stock Value']), verbose)
+            if (result == float(column['Portfolio Value'])):
+                if (verbose):
+                    print ("\tPortfolioValue({0}) - pass.".format(index))
+                count += 1
+            else:
+                if (verbose):
+                    print ("\tPortfolioValue({0}) - expected: {1}, calculated: {2}, fail.".format(index, column['Portfolio Value'], result))
         username = getpass.getuser()
         db_file = username + "/" + "test.db"
         if (os.path.exists(db_file)):
@@ -868,7 +881,7 @@ def TestAIM(location, verbose):
         else:
             if (verbose):
                 print ("\tfail.")
-        if (count == 93):
+        if (count == 184):
             return True
     return False
 
