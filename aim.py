@@ -11,8 +11,9 @@ def main(argv):
     test = ""
     aim = ""
     test_dir = ""
+    safe = ""
     try:
-        opts, args = getopt.getopt(argv, "d:a::hvt:", ["help", "verbose", "test=", "aim=", "directory="])
+        opts, args = getopt.getopt(argv, "d:a::hvt:", ["help", "verbose", "test=", "aim=", "directory=", "safe="])
     except getopt.GetoptError as err:
         print(err)
         usage()
@@ -29,6 +30,8 @@ def main(argv):
             aim = a
         elif o in ("-d", "--directory"):
             test_dir = a
+        elif o in ("-s", "--safe"):
+            safe = a
         else:
             assert False, "unhandled option"
     if (test_dir > ""):
@@ -59,6 +62,16 @@ def main(argv):
         else:
             print ("Test result - fail")
         exit()
+    if (safe > ""):
+        if (safe.isnumeric()):
+            safeResult = plumb.Safe(float(safe), verbose)
+        else:
+            safeResult = 0
+        if (safeResult > 0):
+            print ("Safe: {0}".format(safeResult))
+        else:
+            print ("failed.")
+        exit()
     usage()
 
 def usage():
@@ -72,6 +85,7 @@ def usage():
     -t --test           runs test routine to check calculations
     -a --aim            save the database name
     -d --directory      save the test directory (default is test)
+    -s --safe           returns 10% of Stock Value
     """
     print (usage) 
 
