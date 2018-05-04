@@ -853,27 +853,28 @@ def TestAIM(location, verbose):
             print ("testing {0} spreadsheet rows".format(len(rows)))
         for item in rows.items():
             index = item[0]
-            column = dict(zip(keys, item[1]))
+            curr = dict(zip(keys, item[1]))
+            prev = GetPrevious(index, keys, rows)
             if (verbose):
                 print ("Test #{0} - Safe(<Stock Value>, verbose)".format(count + 1))
-            result = Safe(float(column['Stock Value']), verbose)
-            if (result == float(column['Safe'])):
+            result = Safe(float(curr['Stock Value']), verbose)
+            if (result == float(curr['Safe'])):
                 if (verbose):
                     print ("\tSafe({0}) - pass.".format(index))
                 count += 1
             else:
                 if (verbose):
-                    print ("\tSafe({0}) - expected: {1}, calculated: {2}, fail.".format(index, column['Safe'], result))
+                    print ("\tSafe({0}) - expected: {1}, calculated: {2}, fail.".format(index, curr['Safe'], result))
             if (verbose):
                 print ("Test #{0} - PortfolioValue(<Cash>, <Stock Value>, verbose)".format(count + 1))
-            result = PortfolioValue(float(column['Cash']), float(column['Stock Value']), verbose)
-            if (result == float(column['Portfolio Value'])):
+            result = PortfolioValue(float(curr['Cash']), float(curr['Stock Value']), verbose)
+            if (result == float(curr['Portfolio Value'])):
                 if (verbose):
                     print ("\tPortfolioValue({0}) - pass.".format(index))
                 count += 1
             else:
                 if (verbose):
-                    print ("\tPortfolioValue({0}) - expected: {1}, calculated: {2}, fail.".format(index, column['Portfolio Value'], result))
+                    print ("\tPortfolioValue({0}) - expected: {1}, calculated: {2}, fail.".format(index, curr['Portfolio Value'], result))
         username = getpass.getuser()
         db_file = username + "/" + "test.db"
         if (os.path.exists(db_file)):
@@ -893,6 +894,15 @@ def TestAIM(location, verbose):
         if (count == 184):
             return True
     return False
+
+def GetPrevious(index, keys, rows):
+    count = index - 1
+    values = []
+    if (count < 0):
+        return {}
+    value = rows[count]
+    answer = dict(zip(keys, value))
+    return answer
 
 def GetIndex(item):
     filename = os.path.basename(str(item))
