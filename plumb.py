@@ -505,16 +505,15 @@ def Update(verbose):
         print("Update(3) {0}".format(e))
         return False, e
     c = conn.cursor()
-    c.execute('SELECT symbol, shares, balance FROM folder') 
+    c.execute("SELECT symbol, shares, balance FROM folder where symbol != '$'") 
     rows = c.fetchall()
     conn.commit()
     conn.close()
     for row in rows:
-        if (row[0] != "$"):
-            result = Shares(row[0], str(row[1]), verbose)
-            if (result['status']):
-                if (verbose):
-                    print ("symbol: {0}, current shares: {1}, previous balance: {2}, current balance: {3}".format(row[0], row[1], row[2], result['balance']))
+        result = Shares(row[0], str(row[1]), verbose)
+        if (result['status']):
+            if (verbose):
+                print ("symbol: {0}, current shares: {1}, previous balance: {2}, current balance: {3}".format(row[0], row[1], row[2], result['balance']))
     if (verbose):
         print ("***\n")
     return True, ""
@@ -542,6 +541,66 @@ def Folder(folder, verbose):
     if (verbose):
         print ("***\n")
     return True
+
+def GetFolderCash(verbose):
+    defaults = GetDefaults(verbose)
+    username = getpass.getuser()
+    db_file = username + "/"  + defaults['folder_dbase']
+    if (verbose):
+        print ("***")
+        print ("GetFolderCash(1) dbase: {0}".format(db_file))
+    if (not os.path.exists(db_file)):
+        if (verbose):
+            print ("GetFolderCash(2) {0} file is missing, cannot return the key".format(db_file))
+            print ("***\n")
+        return {}
+    try:
+        conn = sqlite3.connect(db_file)
+        if (verbose):
+            print("GetFolderCash(3) sqlite3: {0}".format(sqlite3.version))
+    except Error as e:
+        print("GetFolderCash(4) {0}".format(e))
+        return {}
+    c = conn.cursor()
+    c.execute("SELECT * FROM folder WHERE symbol = '$'")
+    keys = list(map(lambda x: x[0], c.description))
+    values = c.fetchone()
+    answer = dict(zip(keys, values))
+    conn.close()
+    if (verbose):
+        print ("***\n")
+    return answer
+
+def GetFolderStockValue(verbose):
+    defaults = GetDefaults(verbose)
+    username = getpass.getuser()
+    db_file = username + "/"  + defaults['folder_dbase']
+    if (verbose):
+        print ("***")
+        print ("GetFolderStockValue(1) dbase: {0}".format(db_file))
+    if (not os.path.exists(db_file)):
+        if (verbose):
+            print ("GetFolderStockValue(2) {0} file is missing, cannot return the key".format(db_file))
+            print ("***\n")
+        return 0
+    try:
+        conn = sqlite3.connect(db_file)
+        if (verbose):
+            print("GetFolderStockValue(3) sqlite3: {0}".format(sqlite3.version))
+    except Error as e:
+        print("GetFolderStockValue(4) {0}".format(e))
+        return 0
+    c = conn.cursor()
+    c.execute("SELECT * FROM folder WHERE symbol != '$'")
+    rows = c.fetchall()
+    conn.commit()
+    conn.close()
+    answer = 0
+    for row in rows:
+        answer += row[2]
+    if (verbose):
+        print ("***\n")
+    return answer
 #endregion folder
 
 #region aim
@@ -792,8 +851,26 @@ def GetLastAIM(verbose):
 
 def Look(verbose):
     prev = GetLastAIM(verbose)
-    pdb.set_trace()
-    return True
+    keys = prev.keys()
+    values = []
+    cd = datetime.datetime.now()
+    values.append(cd.strftime("%Y/%m/%d"))
+    stock = math.ceil(GetFolderStockValue(verbose) -.4)
+    values.append(stock)
+    cash = GetFolderCash(verbose)
+    cash = math.ceil(cash['balance'] -.4)
+    values.append(cash)
+    bsa = BuySellAdvice(math.ceil(prev['portfolio_control'] -.4), stock, verbose)
+    safe = Safe(stock, verbose)
+    mo = MarketOrder(bsa, safe, verbose)
+    pc = PortfolioControl(mo, math.ceil(prev['portfolio_control'] -.4), verbose)
+    pv = PortfolioValue(cash, stock, verbose)
+    values.append(pc)
+    values.append(bsa)
+    values.append(mo)
+    values.append(pv)
+    answer = dict(zip(keys, values))
+    return answer
 
 def Post(verbose):
     return True
