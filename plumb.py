@@ -651,18 +651,59 @@ def AIMDate(verbose):
         print ("AIMDate(1) dbase: {0}".format(db_file))
     result = CreateDefaults(verbose)
     if (result):
+        defaults = GetDefaults(verbose)
+        if myFloat(defaults['aim_cash']) == 0:
+            log = "AIMDate(2) an AIM cash balance is required"
+            if (verbose):
+                print (log)
+            return False, log 
+        if myFloat(defaults['aim_stock_value']) == 0:
+            log = "AIMDate(2) an AIM stock value balance is required"
+            if (verbose):
+                print (log)
+            return False, log 
         try:
             conn = sqlite3.connect(db_file)
             if (verbose):
-                print("AIMDate(3) sqlite3: {0}".format(sqlite3.version))
+                print("AIMDate(4) sqlite3: {0}".format(sqlite3.version))
         except Error as e:
-            print("AIMDate(4) {0}".format(e))
-            return False
+            print("AIMDate(5) {0}".format(e))
+            return False, e
         c = conn.cursor()
         cd = datetime.datetime.now()
         c.execute("UPDATE defaults SET aim_date = (?) WHERE username = (?)", (cd.strftime("%Y/%m/%d"), username,))
         conn.commit()
         conn.close()
+        resultCreate = CreateAIM(verbose)
+        if (not resultCreate):
+            if (verbose):
+                print ("Error when creating aim database/table")
+            return False
+    if (verbose):
+        print ("***\n")
+    return True, ""
+
+def CreateAIM(verbose):
+    defaults = GetDefaults(verbose)
+    username = getpass.getuser()
+    db_file = username + "/"  + defaults['aim_dbase']
+    Path(username + "/").mkdir(parents=True, exist_ok=True) 
+    if (verbose):
+        print ("***")
+        print ("CreateAIM(1) dbase: {0}".format(db_file))
+    try:
+        conn = sqlite3.connect(db_file)
+        if (verbose):
+            print("CreateAIM(2) sqlite3: {0}".format(sqlite3.version))
+    except Error as e:
+        print("CreateAIM(3) {0}".format(e))
+        return False
+    c = conn.cursor()
+    c.execute("CREATE TABLE if not exists `aim` ( `post_date` TEXT NOT NULL UNIQUE, `stock_value` REAL, `cash` REAL, `portfolio_control` REAL, `buy_sell_advice` REAL, `market_order` REAL, `portfolio_value` REAL )")
+    c.execute("DELETE FROM aim")
+    c.execute( "INSERT INTO aim VALUES((?),?,?,?,?,?,?)", (defaults['aim_date'], defaults['aim_stock_value'], defaults['aim_cash'],0,0,0,0,))
+    conn.commit()
+    conn.close()
     if (verbose):
         print ("***\n")
     return True

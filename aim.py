@@ -96,11 +96,11 @@ def main(argv):
             print ("failed.")
         exit()
     if (now):
-        nowResult = plumb.AIMDate(verbose)
+        nowResult, nowError = plumb.AIMDate(verbose)
         if (nowResult):
              print ("updated.")
         else:
-            print ("failed.")
+            print ("failed. {0}".format(nowError))
         exit()
     usage()
 
