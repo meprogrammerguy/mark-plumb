@@ -689,14 +689,25 @@ def BuySellAdvice(portfoliocontrol, stockvalue, verbose):
         print ("BuySellAdvice(1) portfoliocontrol: {0}".format(portfoliocontrol))
         print ("BuySellAdvice(2) stockvalue: {0}".format(stockvalue))
         print ("***\n")
-    if (portfoliocontrol < 0):
+    if (portfoliocontrol <= 0):
         return 0
     answer = portfoliocontrol - stockvalue
     return answer
 
-def MarketOrder():
-    return 0
- 
+def MarketOrder(buyselladvice, safe, verbose):
+    if (verbose):
+        print ("***")
+        print ("MarketOrder(1) buyselladvice: {0}".format(buyselladvice))
+        print ("MarketOrder(2) safe: {0}".format(safe))
+        print ("***\n")
+    if (buyselladvice == 0):
+        return 0
+    if (safe > abs(buyselladvice)):
+        return 0
+    answer = abs(buyselladvice) - safe
+    if (buyselladvice < 0):
+        return -answer
+    return answer
 #endregion aim
 
 #region tests
@@ -963,6 +974,16 @@ def TestAIM(location, verbose):
                 if (verbose):
                     print ("\tBuySellAdvice({0}) - expected: {1}, calculated: {2}, fail.".format(index, curr['Buy (Sell) Advice'], result))
             if (verbose):
+                print ("Test #{0} - MarketOrder(<Buy (Sell) Advice>, <Safe>, verbose)".format(count + 1))
+            result = MarketOrder(myFloat(curr['Buy (Sell) Advice']), myFloat(curr['Safe']), verbose)
+            if (result == myFloat(curr['Market Order'])):
+                if (verbose):
+                    print ("\tMarketOrder({0}) - pass.".format(index))
+                count += 1
+            else:
+                if (verbose):
+                    print ("\tMarketOrder({0}) - expected: {1}, calculated: {2}, fail.".format(index, curr['Market Order'], result))
+            if (verbose):
                 print ("Test #{0} - PortfolioValue(<Cash>, <Stock Value>, verbose)".format(count + 1))
             result = PortfolioValue(myFloat(curr['Cash']), myFloat(curr['Stock Value']), verbose)
             if (result == myFloat(curr['Portfolio Value'])):
@@ -988,7 +1009,7 @@ def TestAIM(location, verbose):
         else:
             if (verbose):
                 print ("\tfail.")
-        if (count == 275):
+        if (count == 366):
             return True
     return False
 
@@ -1003,7 +1024,7 @@ def GetPrevious(index, keys, rows):
     count = index - 1
     values = []
     for i in keys:
-        values.append(-1)
+        values.append('')
     if (count < 0):
         return  dict(zip(keys, values))
     value = rows[count]
