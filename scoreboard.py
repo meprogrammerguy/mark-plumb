@@ -5,5 +5,5 @@ app = Flask(__name__)
 
 @app.route("/")
 def scoreboard():
-    return "Hello World! modify"
+    return "Hello World!"
 
