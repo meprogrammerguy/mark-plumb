@@ -685,6 +685,7 @@ def AIMDate(verbose):
 
 def CreateAIM(verbose):
     defaults = GetDefaults(verbose)
+    pv = defaults['aim_stock_value'] + defaults['aim_cash']
     username = getpass.getuser()
     db_file = username + "/"  + defaults['aim_dbase']
     Path(username + "/").mkdir(parents=True, exist_ok=True) 
@@ -701,7 +702,7 @@ def CreateAIM(verbose):
     c = conn.cursor()
     c.execute("CREATE TABLE if not exists `aim` ( `post_date` TEXT NOT NULL UNIQUE, `stock_value` REAL, `cash` REAL, `portfolio_control` REAL, `buy_sell_advice` REAL, `market_order` REAL, `portfolio_value` REAL )")
     c.execute("DELETE FROM aim")
-    c.execute( "INSERT INTO aim VALUES((?),?,?,?,?,?,?)", (defaults['aim_date'], defaults['aim_stock_value'], defaults['aim_cash'],0,0,0,0,))
+    c.execute( "INSERT INTO aim VALUES((?),?,?,?,?,?,?)", (defaults['aim_date'], defaults['aim_stock_value'], defaults['aim_cash'], defaults['aim_stock_value'], 0, 0, pv,))
     conn.commit()
     conn.close()
     if (verbose):
@@ -715,6 +716,16 @@ def Safe(stockvalue, verbose):
         print ("***\n")           
     answer = math.ceil(stockvalue/10.-.4)
     return answer
+
+def PortfolioControl(marketorder, previous, verbose):
+    if (verbose):
+        print ("***")
+        print ("PortfolioControl(1) marketorder: {0}".format(marketorder))
+        print ("PortfolioControl(2) previous: {0}".format(previous))
+        print ("***\n")
+    if (marketorder <= 0):
+        return previous
+    return math.ceil((previous + (marketorder / 2.)-.4))
 
 def PortfolioValue(cash, stockvalue, verbose):
     if (verbose):
@@ -753,7 +764,7 @@ def MarketOrder(buyselladvice, safe, verbose):
 def GetLastAIM(verbose):
     defaults = GetDefaults(verbose)
     username = getpass.getuser()
-    db_file = os.getcwd() + "/"  + defaults['aim_db']
+    db_file = username + "/"  + defaults['aim_dbase']
     if (verbose):
         print ("***")
         print ("GetLastAIM(1) dbase: {0}".format(db_file))
@@ -780,6 +791,8 @@ def GetLastAIM(verbose):
     return answer
 
 def Look(verbose):
+    prev = GetLastAIM(verbose)
+    pdb.set_trace()
     return True
 
 def Post(verbose):
@@ -1027,6 +1040,8 @@ def TestAIM(location, verbose):
             print ("testing {0} spreadsheet rows".format(len(rows)))
         for item in rows.items():
             index = item[0]
+            if (index == 0):
+                continue
             curr = dict(zip(keys, item[1]))
             prev = GetPrevious(index, keys, rows)
             if (verbose):
@@ -1039,6 +1054,16 @@ def TestAIM(location, verbose):
             else:
                 if (verbose):
                     print ("\tSafe({0}) - expected: {1}, calculated: {2}, fail.".format(index, curr['Safe'], result))
+            if (verbose):
+                print ("Test #{0} - PortfolioControl(<Market Order>, <Prev Portfolio Control>, verbose)".format(count + 1))
+            result = PortfolioControl(myFloat(curr['Market Order']), myFloat(prev['Portfolio Control']), verbose)
+            if (result == myFloat(curr['Portfolio Control'])):
+                if (verbose):
+                    print ("\tPortfolioControl({0}) - pass.".format(index))
+                count += 1
+            else:
+                if (verbose):
+                    print ("\tPortfolioControl({0}) - expected: {1}, calculated: {2}, fail.".format(index, curr['Portfolio Control'], result))
             if (verbose):
                 print ("Test #{0} - BuySellAdvice(<Portfolio Control>, <Stock Value>, verbose)".format(count + 1))
             result = BuySellAdvice(myFloat(prev['Portfolio Control']), myFloat(curr['Stock Value']), verbose)
@@ -1085,7 +1110,7 @@ def TestAIM(location, verbose):
         else:
             if (verbose):
                 print ("\tfail.")
-        if (count == 366):
+        if (count == 452):
             return True
     return False
 
