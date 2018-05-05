@@ -553,14 +553,14 @@ def GetFolderCash(verbose):
         if (verbose):
             print ("GetFolderCash(2) {0} file is missing, cannot return the key".format(db_file))
             print ("***\n")
-        return {}
+        return 0
     try:
         conn = sqlite3.connect(db_file)
         if (verbose):
             print("GetFolderCash(3) sqlite3: {0}".format(sqlite3.version))
     except Error as e:
         print("GetFolderCash(4) {0}".format(e))
-        return {}
+        return 0
     c = conn.cursor()
     c.execute("SELECT * FROM folder WHERE symbol = '$'")
     keys = list(map(lambda x: x[0], c.description))
@@ -569,7 +569,7 @@ def GetFolderCash(verbose):
     conn.close()
     if (verbose):
         print ("***\n")
-    return answer
+    return answer['balance']
 
 def GetFolderStockValue(verbose):
     defaults = GetDefaults(verbose)
@@ -851,19 +851,19 @@ def GetLastAIM(verbose):
 
 def Look(verbose):
     prev = GetLastAIM(verbose)
+    prev_pc = math.ceil(prev['portfolio_control'] -.4)
     keys = prev.keys()
     values = []
     cd = datetime.datetime.now()
     values.append(cd.strftime("%Y/%m/%d"))
     stock = math.ceil(GetFolderStockValue(verbose) -.4)
     values.append(stock)
-    cash = GetFolderCash(verbose)
-    cash = math.ceil(cash['balance'] -.4)
+    cash = math.ceil(GetFolderCash(verbose) -.4)
     values.append(cash)
-    bsa = BuySellAdvice(math.ceil(prev['portfolio_control'] -.4), stock, verbose)
+    bsa = BuySellAdvice(prev_pc, stock, verbose)
     safe = Safe(stock, verbose)
     mo = MarketOrder(bsa, safe, verbose)
-    pc = PortfolioControl(mo, math.ceil(prev['portfolio_control'] -.4), verbose)
+    pc = PortfolioControl(mo, prev_pc, verbose)
     pv = PortfolioValue(cash, stock, verbose)
     values.append(pc)
     values.append(bsa)
