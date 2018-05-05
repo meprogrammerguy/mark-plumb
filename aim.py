@@ -11,12 +11,13 @@ def main(argv):
     test = ""
     aim = ""
     test_dir = ""
-    safe = ""
     cash = ""
-    balance = ""
+    stock = ""
     now = False
+    look = False
+    post = False
     try:
-        opts, args = getopt.getopt(argv, "c:b:nd:a::hvt:", ["help", "verbose", "test=", "aim=", "directory=", "safe=", "now", "cash=", "balance="])
+        opts, args = getopt.getopt(argv, "lpc:s:nd:a::hvt:", ["help", "verbose", "test=", "aim=", "directory=", "now", "cash=", "stock=", "look", "post"])
     except getopt.GetoptError as err:
         print(err)
         usage()
@@ -33,14 +34,16 @@ def main(argv):
             aim = a
         elif o in ("-d", "--directory"):
             test_dir = a
-        elif o in ("-s", "--safe"):
-            safe = a
         elif o in ("-c", "--cash"):
             cash = a
-        elif o in ("-b", "--balance"):
-            balance = a
+        elif o in ("-s", "--stock"):
+            stock = a
         elif o in ("-n", "--now"):
             now = True
+        elif o in ("-l", "--look"):
+            look = True
+        elif o in ("-p", "--post"):
+            post = True
         else:
             assert False, "unhandled option"
     if (test_dir > ""):
@@ -71,16 +74,6 @@ def main(argv):
         else:
             print ("Test result - fail")
         exit()
-    if (safe > ""):
-        if (safe.isnumeric()):
-            safeResult = plumb.Safe(float(safe), verbose)
-        else:
-            safeResult = 0
-        if (safeResult > 0):
-            print ("Safe: {0}".format(safeResult))
-        else:
-            print ("failed.")
-        exit()
     if (cash > ""):
         cashResult = plumb.AIMCash(float(cash), verbose)
         if (cashResult):
@@ -88,8 +81,8 @@ def main(argv):
         else:
             print ("failed.")
         exit()
-    if (balance > ""):
-        stockResult = plumb.AIMStock(float(balance), verbose)
+    if (stock > ""):
+        stockResult = plumb.AIMStock(float(stock), verbose)
         if (stockResult):
             print ("updated.")
         else:
@@ -102,6 +95,17 @@ def main(argv):
         else:
             print ("failed. {0}".format(nowError))
         exit()
+    if (look):
+        lookResult = plumb.Look(verbose)
+        print (lookResult)
+        exit()
+    if (post):
+        postResult = plumb.Post(verbose)
+        if (postResult):
+             print ("updated.")
+        else:
+            print ("failed.")
+        exit()
     usage()
 
 def usage():
@@ -112,13 +116,18 @@ def usage():
 
     -h --help           prints this help
     -v --verbose        increases the information level
-    -t --test           runs test routine to check calculations
     -a --aim            save the database name
+
     -d --directory      save the test directory (default is test)
+    -t --test           runs test routine to check calculations
+
     -c --cash           save starting cash
     -b --balance        save starting stock value
-    -n --now            save aim plan date
-    -s --safe           returns 10% of Stock Value
+    -n --now            begin tracking AIM now
+                            (warning, this will clear out the db)
+
+    -l --look           looks at today's AIM position
+    -p --post           posts today's AIM position to database
     """
     print (usage) 
 

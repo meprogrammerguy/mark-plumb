@@ -749,6 +749,41 @@ def MarketOrder(buyselladvice, safe, verbose):
     if (buyselladvice < 0):
         return -answer
     return answer
+
+def GetLastAIM(verbose):
+    defaults = GetDefaults(verbose)
+    username = getpass.getuser()
+    db_file = os.getcwd() + "/"  + defaults['aim_db']
+    if (verbose):
+        print ("***")
+        print ("GetLastAIM(1) dbase: {0}".format(db_file))
+    if (not os.path.exists(db_file)):
+        if (verbose):
+            print ("GetLastAIM(2) {0} file is missing, cannot return the last row".format(db_file))
+            print ("***\n")
+        return {}
+    try:
+        conn = sqlite3.connect(db_file)
+        if (verbose):
+            print("GetLastAIM(3) sqlite3: {0}".format(sqlite3.version))
+    except Error as e:
+        print("GetLastAIM(4) {0}".format(e))
+        return {}
+    c = conn.cursor()
+    c.execute("SELECT * FROM aim ORDER BY post_date DESC LIMIT 1")
+    keys = list(map(lambda x: x[0], c.description))
+    values = c.fetchone()
+    answer = dict(zip(keys, values))
+    conn.close()
+    if (verbose):
+        print ("***\n")
+    return answer
+
+def Look(verbose):
+    return True
+
+def Post(verbose):
+    return True
 #endregion aim
 
 #region tests
