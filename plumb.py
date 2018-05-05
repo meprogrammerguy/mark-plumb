@@ -681,7 +681,22 @@ def PortfolioValue(cash, stockvalue, verbose):
         print ("PortfolioValue(1) cash: {0}".format(cash))
         print ("PortfolioValue(2) stockvalue: {0}".format(stockvalue))
         print ("***\n")
-    return (cash + stockvalue) 
+    return (cash + stockvalue)
+
+def BuySellAdvice(portfoliocontrol, stockvalue, verbose):
+    if (verbose):
+        print ("***")
+        print ("BuySellAdvice(1) portfoliocontrol: {0}".format(portfoliocontrol))
+        print ("BuySellAdvice(2) stockvalue: {0}".format(stockvalue))
+        print ("***\n")
+    if (portfoliocontrol < 0):
+        return 0
+    answer = portfoliocontrol - stockvalue
+    return answer
+
+def MarketOrder():
+    return 0
+ 
 #endregion aim
 
 #region tests
@@ -929,8 +944,8 @@ def TestAIM(location, verbose):
             prev = GetPrevious(index, keys, rows)
             if (verbose):
                 print ("Test #{0} - Safe(<Stock Value>, verbose)".format(count + 1))
-            result = Safe(float(curr['Stock Value']), verbose)
-            if (result == float(curr['Safe'])):
+            result = Safe(myFloat(curr['Stock Value']), verbose)
+            if (result == myFloat(curr['Safe'])):
                 if (verbose):
                     print ("\tSafe({0}) - pass.".format(index))
                 count += 1
@@ -938,9 +953,19 @@ def TestAIM(location, verbose):
                 if (verbose):
                     print ("\tSafe({0}) - expected: {1}, calculated: {2}, fail.".format(index, curr['Safe'], result))
             if (verbose):
+                print ("Test #{0} - BuySellAdvice(<Portfolio Control>, <Stock Value>, verbose)".format(count + 1))
+            result = BuySellAdvice(myFloat(prev['Portfolio Control']), myFloat(curr['Stock Value']), verbose)
+            if (result == myFloat(curr['Buy (Sell) Advice'])):
+                if (verbose):
+                    print ("\tBuySellAdvice({0}) - pass.".format(index))
+                count += 1
+            else:
+                if (verbose):
+                    print ("\tBuySellAdvice({0}) - expected: {1}, calculated: {2}, fail.".format(index, curr['Buy (Sell) Advice'], result))
+            if (verbose):
                 print ("Test #{0} - PortfolioValue(<Cash>, <Stock Value>, verbose)".format(count + 1))
-            result = PortfolioValue(float(curr['Cash']), float(curr['Stock Value']), verbose)
-            if (result == float(curr['Portfolio Value'])):
+            result = PortfolioValue(myFloat(curr['Cash']), myFloat(curr['Stock Value']), verbose)
+            if (result == myFloat(curr['Portfolio Value'])):
                 if (verbose):
                     print ("\tPortfolioValue({0}) - pass.".format(index))
                 count += 1
@@ -963,15 +988,24 @@ def TestAIM(location, verbose):
         else:
             if (verbose):
                 print ("\tfail.")
-        if (count == 184):
+        if (count == 275):
             return True
     return False
+
+def myFloat(value):
+    try:
+        answer = float(value)
+    except ValueError:
+        return 0
+    return answer
 
 def GetPrevious(index, keys, rows):
     count = index - 1
     values = []
+    for i in keys:
+        values.append(-1)
     if (count < 0):
-        return {}
+        return  dict(zip(keys, values))
     value = rows[count]
     answer = dict(zip(keys, value))
     return answer
