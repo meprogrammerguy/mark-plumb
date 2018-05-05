@@ -761,7 +761,7 @@ def CreateAIM(verbose):
     c = conn.cursor()
     c.execute("CREATE TABLE if not exists `aim` ( `post_date` TEXT NOT NULL UNIQUE, `stock_value` REAL, `cash` REAL, `portfolio_control` REAL, `buy_sell_advice` REAL, `market_order` REAL, `portfolio_value` REAL )")
     c.execute("DELETE FROM aim")
-    c.execute( "INSERT INTO aim VALUES((?),?,?,?,?,?,?)", (defaults['aim_date'], defaults['aim_stock_value'], defaults['aim_cash'], defaults['aim_stock_value'], 0, 0, pv,))
+    c.execute( "INSERT INTO aim VALUES((?),?,?,?,?,?,?)", ("0000/01/01", defaults['aim_stock_value'], defaults['aim_cash'], defaults['aim_stock_value'], 0, 0, pv,))
     conn.commit()
     conn.close()
     if (verbose):
@@ -873,6 +873,34 @@ def Look(verbose):
     return answer
 
 def Post(verbose):
+    defaults = GetDefaults(verbose)
+    username = getpass.getuser()
+    db_file = username + "/"  + defaults['aim_dbase']
+    if (verbose):
+        print ("***")
+        print ("Post(1) dbase: {0}".format(db_file))
+    try:
+        conn = sqlite3.connect(db_file)
+        if (verbose):
+            print("Post(3) sqlite3: {0}".format(sqlite3.version))
+    except Error as e:
+        print("Post(4) {0}".format(e))
+        return False
+    look = Look(verbose)
+    if (verbose):
+        print("Post(5) {0}".format(look))
+    c = conn.cursor()
+    c.execute( "INSERT OR IGNORE INTO aim(post_date) VALUES((?))", (look['post_date'],))
+    c.execute("UPDATE aim SET stock_value = ? WHERE post_date = (?)", (look['stock_value'], look['post_date'],))
+    c.execute("UPDATE aim SET cash = ? WHERE post_date = (?)", (look['cash'], look['post_date'],))
+    c.execute("UPDATE aim SET portfolio_control = ? WHERE post_date = (?)", (look['portfolio_control'], look['post_date'],))
+    c.execute("UPDATE aim SET buy_sell_advice = ? WHERE post_date = (?)", (look['buy_sell_advice'], look['post_date'],))
+    c.execute("UPDATE aim SET market_order = ? WHERE post_date = (?)", (look['market_order'], look['post_date'],))
+    c.execute("UPDATE aim SET portfolio_value = ? WHERE post_date = (?)", (look['portfolio_value'], look['post_date'],))
+    conn.commit()
+    conn.close()
+    if (verbose):
+        print ("***\n")
     return True
 #endregion aim
 
