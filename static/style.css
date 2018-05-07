@@ -89,13 +89,13 @@ ol li
   margin-right: auto;}
 
 #header
-{ background: url(back.png) repeat-x;}
+{ background: url(/static/back.png) repeat-x;}
 
 #logo
 { width: 870px;
   height: 127px;
   position: relative;
-  background: transparent url(logo.png) no-repeat right;}
+  background: transparent url(/static/logo.png) no-repeat right;}
 
 #logo #logo_text 
 { position: absolute; 
@@ -178,10 +178,10 @@ ul#menu li.selected a
 
 ul#menu li.selected
 { margin: 7px 0 0 0;
-  background: #635B53 url(tabs.png) no-repeat 0 0px;}
+  background: #635B53 url(/static/tabs.png) no-repeat 0 0px;}
 
 ul#menu li.selected a, ul#menu li.selected a:hover
-{ background: #635B53 url(tabs.png) no-repeat 100% 0px;
+{ background: #635B53 url(/static/tabs.png) no-repeat 100% 0px;
   color: #FFF;}
 
 ul#menu li a:hover
@@ -210,7 +210,7 @@ ul#menu li a:hover
 { text-decoration: none; 
   padding: 4px 0px 4px 35px;
   display: block;
-  background: transparent url(arrow.png) no-repeat left center;
+  background: transparent url(/static/arrow.png) no-repeat left center;
   color: #555;
   border: none;} 
 
