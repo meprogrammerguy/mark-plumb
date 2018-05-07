@@ -11,15 +11,15 @@ def index():
 
 @app.route('/folder/')
 def folder():
-    return render_template('folder.html',  title="Folder")
+    return render_template('folder.html')
 
 @app.route('/defaults/')
 def defaults():
-    return render_template('defaults.html',  title="Defaults")
+    return render_template('defaults.html')
 
 @app.route('/examples/')
 def examples():
-    return render_template('examples.html',  title="Examples")
+    return render_template('examples.html')
 
 @app.errorhandler(404)
 def page_not_found(e):

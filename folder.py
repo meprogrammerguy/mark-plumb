@@ -17,8 +17,9 @@ def main(argv):
     symbol = ""
     balance = ""
     shares = ""
+    printout = False
     try:
-        opts, args = getopt.getopt(argv, "ub:n:s:a:r:f:c:hvt", ["help", "verbose", "test", "folder=", "cash=", "add=", "remove=", "symbol=", "balance=", "number=", "update"])
+        opts, args = getopt.getopt(argv, "pub:n:s:a:r:f:c:hvt", ["help", "verbose", "test", "folder=", "cash=", "add=", "remove=", "symbol=", "balance=", "number=", "update", "print"])
     except getopt.GetoptError as err:
         print(err)
         usage()
@@ -30,6 +31,8 @@ def main(argv):
             test = True
         elif o in ("-u", "--update"):
             update = True
+        elif o in ("-p", "--print"):
+            printout = True
         elif o in ("-h", "--help"):
             usage()
             exit()
@@ -115,6 +118,13 @@ def main(argv):
         else:
             print ("failed. Error: {0}".format(updateError))
         exit()
+    if (printout):
+        printResult = plumb.PrintFolder(verbose)
+        if (printResult):
+            print (printResult)
+        else:
+            print ("failed.")
+        exit()
     usage()
 
 def usage():
@@ -134,6 +144,7 @@ def usage():
     -n --number         number of shares owned (used with --symbol)
     -b --balance        balance in dollars (used with --symbol)
     -u --update         update all prices (to within default interval minutes)
+    -p --print          print out the entire folder
     """
     print (usage) 
 
