@@ -120,8 +120,8 @@ def main(argv):
         exit()
     if (printout):
         printResult = plumb.PrintFolder(verbose)
-        if (printResult):
-            print (printResult)
+        if (printResult > ""):
+            pprint.pprint(printResult)
         else:
             print ("failed.")
         exit()
@@ -144,7 +144,7 @@ def usage():
     -n --number         number of shares owned (used with --symbol)
     -b --balance        balance in dollars (used with --symbol)
     -u --update         update all prices (to within default interval minutes)
-    -p --print          print out the entire folder
+    -p --print          print out the folder database (in HTML table format)
     """
     print (usage) 
 

@@ -17,10 +17,11 @@ def main(argv):
     update_interval = False
     daemon = 1200
     update_daemon = False
+    printout = False
     begin = ""
     end = ""
     try:
-        opts, args = getopt.getopt(argv, "b:e:s:i:k:q:hvtc:", ["help", "verbose", "test", "quote=", "key=", "company=", "interval=", "seconds=", "begin=", "end="])
+        opts, args = getopt.getopt(argv, "pb:e:s:i:k:q:hvtc:", ["help", "verbose", "test", "quote=", "key=", "company=", "interval=", "seconds=", "begin=", "end=", "print"])
     except getopt.GetoptError as err:
         print(err)
         usage()
@@ -30,6 +31,8 @@ def main(argv):
             verbose = True
         elif o in ("-t", "--test"):
             test = True
+        elif o in ("-p", "--print"):
+            printout = True
         elif o in ("-h", "--help"):
             usage()
             exit()
@@ -128,6 +131,13 @@ def main(argv):
         else:
             print ("\nfailed.\n")
         exit()
+    if (printout):
+        printResult = plumb.PrintDefaults(verbose)
+        if (printResult > ""):
+            pprint.pprint(printResult)
+        else:
+            print ("failed.")
+        exit()
     usage()
 
 def timecheck(theTime):
@@ -154,6 +164,7 @@ def usage():
     -s --seconds        saves the daemon seconds (default is 1200)
     -b --begin          saves the beginning bell time (defaults to 8:30AM)
     -e --end            saves the ending bell time (defaults to 3:00PM)
+    -p --print          print out the defaults database (in HTML table format)
     """
     print (usage) 
 

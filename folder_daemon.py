@@ -13,10 +13,10 @@ import plumb
 def do_something():
     while True:
         defaults = plumb.GetDefaults(False)
-        begin = defaults['begin_time']
+        begin = defaults['open']
         if (begin is None):
             begin = "08:30"
-        end = defaults['end_time']
+        end = defaults['close']
         if (end is None):
             end = "16:00"
         weekno = datetime.today().weekday()
@@ -41,7 +41,7 @@ def do_something():
                 with open(filename, "a") as f:
                     f.write("pid: {0}, exception: {1}, continuing".format(os.getpid(), e))
             with open(filename, "w") as f:
-                f.write("pid: {0}, {1} updated on: {2}. (sleeping for {3} seconds)".format(os.getpid(), defaults['folder_dbase'], time.ctime(), defaults['daemon_seconds']))
+                f.write("pid: {0}, {1} updated on: {2}. (sleeping for {3} seconds)".format(os.getpid(), defaults['folder_db'], time.ctime(), defaults['daemon_seconds']))
         else:
             with open(filename, "w") as f:
                 f.write("pid: {0}, now: {1}, open: {2}, close: {3}".format(os.getpid(), ct, bt, et))

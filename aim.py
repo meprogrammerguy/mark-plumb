@@ -5,6 +5,7 @@ import plumb
 import pdb
 import os
 import pprint
+import datetime
 
 def main(argv):
     verbose = False
@@ -15,9 +16,10 @@ def main(argv):
     stock = ""
     now = False
     look = False
-    post = False
+    update = False
+    printyear = ""
     try:
-        opts, args = getopt.getopt(argv, "lpc:s:nd:a::hvt:", ["help", "verbose", "test=", "aim=", "directory=", "now", "cash=", "stock=", "look", "post"])
+        opts, args = getopt.getopt(argv, "p:luc:s:nd:a::hvt:", ["help", "verbose", "test=", "aim=", "directory=", "now", "cash=", "stock=", "look", "update", "print="])
     except getopt.GetoptError as err:
         print(err)
         usage()
@@ -42,8 +44,15 @@ def main(argv):
             now = True
         elif o in ("-l", "--look"):
             look = True
-        elif o in ("-p", "--post"):
-            post = True
+        elif o in ("-u", "--update"):
+            update = True
+        elif o in ("-p", "--print"):
+            if (a[0] == '-'):
+                if ("verbose" in a):
+                    verbose = True
+                printyear = str(datetime.datetime.now().year)
+            else:
+                printyear = a.lower()
         else:
             assert False, "unhandled option"
     if (test_dir > ""):
@@ -61,11 +70,11 @@ def main(argv):
             print ("failed.")
         exit()
     defaults = plumb.GetDefaults(False)
-    if defaults['aim_dbase'] is None:
+    if defaults['aim_db'] is None:
         print ("\tWarning, please use --aim switch to set the AIM database name")
         exit()
-    if defaults['test_directory'] is None:
-        print ("\tWarning, please use --directory switch to set the test directory")
+    if defaults['test_root'] is None:
+        print ("\tWarning, please use --directory switch to set the test root")
         exit()
     if (test > ""):
         testResult = plumb.TestAIM(test, verbose)
@@ -96,13 +105,20 @@ def main(argv):
             print ("failed. {0}".format(nowError))
         exit()
     if (look):
-        lookResult = plumb.Look(verbose)
+        lookResult, lookHTML = plumb.Look(verbose)
         print (lookResult)
         exit()
-    if (post):
+    if (update):
         postResult = plumb.Post(verbose)
         if (postResult):
              print ("updated.")
+        else:
+            print ("failed.")
+        exit()
+    if (printyear > ""):
+        printResult = plumb.PrintAIM(printyear, verbose)
+        if (printResult > ""):
+            pprint.pprint(printResult)
         else:
             print ("failed.")
         exit()
@@ -122,12 +138,14 @@ def usage():
     -t --test           runs test routine to check calculations
 
     -c --cash           save starting cash
-    -b --balance        save starting stock value
+    -s --stock          save starting stock value
     -n --now            begin tracking AIM now
                             (warning, this will clear out the db)
 
     -l --look           looks at today's AIM position
-    -p --post           posts today's AIM position to database
+    -u --update         update today's AIM position to database
+    -p --print          print out the AIM database (in HTML table format)
+                            (--print=all, --print=2018, --print)  
     """
     print (usage) 
 

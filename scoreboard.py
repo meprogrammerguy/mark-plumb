@@ -2,24 +2,28 @@
 
 from flask import Flask
 from flask import render_template
+import datetime
+
+import plumb
 
 app = Flask(__name__)
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    l, table = plumb.Look(False)
+    return render_template('index.html', table = table)
 
 @app.route('/folder/')
 def folder():
-    return render_template('folder.html')
+    return render_template('folder.html', table = plumb.PrintFolder(False))
 
 @app.route('/defaults/')
 def defaults():
-    return render_template('defaults.html')
+    return render_template('defaults.html', table = plumb.PrintDefaults(False))
 
-@app.route('/examples/')
-def examples():
-    return render_template('examples.html')
+@app.route('/history/')
+def history():
+    return render_template('history.html')
 
 @app.errorhandler(404)
 def page_not_found(e):
