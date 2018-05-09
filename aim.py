@@ -105,7 +105,7 @@ def main(argv):
             print ("failed. {0}".format(nowError))
         exit()
     if (look):
-        lookResult, lookHTML = plumb.Look(verbose)
+        lookResult, lookHTML, lookDB = plumb.Look(verbose)
         print (lookResult)
         exit()
     if (update):
@@ -145,7 +145,7 @@ def usage():
     -l --look           looks at today's AIM position
     -u --update         update today's AIM position to database
     -p --print          print out the AIM database (in HTML table format)
-                            (--print=all, --print=2018, --print)  
+                            (--print=all, --print=2018)  
     """
     print (usage) 
 

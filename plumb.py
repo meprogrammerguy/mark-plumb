@@ -899,7 +899,7 @@ def CreateAIM(verbose):
     c = conn.cursor()
     c.execute("CREATE TABLE if not exists `aim` ( `post_date` TEXT NOT NULL UNIQUE, `stock_value` REAL, `cash` REAL, `portfolio_control` REAL, `buy_sell_advice` REAL, `market_order` REAL, `portfolio_value` REAL )")
     c.execute("DELETE FROM aim")
-    c.execute( "INSERT INTO aim VALUES((?),?,?,?,?,?,?)", ("0000/01/01", defaults['stocks'], defaults['cash'], defaults['stocks'], 0, 0, pv,))
+    c.execute( "INSERT INTO aim VALUES((?),?,?,?,?,?,?)", ("1970/01/01", defaults['stocks'], defaults['cash'], defaults['stocks'], 0, 0, pv,))
     conn.commit()
     conn.close()
     if (verbose):
@@ -1007,7 +1007,7 @@ def GetFirstAIM(verbose):
         print("GetFirstAIM(4) {0}".format(e))
         return {}
     c = conn.cursor()
-    c.execute("SELECT * FROM aim where post_date = '0000/01/01'")
+    c.execute("SELECT * FROM aim where post_date = '1970/01/01'")
     keys = list(map(lambda x: x[0], c.description))
     values = c.fetchone()
     answer = dict(zip(keys, values))
@@ -1049,20 +1049,29 @@ def Look(verbose):
     values.append(as_currency(bsa))
     values.append(as_currency(mo))
     values.append(as_currency(pv))
-    answer = dict(zip(keys, values))
+    values_db = []
+    values_db.append(cd.strftime("%Y/%m/%d"))
+    values_db.append(stock)
+    values_db.append(cash)
+    values_db.append(pc)
+    values_db.append(bsa)
+    values_db.append(mo)
+    values_db.append(pv)
+    pretty = dict(zip(keys, values))
+    answer_db = dict(zip(keys, values_db))
     TableCls = create_table('TableCls')
     for key in keys:
         TableCls.add_column(key, Col(key))
     items = []
-    items.append(answer)
+    items.append(pretty)
     table = TableCls(items, html_attrs = {'width':'100%','border-spacing':0})
     pct_cash = int(cash / pv * 100. +.4)
     pct_stock = int(stock / pv * 100. +.4)
-    answer['initial_value'] = as_currency(first['portfolio_value'])
-    answer['profit_value'] = as_currency(pv - first['portfolio_value'])
-    answer['profit_percent'] = as_percent(int((pv - first['portfolio_value']) / pv * 100. +.4))
-    answer['percent_list'] = "<li> Cash {0}%</li><li> Stock {1}%</li>".format(pct_cash, pct_stock)
-    return answer, table.__html__()
+    pretty['initial_value'] = as_currency(first['portfolio_value'])
+    pretty['profit_value'] = as_currency(pv - first['portfolio_value'])
+    pretty['profit_percent'] = as_percent(int((pv - first['portfolio_value']) / pv * 100. +.4))
+    pretty['percent_list'] = "<li> Cash {0}%</li><li> Stock {1}%</li>".format(pct_cash, pct_stock)
+    return pretty, table.__html__(), answer_db
 
 def Post(verbose):
     defaults = GetDefaults(verbose)
@@ -1078,17 +1087,17 @@ def Post(verbose):
     except Error as e:
         print("Post(4) {0}".format(e))
         return False
-    look = Look(verbose)
+    look, table, db_values = Look(verbose)
     if (verbose):
         print("Post(5) {0}".format(look))
     c = conn.cursor()
-    c.execute( "INSERT OR IGNORE INTO aim(post_date) VALUES((?))", (look['post_date'],))
-    c.execute("UPDATE aim SET stock_value = ? WHERE post_date = (?)", (look['stock_value'], look['post_date'],))
-    c.execute("UPDATE aim SET cash = ? WHERE post_date = (?)", (look['cash'], look['post_date'],))
-    c.execute("UPDATE aim SET portfolio_control = ? WHERE post_date = (?)", (look['portfolio_control'], look['post_date'],))
-    c.execute("UPDATE aim SET buy_sell_advice = ? WHERE post_date = (?)", (look['buy_sell_advice'], look['post_date'],))
-    c.execute("UPDATE aim SET market_order = ? WHERE post_date = (?)", (look['market_order'], look['post_date'],))
-    c.execute("UPDATE aim SET portfolio_value = ? WHERE post_date = (?)", (look['portfolio_value'], look['post_date'],))
+    c.execute( "INSERT OR IGNORE INTO aim(post_date) VALUES((?))", (db_values['post_date'],))
+    c.execute("UPDATE aim SET stock_value = ? WHERE post_date = (?)", (db_values['stock_value'], db_values['post_date'],))
+    c.execute("UPDATE aim SET cash = ? WHERE post_date = (?)", (db_values['cash'], db_values['post_date'],))
+    c.execute("UPDATE aim SET portfolio_control = ? WHERE post_date = (?)", (db_values['portfolio_control'], db_values['post_date'],))
+    c.execute("UPDATE aim SET buy_sell_advice = ? WHERE post_date = (?)", (db_values['buy_sell_advice'], db_values['post_date'],))
+    c.execute("UPDATE aim SET market_order = ? WHERE post_date = (?)", (db_values['market_order'], db_values['post_date'],))
+    c.execute("UPDATE aim SET portfolio_value = ? WHERE post_date = (?)", (db_values['portfolio_value'], db_values['post_date'],))
     conn.commit()
     conn.close()
     if (verbose):
@@ -1097,7 +1106,7 @@ def Post(verbose):
 
 def PrintAIM(printyear, verbose):
     if (printyear[0] == 'a'):
-        intyear = 0
+        intyear = 1970
     else:
         intyear = int(printyear)
         if (intyear < 100):
@@ -1134,11 +1143,16 @@ def PrintAIM(printyear, verbose):
     items = []
     answer = {}
     for row in rows:
-        if (row[0] != "0000/01/01"):
-            dt = datetime.datetime.strptime(row[0], '%Y/%M/%d')
-            if (intyear == 0 or dt.year == intyear):
-                answer = dict(zip(keys, row))
-                items.append(answer)
+        dt = datetime.datetime.strptime(row[0], '%Y/%M/%d')
+        if (intyear == 1970 or dt.year == intyear):
+            col_list = []
+            for i in range(len(keys)):
+                if (i == 0):
+                    col_list.append(row[i])
+                else:
+                    col_list.append(as_currency(row[i]))
+            answer = dict(zip(keys, col_list))
+            items.append(answer)
     table = TableCls(items, html_attrs = {'width':'100%','border-spacing':0})
     if (verbose):
         print ("***\n")
