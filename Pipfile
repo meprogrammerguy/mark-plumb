@@ -11,6 +11,7 @@ name = "pypi"
 "html5lib" = "*"
 flask = "*"
 flask-table = "*"
+python-daemon = "*"
 
 
 [dev-packages]

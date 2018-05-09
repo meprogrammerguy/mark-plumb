@@ -12,7 +12,7 @@ import plumb
 
 def do_something():
     while True:
-        defaults = plumb.GetDefaults(False)
+        defaults = plumb.GetDefaults(True)
         begin = defaults['open']
         if (begin is None):
             begin = "08:30"
@@ -33,7 +33,7 @@ def do_something():
         errname = "/tmp/{0}_folder_daemon_error.txt".format(getpass.getuser())
         if weekno < 5 and ct > bt and ct < et:
             try:
-                result, resultError = plumb.Update(False)
+                result, resultError = plumb.Update(True)
                 if not result:
                     with open(filename, "a") as f:
                         f.write("pid: {0}, error: {1}, continuing".format(os.getpid(), resultError))

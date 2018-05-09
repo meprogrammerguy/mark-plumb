@@ -296,7 +296,10 @@ def PrintDefaults(verbose):
         col_list = []
         for i in range(len(row)):
             if (i != 2 and i != 3):
-                col_list.append(row[i])
+                if (i == 9 or i == 10):
+                    col_list.append(as_currency(row[i]))
+                else:
+                    col_list.append(row[i])
         answer = dict(zip(keys, col_list))
         items.append(answer)
     table = TableCls(items, html_attrs = {'width':'100%','border-spacing':0})
@@ -691,7 +694,10 @@ def PrintFolder(verbose):
             if (i == 1):
                 col_list.append(json_string['companyName'])
             else:
-                col_list.append(row[i])
+                if (i == 2 or i == 3 or i == 6):
+                    col_list.append(as_currency(row[i]))
+                else:
+                    col_list.append(row[i])
         answer = dict(zip(keys, col_list))
         items.append(answer)
     table = TableCls(items, html_attrs = {'width':'100%','border-spacing':0})
