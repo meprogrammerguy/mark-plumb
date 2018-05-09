@@ -11,7 +11,9 @@ app = Flask(__name__)
 @app.route('/')
 def index():
     l, table = plumb.Look(False)
-    return render_template('index.html', table = table)
+    allocation_list = plumb.PrintPercent(False)
+    return render_template('index.html', table = table, allocation_list = allocation_list, balance_list = l['percent_list'],
+        initial_value =  l['initial_value'], profit_value = l['profit_value'], profit_percent = l['profit_percent'])
 
 @app.route('/folder/')
 def folder():

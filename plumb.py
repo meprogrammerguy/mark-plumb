@@ -704,6 +704,41 @@ def PrintFolder(verbose):
     if (verbose):
         print ("***\n")
     return table.__html__()
+
+def PrintPercent(verbose):
+    defaults = GetDefaults(verbose)
+    username = getpass.getuser()
+    db_file = username + "/"  + defaults['folder_db']
+    if (verbose):
+        print ("***")
+        print ("PrintPercent(1) dbase: {0}".format(db_file))
+    if (not os.path.exists(db_file)):
+        if (verbose):
+            print ("PrintPercent(2) {0} file is missing, cannot print".format(db_file))
+            print ("***\n")
+        return ""
+    try:
+        conn = sqlite3.connect(db_file)
+        if (verbose):
+            print("PrintPercent(3) sqlite3: {0}".format(sqlite3.version))
+    except Error as e:
+        print("PrintPercent(4) {0}".format(e))
+        return ""
+    c = conn.cursor()
+    c.execute("SELECT * FROM folder where symbol != '$'")
+    rows = c.fetchall()
+    conn.commit()
+    conn.close()
+    total = 0
+    for row in rows:
+        total = total + row[2]
+    total = math.ceil(total -.4)
+    answer = ""
+    for row in rows:
+        pst = int(row[2] / total * 100.+.4)
+        answer = answer + "<li>{0} {1}%</li>".format(row[0], pst)
+        
+    return answer
 #endregion folder
 
 #region aim
@@ -952,13 +987,49 @@ def GetLastAIM(verbose):
         print ("***\n")
     return answer
 
+def GetFirstAIM(verbose):
+    defaults = GetDefaults(verbose)
+    username = getpass.getuser()
+    db_file = username + "/"  + defaults['aim_db']
+    if (verbose):
+        print ("***")
+        print ("GetFirstAIM(1) dbase: {0}".format(db_file))
+    if (not os.path.exists(db_file)):
+        if (verbose):
+            print ("GetFirstAIM(2) {0} file is missing, cannot return the first row".format(db_file))
+            print ("***\n")
+        return {}
+    try:
+        conn = sqlite3.connect(db_file)
+        if (verbose):
+            print("GetFirstAIM(3) sqlite3: {0}".format(sqlite3.version))
+    except Error as e:
+        print("GetFirstAIM(4) {0}".format(e))
+        return {}
+    c = conn.cursor()
+    c.execute("SELECT * FROM aim where post_date = '0000/01/01'")
+    keys = list(map(lambda x: x[0], c.description))
+    values = c.fetchone()
+    answer = dict(zip(keys, values))
+    conn.close()
+    if (verbose):
+        print ("***\n")
+    return answer
+
 def as_currency(amount):
     if amount >= 0:
         return '${:,.2f}'.format(amount)
     else:
         return '(${:,.2f})'.format(-amount)
 
+def as_percent(amount):
+    if amount >= 0:
+        return "{0:.0f}%".format(amount)
+    else:
+        return '({0:.0f}%)'.format(-amount)
+
 def Look(verbose):
+    first = GetFirstAIM(verbose)
     prev = GetLastAIM(verbose)
     prev_pc = math.ceil(prev['portfolio_control'] -.4)
     keys = prev.keys()
@@ -985,6 +1056,12 @@ def Look(verbose):
     items = []
     items.append(answer)
     table = TableCls(items, html_attrs = {'width':'100%','border-spacing':0})
+    pct_cash = int(cash / pv * 100. +.4)
+    pct_stock = int(stock / pv * 100. +.4)
+    answer['initial_value'] = as_currency(first['portfolio_value'])
+    answer['profit_value'] = as_currency(pv - first['portfolio_value'])
+    answer['profit_percent'] = as_percent(int((pv - first['portfolio_value']) / pv * 100. +.4))
+    answer['percent_list'] = "<li> Cash {0}%</li><li> Stock {1}%</li>".format(pct_cash, pct_stock)
     return answer, table.__html__()
 
 def Post(verbose):

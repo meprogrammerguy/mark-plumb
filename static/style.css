@@ -57,7 +57,7 @@ form
   margin-left: 10px;}
 
 .center
-{ display: block;
+{ display: inline_block;
   text-align: center;
   margin: 0 auto;}
 
