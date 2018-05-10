@@ -47,7 +47,7 @@
         <h3>Search</h3>
         <form method="post" action="#" id="search_form">
           <p>
-            <input class="search" type="text" name="search_field" value="Ticker symbol" />
+            <input class="search" type="text" onfocus="this.value=''" name="search_field" value="Ticker symbol" />
             <input name="search" type="image" style="border: 0; margin: 0 0 -9px 5px;" src="{{ url_for('static', filename='search.png') }}" alt="Search" title="Search" />
           </p>
         </form>
@@ -56,6 +56,36 @@
         <!-- insert the page content here -->
         <h1>Folder</h1>
         {{table | safe}}
+        <h1>Adjustments</h1>
+        <h1>Ticker Symbol Lookup</h1>
+	<p></p>Apple Inc is designs, manufactures and markets mobile communication and media devices and personal computers, and sells a variety of related software, services, accessories, networking solutions and third-party digital content and applications.</p>
+	<table border=1>
+	    <thead>
+	        <tr>
+		    <th>symbol</th>
+		    <th>companyName</th>
+		    <th>exchange</th>
+		    <th>industry</th>
+		    <th>website</th>
+		    <th>CEO</th>
+		    <th>issueType</th>
+		    <th>sector</th>
+		</tr>
+	    </thead>
+	    <tbody>
+		<tr>
+		    <td>AAPL</td>
+		    <td>Apple Inc.</td>
+		    <td>Nasdaq Global Select</td>
+		    <td>Computer Hardware</td>
+		    <td>http://www.apple.com</td>
+		    <td>Timothy D. Cook</td>
+		    <td>cs</td>
+		    <td>Technology</td>
+		</tr>
+	    </tbody>
+	</table>
+        <!--p>{{ticker_company}}</p-->
       </div>
     </div>
     <div id="content_footer"></div>

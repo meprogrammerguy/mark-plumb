@@ -58,7 +58,8 @@ def Quote(ticker, verbose):
                 break
             if (keys != "Meta Data"):
                 for key, value in values.items():
-                    closing['price time'] = key
+                    dt = datetime.datetime.strptime(key, '%Y-%m-%d %H:%M:%S')
+                    closing['price time'] = dt.strftime('%m/%d/%y %H:%M')
                     closing['price'] =  value['4. close']
                     break
         if "Meta Data" in returnQuote:
@@ -331,7 +332,7 @@ def Add(symbol, verbose):
         c = conn.cursor()
         c.execute("UPDATE folder SET json_string = (?) WHERE symbol = (?)", (json_string, symbol,))
         dt = datetime.datetime.now()
-        c.execute("UPDATE folder SET update_time = (?) WHERE symbol = (?)", (dt.strftime("%d/%m/%y %H:%M"), symbol,))
+        c.execute("UPDATE folder SET update_time = (?) WHERE symbol = (?)", (dt.strftime("%m/%d/%y %H:%M"), symbol,))
         conn.commit()
         conn.close()
     if (verbose):
@@ -385,8 +386,8 @@ def Cash(balance, verbose):
         c.execute("UPDATE folder SET json_string = (?) WHERE symbol = '$'", (json_string,))
         c.execute("UPDATE folder SET shares = ? WHERE symbol = '$'", (math.ceil(float(balance)-.4),))
         dt = datetime.datetime.now()
-        c.execute("UPDATE folder SET update_time = (?) WHERE symbol = '$'", (dt.strftime("%d/%m/%y %H:%M"),))
-        c.execute("UPDATE folder SET price_time = (?) WHERE symbol = '$'", (dt.strftime("%d/%m/%y %H:%M:%S"),))
+        c.execute("UPDATE folder SET update_time = (?) WHERE symbol = '$'", (dt.strftime("%m/%d/%y %H:%M"),))
+        c.execute("UPDATE folder SET price_time = (?) WHERE symbol = '$'", (dt.strftime("%m/%d/%y %H:%M"),))
         c.execute("UPDATE folder SET price = 1.00 WHERE symbol = '$'")
         conn.commit()
         conn.close()
@@ -457,7 +458,7 @@ def Shares(symbol, shares, verbose):
             balance = float(shares) * float(price['price'])
             c.execute("UPDATE folder SET balance = ? WHERE symbol = (?)", (math.ceil(balance-.4), symbol,))
             dt = datetime.datetime.now()
-            c.execute("UPDATE folder SET update_time = (?) WHERE symbol = (?)", (dt.strftime("%d/%m/%y %H:%M"), symbol,))
+            c.execute("UPDATE folder SET update_time = (?) WHERE symbol = (?)", (dt.strftime("%m/%d/%y %H:%M"), symbol,))
             conn.commit()
             conn.close()
         else:
@@ -519,7 +520,7 @@ def Balance(symbol, balance, verbose):
             c.execute("UPDATE folder SET price = ? WHERE symbol = (?)", (float(price['price']), symbol,))
             c.execute("UPDATE folder SET balance = ? WHERE symbol = (?)", (math.ceil(float(balance)-.4), symbol,))
             dt = datetime.datetime.now()
-            c.execute("UPDATE folder SET update_time = (?) WHERE symbol = (?)", (dt.strftime("%d/%m/%y %H:%M"), symbol,))
+            c.execute("UPDATE folder SET update_time = (?) WHERE symbol = (?)", (dt.strftime("%m/%d/%y %H:%M"), symbol,))
             conn.commit()
             conn.close()
         else:
@@ -694,7 +695,7 @@ def PrintFolder(verbose):
             if (i == 1):
                 col_list.append(json_string['companyName'])
             else:
-                if (i == 2 or i == 3 or i == 6):
+                if (i == 2 or i == 6):
                     col_list.append(as_currency(row[i]))
                 else:
                     col_list.append(row[i])
@@ -868,7 +869,7 @@ def AIMDate(verbose):
             return False, e
         c = conn.cursor()
         cd = datetime.datetime.now()
-        c.execute("UPDATE defaults SET start = (?) WHERE username = (?)", (cd.strftime("%d/%m/%y"), username,))
+        c.execute("UPDATE defaults SET start = (?) WHERE username = (?)", (cd.strftime("%Y/%m/%d"), username,))
         conn.commit()
         conn.close()
         resultCreate = CreateAIM(verbose)
@@ -986,6 +987,50 @@ def GetLastAIM(verbose):
     if (verbose):
         print ("***\n")
     return answer
+
+def GetAIMNotes(count, verbose):
+    defaults = GetDefaults(verbose)
+    username = getpass.getuser()
+    db_file = username + "/"  + defaults['aim db']
+    if (verbose):
+        print ("***")
+        print ("GetAIMNotes(1) dbase: {0}".format(db_file))
+    if (not os.path.exists(db_file)):
+        if (verbose):
+            print ("GetAIMNotes(2) {0} file is missing, cannot return the notes".format(db_file))
+            print ("***\n")
+        return {}
+    try:
+        conn = sqlite3.connect(db_file)
+        if (verbose):
+            print("GetAIMNotes(3) sqlite3: {0}".format(sqlite3.version))
+    except Error as e:
+        print("GetAIMNotes(4) {0}".format(e))
+        return {}
+    c = conn.cursor()
+    c.execute("SELECT * FROM aim ORDER BY post_date DESC LIMIT ?", (count,))
+    keys = list(map(lambda x: x[0].replace("_"," "), c.description))
+    rows = c.fetchall()
+    conn.close()
+    notes = []
+    for row in rows:
+        note = {}
+        answer = dict(zip(keys, row))
+        if (answer['post date'] == "1970/01/01"):
+            note['date'] = defaults['start']
+            note['content'] = "A.I.M. was initialized with {0}".format(as_currency(defaults['cash'] + defaults['stocks']))            
+        else:
+            note['date'] = answer['post date']
+            if (answer['market order'] == 0):
+                note['content'] = "holds current position."
+            elif (answer['market order'] < 0):
+                note['content'] = "sold {0} of folder".format(as_currency(answer['market order']))
+            else:
+                note['content'] = "purchased {0} for folder".format(as_currency(answer['market order']))
+        notes.append(note)
+    if (verbose):
+        print ("***\n")
+    return notes
 
 def GetFirstAIM(verbose):
     defaults = GetDefaults(verbose)
@@ -1155,7 +1200,7 @@ def PrintAIM(printyear, verbose):
     items = []
     answer = {}
     for row in rows:
-        dt = datetime.datetime.strptime(row[0], '%Y/%M/%d')
+        dt = datetime.datetime.strptime(row[0], '%Y/%m/%d')
         if (intyear == 1970 or dt.year == intyear):
             col_list = []
             for i in range(len(keys)):

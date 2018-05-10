@@ -14,12 +14,13 @@ def main(argv):
     test_dir = ""
     cash = ""
     stock = ""
-    now = False
+    initialize = False
+    notes = ""
     look = False
     update = False
     printyear = ""
     try:
-        opts, args = getopt.getopt(argv, "p:luc:s:nd:a::hvt:", ["help", "verbose", "test=", "aim=", "directory=", "now", "cash=", "stock=", "look", "update", "print="])
+        opts, args = getopt.getopt(argv, "ip:luc:s:n:d:a::hvt:", ["help", "verbose", "test=", "aim=", "directory=", "notes=", "cash=", "stock=", "look", "update", "print=", "initialize"])
     except getopt.GetoptError as err:
         print(err)
         usage()
@@ -40,8 +41,10 @@ def main(argv):
             cash = a
         elif o in ("-s", "--stock"):
             stock = a
-        elif o in ("-n", "--now"):
-            now = True
+        elif o in ("-n", "--notes"):
+            notes = a
+        elif o in ("-i", "--initialize"):
+            initialize = True
         elif o in ("-l", "--look"):
             look = True
         elif o in ("-u", "--update"):
@@ -97,7 +100,11 @@ def main(argv):
         else:
             print ("failed.")
         exit()
-    if (now):
+    if (notes > ""):
+        notesResult = plumb.GetAIMNotes(int(notes), verbose)
+        print (notesResult)
+        exit()
+    if (initialize):
         nowResult, nowError = plumb.AIMDate(verbose)
         if (nowResult):
              print ("updated.")
@@ -139,13 +146,14 @@ def usage():
 
     -c --cash           save starting cash
     -s --stock          save starting stock value
-    -n --now            begin tracking AIM now
+    -i --initialize     initialize your AIM database
                             (warning, this will clear out the db)
 
     -l --look           looks at today's AIM position
     -u --update         update today's AIM position to database
     -p --print          print out the AIM database (in HTML table format)
-                            (--print=all, --print=2018)  
+                            (--print=all, --print=2018)
+    -n --notes          show the last <count> of notes  
     """
     print (usage) 
 
