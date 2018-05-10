@@ -57,6 +57,13 @@
         <h1>Folder</h1>
         {{table | safe}}
         <h1>Adjustments</h1>
+        <form action="#" method="post">
+          <div class="form_settings">
+            <p><span class="right">symbol: </span><select id="id" name="symbol"><option value="1">$</option><option value="2">UPRO</option></select></p>
+            <p><span class="right">balance: </span><input type="text" name="balance" value=""/></p>
+          </div>
+        </form>
+
         <div style="{{ticker_style}}">
             <h1>Ticker Symbol Lookup</h1>
 	    <p>{{ticker_description}}</p>
