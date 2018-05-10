@@ -3,7 +3,6 @@
 from flask import Flask
 from flask import render_template
 from datetime import datetime
-import json
 
 import plumb
 
@@ -23,9 +22,11 @@ def index():
 
 @app.route('/folder/')
 def folder():
-    result = plumb.Company("AAPL", False)
-    json_string = json.dumps(result)
-    return render_template('folder.html', table = plumb.PrintFolder(False), ticker_company = json_string)
+    co = plumb.Company("AAPL", False)
+    # ticker_style = "display: none;"
+    return render_template('folder.html', table = plumb.PrintFolder(False), ticker_symbol = co['symbol'], ticker_name = co['companyName'], ticker_description = co['description'],
+        ticker_exchange =  co['exchange'], ticker_industry =  co['industry'], ticker_website =  co['website'], ticker_ceo =  co['CEO'],
+        ticker_issuetype =  co['issueType'], ticker_sector =  co['sector'], ticker_style = "display: block;")
 
 @app.route('/defaults/')
 def defaults():

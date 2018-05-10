@@ -124,12 +124,7 @@ def main(argv):
         exit()
     if (company > ""):
         companyResult = plumb.Company(company, verbose)
-        if (verbose):
-            pprint.pprint(companyResult)
-        if (companyResult):
-            print ("\nCompany {0} = {1}\n".format(company, companyResult['companyName']))
-        else:
-            print ("\nfailed.\n")
+        pprint.pprint(companyResult)
         exit()
     if (printout):
         printResult = plumb.PrintDefaults(verbose)

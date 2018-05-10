@@ -57,35 +57,36 @@
         <h1>Folder</h1>
         {{table | safe}}
         <h1>Adjustments</h1>
-        <h1>Ticker Symbol Lookup</h1>
-	<p></p>Apple Inc is designs, manufactures and markets mobile communication and media devices and personal computers, and sells a variety of related software, services, accessories, networking solutions and third-party digital content and applications.</p>
-	<table border=1>
-	    <thead>
-	        <tr>
-		    <th>symbol</th>
-		    <th>companyName</th>
-		    <th>exchange</th>
-		    <th>industry</th>
-		    <th>website</th>
-		    <th>CEO</th>
-		    <th>issueType</th>
-		    <th>sector</th>
-		</tr>
-	    </thead>
-	    <tbody>
-		<tr>
-		    <td>AAPL</td>
-		    <td>Apple Inc.</td>
-		    <td>Nasdaq Global Select</td>
-		    <td>Computer Hardware</td>
-		    <td>http://www.apple.com</td>
-		    <td>Timothy D. Cook</td>
-		    <td>cs</td>
-		    <td>Technology</td>
-		</tr>
-	    </tbody>
-	</table>
-        <!--p>{{ticker_company}}</p-->
+        <div style="{{ticker_style}}">
+            <h1>Ticker Symbol Lookup</h1>
+	    <p>{{ticker_description}}</p>
+	    <table border=1>
+	        <thead>
+	            <tr>
+		        <th>symbol</th>
+		        <th>companyName</th>
+		        <th>exchange</th>
+		        <th>industry</th>
+		        <th>website</th>
+		        <th>CEO</th>
+		        <th>issueType</th>
+		        <th>sector</th>
+		    </tr>
+	        </thead>
+	        <tbody>
+		    <tr>
+		        <td>{{ticker_symbol}}</td>
+		        <td>{{ticker_name}}</td>
+		        <td>{{ticker_exchange}}</td>
+		        <td>{{ticker_industry}}</td>
+		        <td>{{ticker_website}}</td>
+		        <td>{{ticker_ceo}}</td>
+		        <td>{{ticker_issuetype}}</td>
+		        <td>{{ticker_sector}}</td>
+		    </tr>
+	        </tbody>
+	    </table>
+        </div>
       </div>
     </div>
     <div id="content_footer"></div>
