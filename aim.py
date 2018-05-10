@@ -70,10 +70,10 @@ def main(argv):
             print ("failed.")
         exit()
     defaults = plumb.GetDefaults(False)
-    if defaults['aim_db'] is None:
+    if defaults['aim db'] is None:
         print ("\tWarning, please use --aim switch to set the AIM database name")
         exit()
-    if defaults['test_root'] is None:
+    if defaults['test root'] is None:
         print ("\tWarning, please use --directory switch to set the test root")
         exit()
     if (test > ""):

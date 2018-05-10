@@ -12,8 +12,8 @@ app = Flask(__name__)
 def index():
     l, table, db = plumb.Look(False)
     allocation_list = plumb.PrintPercent(False)
-    return render_template('index.html', table = table, allocation_list = allocation_list, balance_list = l['percent_list'],
-        initial_value =  l['initial_value'], profit_value = l['profit_value'], profit_percent = l['profit_percent'])
+    return render_template('index.html', table = table, allocation_list = allocation_list, balance_list = l['percent list'],
+        initial_value =  l['initial value'], profit_value = l['profit value'], profit_percent = l['profit percent'])
 
 @app.route('/folder/')
 def folder():
@@ -25,7 +25,8 @@ def defaults():
 
 @app.route('/history/')
 def history():
-    return render_template('history.html', table = plumb.PrintAIM("all", False))
+    dt = datetime.datetime.now()
+    return render_template('history.html', table = plumb.PrintAIM(str(dt.year), False), year = str(dt.year))
 
 @app.errorhandler(404)
 def page_not_found(e):

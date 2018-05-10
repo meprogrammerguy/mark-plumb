@@ -22,12 +22,12 @@ from flask_table import create_table, Table, Col
 def Quote(ticker, verbose):
     result = {}
     defaults = GetDefaults(verbose)
-    url = "https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol={0}&interval={1}min&apikey={2}".format(ticker, defaults['interval'], defaults['api_key'])
+    url = "https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol={0}&interval={1}min&apikey={2}".format(ticker, defaults['interval'], defaults['api key'])
     if (verbose):
         print ("***")
         print ("Quote(1) ticker: {0}".format(ticker))
         print ("Quote(2) interval: {0}".format(defaults['interval']))
-        print ("Quote(3) key: {0}".format(defaults['api_key']))
+        print ("Quote(3) key: {0}".format(defaults['api key']))
         print ("Quote(4) URL: {0}".format(url))
     try:
         with contextlib.closing(urllib.request.urlopen(url)) as page:
@@ -58,7 +58,7 @@ def Quote(ticker, verbose):
                 break
             if (keys != "Meta Data"):
                 for key, value in values.items():
-                    closing['price_time'] = key
+                    closing['price time'] = key
                     closing['price'] =  value['4. close']
                     break
         if "Meta Data" in returnQuote:
@@ -183,7 +183,7 @@ def GetDefaults(verbose):
         return False
     c = conn.cursor()
     c.execute("SELECT * FROM defaults WHERE username = (?)", (username,))
-    keys = list(map(lambda x: x[0], c.description))
+    keys = list(map(lambda x: x[0].replace("_"," "), c.description))
     values = c.fetchone()
     answer = dict(zip(keys, values))
     conn.close()
@@ -281,12 +281,12 @@ def PrintDefaults(verbose):
         return ""
     c = conn.cursor()
     c.execute("SELECT * FROM defaults")
-    keys = list(map(lambda x: x[0], c.description))
+    keys = list(map(lambda x: x[0].replace("_"," "), c.description))
     rows = c.fetchall()
     conn.commit()
     conn.close()
     keys.remove('interval')
-    keys.remove('daemon_seconds')
+    keys.remove('daemon seconds')
     TableCls = create_table('TableCls')
     for key in keys:
         TableCls.add_column(key, Col(key))
@@ -312,7 +312,7 @@ def PrintDefaults(verbose):
 def Add(symbol, verbose):
     defaults = GetDefaults(verbose)
     username = getpass.getuser()
-    db_file = username + "/"  + defaults['folder_db']
+    db_file = username + "/"  + defaults['folder db']
     if (verbose):
         print ("***")
         print ("Add(1) symbol: {0}".format(symbol))
@@ -341,7 +341,7 @@ def Add(symbol, verbose):
 def Remove(symbol, verbose):
     defaults = GetDefaults(verbose)
     username = getpass.getuser()
-    db_file = username + "/"  + defaults['folder_db']
+    db_file = username + "/"  + defaults['folder db']
     if (verbose):
         print ("***")
         print ("Remove(1) symbol: {0}".format(symbol))
@@ -364,7 +364,7 @@ def Remove(symbol, verbose):
 def Cash(balance, verbose):
     defaults = GetDefaults(verbose)
     username = getpass.getuser()
-    db_file = username + "/"  + defaults['folder_db']
+    db_file = username + "/"  + defaults['folder db']
     if (verbose):
         print ("***")
         print ("Cash(1) balance: {0}".format(balance))
@@ -397,7 +397,7 @@ def Cash(balance, verbose):
 def CreateFolder(key, verbose):
     defaults = GetDefaults(verbose)
     username = getpass.getuser()
-    db_file = username + "/"  + defaults['folder_db']
+    db_file = username + "/"  + defaults['folder db']
     Path(username + "/").mkdir(parents=True, exist_ok=True) 
     if (verbose):
         print ("***")
@@ -422,7 +422,7 @@ def Shares(symbol, shares, verbose):
     result = {}
     defaults = GetDefaults(verbose)
     username = getpass.getuser()
-    db_file = username + "/"  + defaults['folder_db']
+    db_file = username + "/"  + defaults['folder db']
     Path(username + "/").mkdir(parents=True, exist_ok=True) 
     if (verbose):
         print ("***")
@@ -452,7 +452,7 @@ def Shares(symbol, shares, verbose):
                 return result
             c = conn.cursor()
             c.execute("UPDATE folder SET shares = ? WHERE symbol = (?)", (round(float(shares), 2), symbol,))
-            c.execute("UPDATE folder SET price_time = (?) WHERE symbol = (?)", (price['price_time'], symbol,))
+            c.execute("UPDATE folder SET price_time = (?) WHERE symbol = (?)", (price['price time'], symbol,))
             c.execute("UPDATE folder SET price = ? WHERE symbol = (?)", (float(price['price']), symbol,))
             balance = float(shares) * float(price['price'])
             c.execute("UPDATE folder SET balance = ? WHERE symbol = (?)", (math.ceil(balance-.4), symbol,))
@@ -482,7 +482,7 @@ def Balance(symbol, balance, verbose):
     result = {}
     defaults = GetDefaults(verbose)
     username = getpass.getuser()
-    db_file = username + "/"  + defaults['folder_db']
+    db_file = username + "/"  + defaults['folder db']
     Path(username + "/").mkdir(parents=True, exist_ok=True) 
     if (verbose):
         print ("***")
@@ -515,7 +515,7 @@ def Balance(symbol, balance, verbose):
             if float(price['price']) > 0:
                 shares = float(balance) / float(price['price'])
             c.execute("UPDATE folder SET shares = ? WHERE symbol = (?)", (round(shares,2), symbol,))
-            c.execute("UPDATE folder SET price_time = (?) WHERE symbol = (?)", (price['price_time'], symbol,))
+            c.execute("UPDATE folder SET price_time = (?) WHERE symbol = (?)", (price['price time'], symbol,))
             c.execute("UPDATE folder SET price = ? WHERE symbol = (?)", (float(price['price']), symbol,))
             c.execute("UPDATE folder SET balance = ? WHERE symbol = (?)", (math.ceil(float(balance)-.4), symbol,))
             dt = datetime.datetime.now()
@@ -543,7 +543,7 @@ def Balance(symbol, balance, verbose):
 def Update(verbose):
     defaults = GetDefaults(verbose)
     username = getpass.getuser()
-    db_file = username + "/"  + defaults['folder_db']
+    db_file = username + "/"  + defaults['folder db']
     Path(username + "/").mkdir(parents=True, exist_ok=True) 
     if (verbose):
         print ("***")
@@ -596,7 +596,7 @@ def Folder(folder, verbose):
 def GetFolderCash(verbose):
     defaults = GetDefaults(verbose)
     username = getpass.getuser()
-    db_file = username + "/"  + defaults['folder_db']
+    db_file = username + "/"  + defaults['folder db']
     if (verbose):
         print ("***")
         print ("GetFolderCash(1) dbase: {0}".format(db_file))
@@ -614,7 +614,7 @@ def GetFolderCash(verbose):
         return 0
     c = conn.cursor()
     c.execute("SELECT * FROM folder WHERE symbol = '$'")
-    keys = list(map(lambda x: x[0], c.description))
+    keys = list(map(lambda x: x[0].replace("_"," "), c.description))
     values = c.fetchone()
     answer = dict(zip(keys, values))
     conn.close()
@@ -625,7 +625,7 @@ def GetFolderCash(verbose):
 def GetFolderStockValue(verbose):
     defaults = GetDefaults(verbose)
     username = getpass.getuser()
-    db_file = username + "/"  + defaults['folder_db']
+    db_file = username + "/"  + defaults['folder db']
     if (verbose):
         print ("***")
         print ("GetFolderStockValue(1) dbase: {0}".format(db_file))
@@ -656,7 +656,7 @@ def GetFolderStockValue(verbose):
 def PrintFolder(verbose):
     defaults = GetDefaults(verbose)
     username = getpass.getuser()
-    db_file = username + "/"  + defaults['folder_db']
+    db_file = username + "/"  + defaults['folder db']
     if (verbose):
         print ("***")
         print ("PrintFolder(1) dbase: {0}".format(db_file))
@@ -674,17 +674,17 @@ def PrintFolder(verbose):
         return ""
     c = conn.cursor()
     c.execute("SELECT * FROM folder")
-    keys = list(map(lambda x: x[0], c.description))
+    keys = list(map(lambda x: x[0].replace("_"," "), c.description))
     rows = c.fetchall()
     conn.commit()
     conn.close()
     TableCls = create_table('TableCls')
     for key in keys:
-        if (key != "json_string"):
+        if (key != "json string"):
             TableCls.add_column(key, Col(key))
         else:
-            TableCls.add_column('companyName', Col('companyName'))
-    keys[1] = 'companyName'
+            TableCls.add_column('company name', Col('company name'))
+    keys[1] = 'company name'
     items = []
     answer = {}
     for row in rows:
@@ -708,7 +708,7 @@ def PrintFolder(verbose):
 def PrintPercent(verbose):
     defaults = GetDefaults(verbose)
     username = getpass.getuser()
-    db_file = username + "/"  + defaults['folder_db']
+    db_file = username + "/"  + defaults['folder db']
     if (verbose):
         print ("***")
         print ("PrintPercent(1) dbase: {0}".format(db_file))
@@ -884,7 +884,7 @@ def CreateAIM(verbose):
     defaults = GetDefaults(verbose)
     pv = defaults['stocks'] + defaults['cash']
     username = getpass.getuser()
-    db_file = username + "/"  + defaults['aim_db']
+    db_file = username + "/"  + defaults['aim db']
     Path(username + "/").mkdir(parents=True, exist_ok=True) 
     if (verbose):
         print ("***")
@@ -961,7 +961,7 @@ def MarketOrder(buyselladvice, safe, verbose):
 def GetLastAIM(verbose):
     defaults = GetDefaults(verbose)
     username = getpass.getuser()
-    db_file = username + "/"  + defaults['aim_db']
+    db_file = username + "/"  + defaults['aim db']
     if (verbose):
         print ("***")
         print ("GetLastAIM(1) dbase: {0}".format(db_file))
@@ -979,7 +979,7 @@ def GetLastAIM(verbose):
         return {}
     c = conn.cursor()
     c.execute("SELECT * FROM aim ORDER BY post_date DESC LIMIT 1")
-    keys = list(map(lambda x: x[0], c.description))
+    keys = list(map(lambda x: x[0].replace("_"," "), c.description))
     values = c.fetchone()
     answer = dict(zip(keys, values))
     conn.close()
@@ -990,7 +990,7 @@ def GetLastAIM(verbose):
 def GetFirstAIM(verbose):
     defaults = GetDefaults(verbose)
     username = getpass.getuser()
-    db_file = username + "/"  + defaults['aim_db']
+    db_file = username + "/"  + defaults['aim db']
     if (verbose):
         print ("***")
         print ("GetFirstAIM(1) dbase: {0}".format(db_file))
@@ -1008,7 +1008,7 @@ def GetFirstAIM(verbose):
         return {}
     c = conn.cursor()
     c.execute("SELECT * FROM aim where post_date = '1970/01/01'")
-    keys = list(map(lambda x: x[0], c.description))
+    keys = list(map(lambda x: x[0].replace("_"," "), c.description))
     values = c.fetchone()
     answer = dict(zip(keys, values))
     conn.close()
@@ -1031,8 +1031,13 @@ def as_percent(amount):
 def Look(verbose):
     first = GetFirstAIM(verbose)
     prev = GetLastAIM(verbose)
-    prev_pc = math.ceil(prev['portfolio_control'] -.4)
-    keys = prev.keys()
+    prev_pc = math.ceil(prev['portfolio control'] -.4)
+    db_keys = prev.keys()
+    keys = []
+    for key in db_keys:
+        if (key == 'cash'):
+            keys.append("safe") # safe is not in the aim db (want to see it though)
+        keys.append(key)
     cd = datetime.datetime.now()
     stock = math.ceil(GetFolderStockValue(verbose) -.4)
     cash = math.ceil(GetFolderCash(verbose) -.4)
@@ -1042,8 +1047,9 @@ def Look(verbose):
     pc = PortfolioControl(mo, prev_pc, verbose)
     pv = PortfolioValue(cash, stock, verbose)
     values = []
-    values.append(cd.strftime("%Y/%m/%d"))
+    values.append(cd.strftime("%b, %d"))
     values.append(as_currency(stock))
+    values.append(safe)
     values.append(as_currency(cash))
     values.append(as_currency(pc))
     values.append(as_currency(bsa))
@@ -1052,6 +1058,7 @@ def Look(verbose):
     values_db = []
     values_db.append(cd.strftime("%Y/%m/%d"))
     values_db.append(stock)
+    values_db.append(safe)
     values_db.append(cash)
     values_db.append(pc)
     values_db.append(bsa)
@@ -1067,16 +1074,16 @@ def Look(verbose):
     table = TableCls(items, html_attrs = {'width':'100%','border-spacing':0})
     pct_cash = int(cash / pv * 100. +.4)
     pct_stock = int(stock / pv * 100. +.4)
-    pretty['initial_value'] = as_currency(first['portfolio_value'])
-    pretty['profit_value'] = as_currency(pv - first['portfolio_value'])
-    pretty['profit_percent'] = as_percent(int((pv - first['portfolio_value']) / pv * 100. +.4))
-    pretty['percent_list'] = "<li> Cash {0}%</li><li> Stock {1}%</li>".format(pct_cash, pct_stock)
+    pretty['initial value'] = as_currency(first['portfolio value'])
+    pretty['profit value'] = as_currency(pv - first['portfolio value'])
+    pretty['profit percent'] = as_percent(int((pv - first['portfolio value']) / pv * 100. +.4))
+    pretty['percent list'] = "<li> Cash {0}%</li><li> Stock {1}%</li>".format(pct_cash, pct_stock)
     return pretty, table.__html__(), answer_db
 
 def Post(verbose):
     defaults = GetDefaults(verbose)
     username = getpass.getuser()
-    db_file = username + "/"  + defaults['aim_db']
+    db_file = username + "/"  + defaults['aim db']
     if (verbose):
         print ("***")
         print ("Post(1) dbase: {0}".format(db_file))
@@ -1091,13 +1098,13 @@ def Post(verbose):
     if (verbose):
         print("Post(5) {0}".format(look))
     c = conn.cursor()
-    c.execute( "INSERT OR IGNORE INTO aim(post_date) VALUES((?))", (db_values['post_date'],))
-    c.execute("UPDATE aim SET stock_value = ? WHERE post_date = (?)", (db_values['stock_value'], db_values['post_date'],))
-    c.execute("UPDATE aim SET cash = ? WHERE post_date = (?)", (db_values['cash'], db_values['post_date'],))
-    c.execute("UPDATE aim SET portfolio_control = ? WHERE post_date = (?)", (db_values['portfolio_control'], db_values['post_date'],))
-    c.execute("UPDATE aim SET buy_sell_advice = ? WHERE post_date = (?)", (db_values['buy_sell_advice'], db_values['post_date'],))
-    c.execute("UPDATE aim SET market_order = ? WHERE post_date = (?)", (db_values['market_order'], db_values['post_date'],))
-    c.execute("UPDATE aim SET portfolio_value = ? WHERE post_date = (?)", (db_values['portfolio_value'], db_values['post_date'],))
+    c.execute( "INSERT OR IGNORE INTO aim(post_date) VALUES((?))", (db_values['post date'],))
+    c.execute("UPDATE aim SET stock_value = ? WHERE post_date = (?)", (db_values['stock value'], db_values['post date'],))
+    c.execute("UPDATE aim SET cash = ? WHERE post_date = (?)", (db_values['cash'], db_values['post date'],))
+    c.execute("UPDATE aim SET portfolio_control = ? WHERE post_date = (?)", (db_values['portfolio control'], db_values['post date'],))
+    c.execute("UPDATE aim SET buy_sell_advice = ? WHERE post_date = (?)", (db_values['buy sell advice'], db_values['post date'],))
+    c.execute("UPDATE aim SET market_order = ? WHERE post_date = (?)", (db_values['market order'], db_values['post date'],))
+    c.execute("UPDATE aim SET portfolio_value = ? WHERE post_date = (?)", (db_values['portfolio value'], db_values['post date'],))
     conn.commit()
     conn.close()
     if (verbose):
@@ -1114,7 +1121,7 @@ def PrintAIM(printyear, verbose):
         printyear = str(intyear)
     defaults = GetDefaults(verbose)
     username = getpass.getuser()
-    db_file = username + "/"  + defaults['aim_db']
+    db_file = username + "/"  + defaults['aim db']
     if (verbose):
         print ("***")
         print ("PrintAIM(1) dbase: {0}".format(db_file))
@@ -1133,10 +1140,15 @@ def PrintAIM(printyear, verbose):
         return ""
     c = conn.cursor()
     c.execute("SELECT * FROM aim")
-    keys = list(map(lambda x: x[0], c.description))
+    keys_db = list(map(lambda x: x[0].replace("_"," "), c.description))
     rows = c.fetchall()
     conn.commit()
     conn.close()
+    keys = []
+    for key in keys_db:
+        if (key == 'cash'):
+            keys.append("safe") # safe is not in the aim db (want to see it though)
+        keys.append(key)
     TableCls = create_table('TableCls')
     for key in keys:
         TableCls.add_column(key, Col(key))
@@ -1148,9 +1160,18 @@ def PrintAIM(printyear, verbose):
             col_list = []
             for i in range(len(keys)):
                 if (i == 0):
-                    col_list.append(row[i])
-                else:
+                    if (intyear == 1970):
+                        col_list.append(dt.strftime("%b, %d %Y"))
+                    else:
+                        col_list.append(dt.strftime("%b, %d"))
+                elif (i == 1):
                     col_list.append(as_currency(row[i]))
+                elif (i == 2):
+                    stock = math.ceil(GetFolderStockValue(verbose) -.4)
+                    safe = Safe(stock, verbose)
+                    col_list.append(safe)
+                else:
+                    col_list.append(as_currency(row[i - 1]))
             answer = dict(zip(keys, col_list))
             items.append(answer)
     table = TableCls(items, html_attrs = {'width':'100%','border-spacing':0})
@@ -1270,14 +1291,14 @@ def TestStock(verbose):
     if (verbose):
         print ("Test #11 - GetDefaults(False)")
     result = GetDefaults(False)
-    if (result['api_key'] == "TEST"
+    if (result['api key'] == "TEST"
         and result['interval'] == 15
-        and result['daemon_seconds'] == 1200
+        and result['daemon seconds'] == 1200
         and result['open'] == "8:30AM"
         and result['close'] == "03:00PM"
-        and result['folder_db'] == "folder.db"
-        and result['aim_db'] == "aim.db"
-        and result['test_root'] == "test/"):
+        and result['folder db'] == "folder.db"
+        and result['aim db'] == "aim.db"
+        and result['test root'] == "test/"):
         if (verbose):
             print ("\tpass.")
         count += 1
@@ -1286,7 +1307,7 @@ def TestStock(verbose):
             print ("\tfail.")
     if (verbose):
         print ("Test #12 - Key(<reset key back>, False)")
-    result = Key(defaults['api_key'], False)
+    result = Key(defaults['api key'], False)
     if (result):
         if (verbose):
             print ("\tpass.")
@@ -1369,7 +1390,7 @@ def TestFolder(verbose):
             print ("Cleanup, remove {0}".format(db_file))
     if (verbose):
         print ("Test #7 - Folder(<reset back db name>, verbose)")
-    result = Folder(defaults['folder_db'], verbose)
+    result = Folder(defaults['folder db'], verbose)
     if (result):
         if (verbose):
             print ("\tpass.")
@@ -1462,7 +1483,7 @@ def TestAIM(location, verbose):
                 print ("Cleanup, remove {0}".format(db_file))
         if (verbose):
             print ("Test #{0} - AIM(<reset back db name>, verbose)".format(count + 1))
-        result = AIM(defaults['aim_db'], verbose)
+        result = AIM(defaults['aim db'], verbose)
         if (result):
             if (verbose):
                 print ("\tpass.")
@@ -1514,7 +1535,7 @@ def GetFiles(path, templatename):
 
 def LoadTest(location, verbose):
     defaults = GetDefaults(False)
-    test_dir = defaults['test_root'] + location
+    test_dir = defaults['test root'] + location
     if not os.path.isdir(test_dir):
         print ("test directory: {0} does not exist - cannot continue.".format(test_dir))
         return False, [], {}
