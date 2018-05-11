@@ -53,7 +53,6 @@
         <div id="content">
             <h1>Portfolio</h1>
             {{table | safe}}
-
             <div class ="left" style="{{ticker_style}}">
                 <h1>Ticker Symbol Lookup</h1>
 	        <p>{{ticker_description}}</p>
@@ -83,28 +82,31 @@
 		        </tr>
 	            </tbody>
 	        </table>
-         <form action="#" method="post">
-          <div class="form_settings">
-              <p><span>&nbsp;</span><input class="submit" type="submit" name="action" value="add {{add_symbol}}" style="float: right;"/></p>
-          </div>
-        </form>
+                <form action="#" method="post">
+                    <div class="form_settings">
+                        <p><span>&nbsp;</span><input class="submit" type="submit" name="action" value="add {{add_symbol}}" style="float: right;"/></p>
+                    </div>
+                </form>
              </div>
-
             <h1>Adjustments</h1>
-            <p><span>symbol: </span><select id="id" name="symbol">{{symbol_options | safe}}</select></p>
-            <p><span>balance: </span><input type="text" name="balance" value=""/></p>
-         <form action="#" method="post">
-          <div class="form_settings">
-            <p><span>&nbsp;</span><input class="submit" type="submit" name="action" value="adjust" style="float: right;"/></p>
-          </div>
-        </form>
+            <div class="left">
+                <p><span>symbol: </span><select id="id" name="symbol">{{symbol_options | safe}}</select></p>
+            </div>
+            <div class="center">
+                <p><span>balance: </span><input type="text" name="balance" value=""/></p>
+            </div>
+            <form action="#" method="post">
+            <div class="form_settings">
+                <p><span>&nbsp;</span><input class="submit" type="submit" name="action" value="adjust" style="float: right;"/></p>
+            </div>
+            </form>
+            </div>
         </div>
+        <div id="content_footer"></div>
+        <div id="footer">
+            <p><a href="{{url_for("index")}}">Home</a> | <a href="{{url_for("folder")}}">Folder</a> | <a href="{{url_for("defaults")}}">Defaults</a> | <a href="{{url_for("history")}}">History</a></p>
+            <p>Copyright &copy; shadowplay_2  | <a href="http://www.html5webtemplates.co.uk">design from HTML5webtemplates.co.uk</a></p>
         </div>
-    <div id="content_footer"></div>
-    <div id="footer">
-      <p><a href="{{url_for("index")}}">Home</a> | <a href="{{url_for("folder")}}">Folder</a> | <a href="{{url_for("defaults")}}">Defaults</a> | <a href="{{url_for("history")}}">History</a></p>
-      <p>Copyright &copy; shadowplay_2  | <a href="http://www.html5webtemplates.co.uk">design from HTML5webtemplates.co.uk</a></p>
-    </div>
     </div>
 </body>
 </html>

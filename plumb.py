@@ -649,7 +649,8 @@ def GetFolderStockValue(verbose):
     conn.close()
     answer = 0
     for row in rows:
-        answer += row[2]
+        if (row[2] is not None):
+            answer += row[2]
     if (verbose):
         print ("***\n")
     return answer
@@ -737,11 +738,14 @@ def PrintPercent(verbose):
     conn.close()
     total = 0
     for row in rows:
-        total = total + row[2]
+        if (row[2] is not None):
+            total = total + row[2]
     total = math.ceil(total -.4)
     answer = ""
     for row in rows:
-        pst = int(row[2] / total * 100.+.4)
+        pst = 0
+        if (row[2] is not None):
+            pst = int(row[2] / total * 100.+.4)
         answer = answer + "<li>{0} {1}%</li>".format(row[0], pst)
         
     return answer
