@@ -42,36 +42,42 @@
           <li><a href="https://amazon.com/author/smithja" target="_blank" >my Amazon Bookshelf</a></li>
           <li><a href="https://github.com/meprogrammerguy" target="_blank" >my GitHub page</a></li>
           <li><a href="http://meprogrammerguy.com/" target="_blank" >my Blog</a></li>
+          <li><a href="https://twitter.com/meprogrammerguy/" target="_blank" >my Twitter</a></li>
+          <li><a href="http://www.wallstreetsurvivor.com/accountoverview/" target="_blank" >Wall Street Survivor</a></li>
         </ul>
       </div>
       <div id="content">
-        <!-- insert the page content here -->
-        <h1>Scoreboard</h1>
-        <div class="left">
-            <h2>Balance</h2>
-            <ul>
-                {{balance_list | safe}}
-            </ul>
-        </div>
-        <div class="right">
-            <h2>Allocation</h2>
-            <ul>
-                {{allocation_list | safe}}
-            </ul>
-        </div>
-        <div class="center">
-            <h2>Value</h2>
-            <p><strong>Initial {{initial_value | safe}}</strong></p>
-            <p><strong>Profit {{profit_value | safe}} or {{profit_percent | safe}}</strong></p>
-        </div>
-        <h1>A.I.M. method</h1>
-        <div class="center">
-            <h4>Check list</h4>
+        <form action="#" method="post">
+          <div class="form_settings">
+            <h1>Scoreboard</h1>
+            <div class="left">
+                <h2>Balance</h2>
+                <ul>
+                    {{balance_list | safe}}
+                </ul>
+            </div>
+            <div class="right">
+                <h2>Allocation</h2>
+                <ul>
+                    {{allocation_list | safe}}
+                </ul>
+            </div>
+            <div class="center">
+                <h2>Value</h2>
+                <p><strong>Initial {{initial_value | safe}}</strong></p>
+                <p><strong>Profit {{profit_value | safe}} or {{profit_percent | safe}}</strong></p>
+            </div>
+            <h1>A.I.M. method</h1>
+            <div class="center">
+                <h4>Check list</h4>
                 <p>Correct any issues with your folder to get accurate numbers</p>
                 <p>You do not have to post, buy or sell if you are just looking</p>
                 <p>When you do press the buy or sell make sure to follow through with your broker</p>
-        </div>
-        {{table | safe}}
+            </div>
+            {{table | safe}}
+            <p><span>&nbsp;</span><input class="submit" type="submit" name="post" value="post" style="float: right;"/></p>
+          </div>
+        </form>
       </div>
     </div>
     <div id="content_footer"></div>

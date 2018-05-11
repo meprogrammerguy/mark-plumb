@@ -2,7 +2,9 @@
 
 from flask import Flask
 from flask import render_template
+from flask import request
 from datetime import datetime
+import pdb
 
 import plumb
 
@@ -20,14 +22,33 @@ def index():
     return render_template('index.html', table = table, allocation_list = allocation_list, balance_list = l['percent list'],
         initial_value =  l['initial value'], profit_value = l['profit value'], profit_percent = l['profit percent'], notes = notes)
 
-@app.route('/folder/')
+@app.route('/folder/', methods=["GET","POST"])
 def folder():
-    co = plumb.Company("AAPL", False)
-    # ticker_style = "display: none;"
-    return render_template('folder.html', table = plumb.PrintFolder(False), ticker_symbol = co['symbol'], ticker_name = co['companyName'], ticker_description = co['description'],
-        ticker_exchange =  co['exchange'], ticker_industry =  co['industry'], ticker_website =  co['website'], ticker_ceo =  co['CEO'],
-        ticker_issuetype =  co['issueType'], ticker_sector =  co['sector'], ticker_style = "display: block;")
+    error = ''
+    table, symbol_options = plumb.PrintFolder(False)
+    try:
+        if request.method == "POST":
+            if (request.form['action'] == "adjust"):
+                print (request.form['action'])
+            elif (request.form['action'][0:3] == "add"):
+                plumb.Add(request.form['action'][4:] , False) 
+                table, symbol_options = plumb.PrintFolder(False)
+                return render_template('folder.html', table = table,  ticker_style = "display: none;", symbol_options = symbol_options)
+            elif (request.form['action'] != "Ticker symbol"):
+                co = plumb.Company(request.form['action'], False)
+                if not co:
+                    return render_template('folder.html', table = table,  ticker_style = "display: none;", symbol_options = symbol_options, search_error = "symbol not found.")
+                else:
+                    return render_template('folder.html', table = table, ticker_symbol = co['symbol'], ticker_name = co['companyName'], ticker_description = co['description'],
+                        ticker_exchange =  co['exchange'], ticker_industry =  co['industry'], ticker_website =  co['website'], ticker_ceo =  co['CEO'],
+                        ticker_issuetype =  co['issueType'], ticker_sector =  co['sector'], ticker_style = "display: block;", symbol_options = symbol_options, add_symbol = co['symbol'])
+            return redirect(url_for('folder'))
 
+    except Exception as e:
+        return render_template("folder.html", search_error = e) 
+
+    return render_template('folder.html', table = table,  ticker_style = "display: none;", symbol_options = symbol_options)
+ 
 @app.route('/defaults/')
 def defaults():
     return render_template('defaults.html', table = plumb.PrintDefaults(False))

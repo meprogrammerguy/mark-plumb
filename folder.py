@@ -119,9 +119,13 @@ def main(argv):
             print ("failed. Error: {0}".format(updateError))
         exit()
     if (printout):
-        printResult = plumb.PrintFolder(verbose)
+        printResult, symbol_options = plumb.PrintFolder(verbose)
         if (printResult > ""):
             pprint.pprint(printResult)
+        else:
+            print ("failed.")
+        if (symbol_options > ""):
+            pprint.pprint(symbol_options)
         else:
             print ("failed.")
         exit()

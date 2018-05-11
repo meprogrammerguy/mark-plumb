@@ -183,7 +183,7 @@ def GetDefaults(verbose):
         print("GetDefaults(4) {0}".format(e))
         return False
     c = conn.cursor()
-    c.execute("SELECT * FROM defaults WHERE username = (?)", (username,))
+    c.execute("SELECT * FROM defaults WHERE username = (?) order by username", (username,))
     keys = list(map(lambda x: x[0].replace("_"," "), c.description))
     values = c.fetchone()
     answer = dict(zip(keys, values))
@@ -281,13 +281,11 @@ def PrintDefaults(verbose):
         print("PrintDefaults(4) {0}".format(e))
         return ""
     c = conn.cursor()
-    c.execute("SELECT * FROM defaults")
+    c.execute("SELECT * FROM defaults order by username")
     keys = list(map(lambda x: x[0].replace("_"," "), c.description))
     rows = c.fetchall()
     conn.commit()
     conn.close()
-    keys.remove('interval')
-    keys.remove('daemon seconds')
     TableCls = create_table('TableCls')
     for key in keys:
         TableCls.add_column(key, Col(key))
@@ -296,11 +294,13 @@ def PrintDefaults(verbose):
     for row in rows:
         col_list = []
         for i in range(len(row)):
-            if (i != 2 and i != 3):
-                if (i == 9 or i == 10):
-                    col_list.append(as_currency(row[i]))
-                else:
-                    col_list.append(row[i])
+            if (i == 9 or i == 10):
+                col_list.append(as_currency(row[i]))
+            elif (i == 11):
+                dt = datetime.datetime.strptime(row[i], '%Y/%m/%d')
+                col_list.append(dt.strftime("%m/%d/%y"))
+            else:
+                col_list.append(row[i])
         answer = dict(zip(keys, col_list))
         items.append(answer)
     table = TableCls(items, html_attrs = {'width':'100%','border-spacing':0})
@@ -557,7 +557,7 @@ def Update(verbose):
         print("Update(3) {0}".format(e))
         return False, e
     c = conn.cursor()
-    c.execute("SELECT symbol, shares, balance FROM folder where symbol != '$'") 
+    c.execute("SELECT symbol, shares, balance FROM folder where symbol != '$' order by symbol") 
     rows = c.fetchall()
     conn.commit()
     conn.close()
@@ -643,7 +643,7 @@ def GetFolderStockValue(verbose):
         print("GetFolderStockValue(4) {0}".format(e))
         return 0
     c = conn.cursor()
-    c.execute("SELECT * FROM folder WHERE symbol != '$'")
+    c.execute("SELECT * FROM folder WHERE symbol != '$' order by symbol")
     rows = c.fetchall()
     conn.commit()
     conn.close()
@@ -674,7 +674,7 @@ def PrintFolder(verbose):
         print("PrintFolder(4) {0}".format(e))
         return ""
     c = conn.cursor()
-    c.execute("SELECT * FROM folder")
+    c.execute("SELECT * FROM folder order by symbol")
     keys = list(map(lambda x: x[0].replace("_"," "), c.description))
     rows = c.fetchall()
     conn.commit()
@@ -688,10 +688,15 @@ def PrintFolder(verbose):
     keys[1] = 'company name'
     items = []
     answer = {}
+    symbol_options = ""
+    index = 0
     for row in rows:
         json_string = json.loads(row[1])
         col_list = []
         for i in range(len(keys)):
+            if (i == 0):
+                index += 1
+                symbol_options += '<option value="{0}">{1}</option>'.format(index, row[i])
             if (i == 1):
                 col_list.append(json_string['companyName'])
             else:
@@ -704,7 +709,7 @@ def PrintFolder(verbose):
     table = TableCls(items, html_attrs = {'width':'100%','border-spacing':0})
     if (verbose):
         print ("***\n")
-    return table.__html__()
+    return table.__html__(), symbol_options
 
 def PrintPercent(verbose):
     defaults = GetDefaults(verbose)
@@ -726,7 +731,7 @@ def PrintPercent(verbose):
         print("PrintPercent(4) {0}".format(e))
         return ""
     c = conn.cursor()
-    c.execute("SELECT * FROM folder where symbol != '$'")
+    c.execute("SELECT * FROM folder where symbol != '$' order by symbol")
     rows = c.fetchall()
     conn.commit()
     conn.close()
@@ -1018,7 +1023,7 @@ def GetAIMNotes(count, verbose):
         answer = dict(zip(keys, row))
         if (answer['post date'] == "1970/01/01"):
             note['date'] = defaults['start']
-            note['content'] = "A.I.M. was initialized with {0}".format(as_currency(defaults['cash'] + defaults['stocks']))            
+            note['content'] = "A.I.M. Was initialized with {0}".format(as_currency(defaults['cash'] + defaults['stocks']))            
         else:
             note['date'] = answer['post date']
             if (answer['market order'] == 0):
@@ -1062,6 +1067,8 @@ def GetFirstAIM(verbose):
     return answer
 
 def as_currency(amount):
+    if (amount is None):
+        amount = 0
     if amount >= 0:
         return '${:,.2f}'.format(amount)
     else:
@@ -1184,7 +1191,7 @@ def PrintAIM(printyear, verbose):
         print("PrintAIM(5) {0}".format(e))
         return ""
     c = conn.cursor()
-    c.execute("SELECT * FROM aim")
+    c.execute("SELECT * FROM aim order by post_date")
     keys_db = list(map(lambda x: x[0].replace("_"," "), c.description))
     rows = c.fetchall()
     conn.commit()
