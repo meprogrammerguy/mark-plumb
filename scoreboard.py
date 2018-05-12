@@ -72,11 +72,14 @@ def history():
     year_input = dt.year
     year_string = str(dt.year)
     feedback = ""
+    history_style = "display: none;"
     try:
         if request.method == "POST":
             if (request.form['action'] == "all"):
                 year_input = 1970
                 year_string = "all"
+            elif (request.form['action'] == "see"):     #temporary code while developing page
+                history_style = "display: block;"
             elif (request.form['action'].isnumeric()):
                 year_input = int(request.form['action'])
                 if year_input < 100:
@@ -84,12 +87,12 @@ def history():
                 year_string = str(year_input)
             else:
                 feedback = "input is not a year or the word all"
-                return render_template("history.html", feedback = feedback)
+                return render_template("history.html", feedback = feedback, history_style = history_style)
 
     except Exception as e:
-        return render_template("history.html", feedback = e) 
+        return render_template("history.html", feedback = e, history_style = history_style) 
 
-    return render_template('history.html', table = plumb.PrintAIM(str(year_input), False), year_string = year_string, notes = notes, feedback = feedback)
+    return render_template('history.html', table = plumb.PrintAIM(str(year_input), False), year_string = year_string, notes = notes, feedback = feedback, history_style = history_style)
 
 @app.errorhandler(404)
 def page_not_found(e):
