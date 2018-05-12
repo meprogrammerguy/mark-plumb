@@ -10,8 +10,21 @@ import plumb
 
 app = Flask(__name__)
 
-@app.route('/')
+@app.route('/', methods=["GET","POST"])
 def index():
+    try:
+        if request.method == "POST":
+            if (request.form['action'] == "post" or request.form['action'] == "buy" or request.form['action'] == "sell"):
+                plumb.Post(False)
+                visual = "{0} saved.".format(request.form['action'])
+                return(render_index(visual))
+
+    except Exception as e:
+        return render_template("index.html", feedback = e) 
+
+    return(render_index(""))
+
+def render_index(visual):
     l, table, db = plumb.Look(False)
     allocation_list = plumb.PrintPercent(False)
     note_list = plumb.GetAIMNotes(10, False)
@@ -20,39 +33,41 @@ def index():
         note = Note(n['date'], n['content'])
         notes.append(note)
     return render_template('index.html', table = table, allocation_list = allocation_list, balance_list = l['percent list'],
-        initial_value =  l['initial value'], profit_value = l['profit value'], profit_percent = l['profit percent'], notes = notes)
+        initial_value =  l['initial value'], profit_value = l['profit value'], profit_percent = l['profit percent'], notes = notes, feedback = visual)
 
 @app.route('/folder/', methods=["GET","POST"])
 def folder():
-    error = ''
-    table, symbol_options, balance_options = plumb.PrintFolder(False)
-    note_list = plumb.GetAIMNotes(10, False)
-    notes = []
-    for n in note_list:
-        note = Note(n['date'], n['content'])
-        notes.append(note)
     try:
         if request.method == "POST":
             if (request.form['action'] == "adjust"):
                 print (request.form['action'])
             elif (request.form['action'][0:3] == "add"):
                 plumb.Add(request.form['action'][4:] , False) 
-                table, symbol_options, balance_options = plumb.PrintFolder(False)
-                return render_template('folder.html', table = table,  ticker_style = "display: none;", symbol_options = symbol_options, balance_options = balance_options, notes = notes)
+                return(render_folder("display: none;", "company added.", ""))
             elif (request.form['action'] != "Ticker symbol"):
                 co = plumb.Company(request.form['action'], False)
                 if not co:
-                    return render_template('folder.html', table = table,  ticker_style = "display: none;", symbol_options = symbol_options, search_error = "symbol not found.", notes = notes)
+                    return(render_folder("display: none;", "symbol not found.", ""))
                 else:
-                    return render_template('folder.html', table = table, ticker_symbol = co['symbol'], ticker_name = co['companyName'], ticker_description = co['description'],
-                        ticker_exchange =  co['exchange'], ticker_industry =  co['industry'], ticker_website =  co['website'], ticker_ceo =  co['CEO'],
-                        ticker_issuetype =  co['issueType'], ticker_sector =  co['sector'], ticker_style = "display: block;", symbol_options = symbol_options, add_symbol = co['symbol'], notes = notes)
-            return redirect(url_for('folder'))
+                    return(render_folder("display: block;", "", request.form['action']))
 
     except Exception as e:
         return render_template("folder.html", search_error = e) 
 
-    return render_template('folder.html', table = table,  ticker_style = "display: none;", symbol_options = symbol_options, balance_options = balance_options, notes = notes)
+    return(render_folder("display: none;", "", ""))
+
+def render_folder(ticker_style, search_error, symbol):
+    table, symbol_options, balance_options = plumb.PrintFolder(False)
+    note_list = plumb.GetAIMNotes(10, False)
+    notes = []
+    for n in note_list:
+        note = Note(n['date'], n['content'])
+        notes.append(note)
+    co = {}
+    if (ticker_style != "display: none;"):
+        co = plumb.Company(symbol, False)
+    return(render_template('folder.html', table = table,  ticker_style = ticker_style, symbol_options = symbol_options, balance_options = balance_options, notes = notes, ticker = co,
+        search_error = search_error))
  
 @app.route('/defaults/')
 def defaults():

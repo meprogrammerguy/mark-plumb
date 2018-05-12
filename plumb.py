@@ -1039,7 +1039,7 @@ def GetAIMNotes(count, verbose):
         else:
             note['date'] = answer['post date']
             if (answer['market order'] == 0):
-                note['content'] = "holds current position."
+                note['content'] = "hold current position."
             elif (answer['market order'] < 0):
                 note['content'] = "sold {0} of folder".format(as_currency(answer['market order']))
             else:
