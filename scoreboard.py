@@ -65,11 +65,31 @@ def render_folder(ticker_style, feedback, symbol):
 def defaults():
     return render_template('defaults.html', table = plumb.PrintDefaults(False))
 
-@app.route('/history/')
+@app.route('/history/', methods=["GET","POST"])
 def history():
     dt = datetime.now()
     notes = plumb.GetAIMNotes(10, False)
-    return render_template('history.html', table = plumb.PrintAIM(str(dt.year), False), year = str(dt.year), notes = notes)
+    year_input = dt.year
+    year_string = str(dt.year)
+    feedback = ""
+    try:
+        if request.method == "POST":
+            if (request.form['action'] == "all"):
+                year_input = 1970
+                year_string = "all"
+            elif (request.form['action'].isnumeric()):
+                year_input = int(request.form['action'])
+                if year_input < 100:
+                    year_input += 2000
+                year_string = str(year_input)
+            else:
+                feedback = "input is not a year or the word all"
+                return render_template("history.html", feedback = feedback)
+
+    except Exception as e:
+        return render_template("history.html", feedback = e) 
+
+    return render_template('history.html', table = plumb.PrintAIM(str(year_input), False), year_string = year_string, notes = notes, feedback = feedback)
 
 @app.errorhandler(404)
 def page_not_found(e):

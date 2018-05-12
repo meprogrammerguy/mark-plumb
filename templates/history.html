@@ -45,17 +45,17 @@
                 <li><a href="http://www.wallstreetsurvivor.com/accountoverview/" target="_blank" >Wall Street Survivor</a></li>
             </ul>
             <h3>Search</h3>
-            <form method="post" action="#" id="search_form">
-            <p>
-                <input class="search" type="text" onfocus="this.value=''" name="search_field" value="enter year or all" />
-                <input name="search" type="image" style="border: 0; margin: 0 0 -9px 5px;" src="{{ url_for('static', filename='search.png') }}" alt="Search" title="Search" />
-            </p>
+            <form method="post" action="#">
+                <p>
+                    <input class="search" type="text" onfocus="this.value=''" name="action" value="enter year or all" />
+                    <input name="search" type="image" style="border: 0; margin: 0 0 -9px 5px;" src="{{ url_for('static', filename='search.png') }}" alt="Search" title="Search" />
+                    <p style="color:red;">{{feedback | safe}}</p>
+                </p>
             </form>
       </div>
       <div id="content">
-        <!-- insert the page content here -->
         <h1>History</h1>
-        <h4 class = "center">Year : {{year}}</h4>
+        <h4 class = "center">Year : {{year_string}}</h4>
         {{table | safe}}
         <p>This page contains examples of all the styled elements available as part of this design. Use this page for reference, whilst you build your website.</p>
         <h2>Headings</h2>
