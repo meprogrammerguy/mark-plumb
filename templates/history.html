@@ -34,7 +34,7 @@
       <div class="sidebar">
             <h3>Latest News</h3>
             {% for note in notes %}
-                <h5>{{ note.noteDate() }}</h5>
+                <h5>{{ note.date }}</h5>
                 <p>{{ note.content }}</p>
             {% endfor %}
             <ul>

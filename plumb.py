@@ -1034,10 +1034,10 @@ def GetAIMNotes(count, verbose):
         note = {}
         answer = dict(zip(keys, row))
         if (answer['post date'] == "1970/01/01"):
-            note['date'] = defaults['start']
+            note['date'] = noteDate(defaults['start'])
             note['content'] = "A.I.M. Was initialized with {0}".format(as_currency(defaults['cash'] + defaults['stocks']))            
         else:
-            note['date'] = answer['post date']
+            note['date'] = noteDate(answer['post date'])
             if (answer['market order'] == 0):
                 note['content'] = "hold current position."
             elif (answer['market order'] < 0):
@@ -1048,6 +1048,16 @@ def GetAIMNotes(count, verbose):
     if (verbose):
         print ("***\n")
     return notes
+
+def noteDate(value):
+    dt = datetime.datetime.strptime(value, '%Y/%m/%d') 
+    return custom_strftime('%B {S}, %Y', dt)
+
+def suffix(d):
+    return 'th' if 11<=d<=13 else {1:'st',2:'nd',3:'rd'}.get(d%10, 'th')
+
+def custom_strftime(format, t):
+    return t.strftime(format).replace('{S}', str(t.day) + suffix(t.day))
 
 def GetFirstAIM(verbose):
     defaults = GetDefaults(verbose)

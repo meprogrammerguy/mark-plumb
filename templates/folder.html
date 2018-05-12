@@ -33,7 +33,7 @@
         <div class="sidebar">
             <h3>Latest News</h3>
             {% for note in notes %}
-                <h5>{{ note.noteDate() }}</h5>
+                <h5>{{ note.date }}</h5>
                 <p>{{ note.content }}</p>
             {% endfor %}
         <ul>
@@ -48,7 +48,7 @@
           <p>
             <input class="search" type="text" onfocus="this.value=''" name="action" value="Ticker symbol" />
             <input name="search" type="image" style="border: 0; margin: 0 0 -9px 5px;" src="{{ url_for('static', filename='search.png') }}" alt="Search" title="Search" />
-            <p style="color:red;">{{search_error | safe}}</p>
+            <p style="color:red;">{{feedback | safe}}</p>
           </p>
         </form>
         </div>
