@@ -25,29 +25,34 @@ def index():
 @app.route('/folder/', methods=["GET","POST"])
 def folder():
     error = ''
-    table, symbol_options = plumb.PrintFolder(False)
+    table, symbol_options, balance_options = plumb.PrintFolder(False)
+    note_list = plumb.GetAIMNotes(10, False)
+    notes = []
+    for n in note_list:
+        note = Note(n['date'], n['content'])
+        notes.append(note)
     try:
         if request.method == "POST":
             if (request.form['action'] == "adjust"):
                 print (request.form['action'])
             elif (request.form['action'][0:3] == "add"):
                 plumb.Add(request.form['action'][4:] , False) 
-                table, symbol_options = plumb.PrintFolder(False)
-                return render_template('folder.html', table = table,  ticker_style = "display: none;", symbol_options = symbol_options)
+                table, symbol_options, balance_options = plumb.PrintFolder(False)
+                return render_template('folder.html', table = table,  ticker_style = "display: none;", symbol_options = symbol_options, balance_options = balance_options, notes = notes)
             elif (request.form['action'] != "Ticker symbol"):
                 co = plumb.Company(request.form['action'], False)
                 if not co:
-                    return render_template('folder.html', table = table,  ticker_style = "display: none;", symbol_options = symbol_options, search_error = "symbol not found.")
+                    return render_template('folder.html', table = table,  ticker_style = "display: none;", symbol_options = symbol_options, search_error = "symbol not found.", notes = notes)
                 else:
                     return render_template('folder.html', table = table, ticker_symbol = co['symbol'], ticker_name = co['companyName'], ticker_description = co['description'],
                         ticker_exchange =  co['exchange'], ticker_industry =  co['industry'], ticker_website =  co['website'], ticker_ceo =  co['CEO'],
-                        ticker_issuetype =  co['issueType'], ticker_sector =  co['sector'], ticker_style = "display: block;", symbol_options = symbol_options, add_symbol = co['symbol'])
+                        ticker_issuetype =  co['issueType'], ticker_sector =  co['sector'], ticker_style = "display: block;", symbol_options = symbol_options, add_symbol = co['symbol'], notes = notes)
             return redirect(url_for('folder'))
 
     except Exception as e:
         return render_template("folder.html", search_error = e) 
 
-    return render_template('folder.html', table = table,  ticker_style = "display: none;", symbol_options = symbol_options)
+    return render_template('folder.html', table = table,  ticker_style = "display: none;", symbol_options = symbol_options, balance_options = balance_options, notes = notes)
  
 @app.route('/defaults/')
 def defaults():
@@ -56,7 +61,12 @@ def defaults():
 @app.route('/history/')
 def history():
     dt = datetime.now()
-    return render_template('history.html', table = plumb.PrintAIM(str(dt.year), False), year = str(dt.year))
+    note_list = plumb.GetAIMNotes(10, False)
+    notes = []
+    for n in note_list:
+        note = Note(n['date'], n['content'])
+        notes.append(note)
+    return render_template('history.html', table = plumb.PrintAIM(str(dt.year), False), year = str(dt.year), notes = notes)
 
 @app.errorhandler(404)
 def page_not_found(e):

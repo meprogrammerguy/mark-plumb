@@ -14,14 +14,12 @@
     <div id="header">
       <div id="logo">
         <div id="logo_text">
-          <!-- class="logo_colour", allows you to change the colour of the text -->
           <h1><a href="index.html">plumb the <span class="logo_colour">Mark</span></a></h1>
           <h2>your personal investing scoreboard.</h2>
         </div>
       </div>
       <div id="menubar">
         <ul id="menu">
-          <!-- put class="selected" in the li tag for the selected page - to highlight which page you're on -->
           <li  class = "selected"><a href="{{url_for("index")}}">Home</a></li>
           <li><a href="{{url_for("folder")}}">Folder</a></li>
           <li><a href="{{url_for("defaults")}}">Defaults</a></li>
@@ -31,24 +29,21 @@
     </div>
     <div id="content_header"></div>
     <div id="site_content">
-      <div class="sidebar">
-        <!-- insert your sidebar items here -->
-        <h3>Latest News</h3>
-        {% for note in notes %}
-            <h5>{{ note.noteDate() }}</h5>
-            <p>{{ note.content }}</p>
-        {% endfor %}
-        <ul>
-          <li><a href="https://amazon.com/author/smithja" target="_blank" >my Amazon Bookshelf</a></li>
-          <li><a href="https://github.com/meprogrammerguy" target="_blank" >my GitHub page</a></li>
-          <li><a href="http://meprogrammerguy.com/" target="_blank" >my Blog</a></li>
-          <li><a href="https://twitter.com/meprogrammerguy/" target="_blank" >my Twitter</a></li>
-          <li><a href="http://www.wallstreetsurvivor.com/accountoverview/" target="_blank" >Wall Street Survivor</a></li>
-        </ul>
-      </div>
-      <div id="content">
-        <form action="#" method="post">
-          <div class="form_settings">
+        <div class="sidebar">
+            <h3>Latest News</h3>
+            {% for note in notes %}
+                <h5>{{ note.noteDate() }}</h5>
+                <p>{{ note.content }}</p>
+            {% endfor %}
+            <ul>
+                <li><a href="https://amazon.com/author/smithja" target="_blank" >my Amazon Bookshelf</a></li>
+                <li><a href="https://github.com/meprogrammerguy" target="_blank" >my GitHub page</a></li>
+                <li><a href="http://meprogrammerguy.com/" target="_blank" >my Blog</a></li>
+                <li><a href="https://twitter.com/meprogrammerguy/" target="_blank" >my Twitter</a></li>
+                <li><a href="http://www.wallstreetsurvivor.com/accountoverview/" target="_blank" >Wall Street Survivor</a></li>
+            </ul>
+        </div>
+        <div id="content">
             <h1>Scoreboard</h1>
             <div class="left">
                 <h2>Balance</h2>
@@ -75,16 +70,18 @@
                 <p>When you do press the buy or sell make sure to follow through with your broker</p>
             </div>
             {{table | safe}}
-            <p><span>&nbsp;</span><input class="submit" type="submit" name="post" value="post" style="float: right;"/></p>
-          </div>
-        </form>
-      </div>
+            <form action="#" method="post">
+            <div class="form_settings">
+                <p><span>&nbsp;</span><input class="submit" type="submit" name="post" value="post" style="float: right;"/></p>
+            </form>
+            </div>
+        </div>
     </div>
     <div id="content_footer"></div>
     <div id="footer">
       <p><a href="{{url_for("index")}}">Home</a> | <a href="{{url_for("folder")}}">Folder</a> | <a href="{{url_for("defaults")}}">Defaults</a> | <a href="{{url_for("history")}}">History</a></p>
       <p>Copyright &copy; shadowplay_2  | <a href="http://www.html5webtemplates.co.uk">design from HTML5webtemplates.co.uk</a></p>
     </div>
-  </div>
+    </div>
 </body>
 </html>

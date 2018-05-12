@@ -380,11 +380,11 @@ def Cash(balance, verbose):
             print("Cash(4) {0}".format(e))
             return False
         c = conn.cursor()
-        c.execute("UPDATE folder SET balance = ? WHERE symbol = '$'", (math.ceil(float(balance)-.4),))
+        c.execute("UPDATE folder SET balance = ? WHERE symbol = '$'", (round(float(balance), 2),))
         dict_string = {'companyName': 'CASH', 'description': 'Cash Account', 'symbol': '$'}
         json_string = json.dumps(dict_string)
         c.execute("UPDATE folder SET json_string = (?) WHERE symbol = '$'", (json_string,))
-        c.execute("UPDATE folder SET shares = ? WHERE symbol = '$'", (math.ceil(float(balance)-.4),))
+        c.execute("UPDATE folder SET shares = ? WHERE symbol = '$'", (round(float(balance), 4),))
         dt = datetime.datetime.now()
         c.execute("UPDATE folder SET update_time = (?) WHERE symbol = '$'", (dt.strftime("%m/%d/%y %H:%M"),))
         c.execute("UPDATE folder SET price_time = (?) WHERE symbol = '$'", (dt.strftime("%m/%d/%y %H:%M"),))
@@ -452,11 +452,11 @@ def Shares(symbol, shares, verbose):
                 result['exception'] = e
                 return result
             c = conn.cursor()
-            c.execute("UPDATE folder SET shares = ? WHERE symbol = (?)", (round(float(shares), 2), symbol,))
+            c.execute("UPDATE folder SET shares = ? WHERE symbol = (?)", (shares, symbol,))
             c.execute("UPDATE folder SET price_time = (?) WHERE symbol = (?)", (price['price time'], symbol,))
-            c.execute("UPDATE folder SET price = ? WHERE symbol = (?)", (float(price['price']), symbol,))
+            c.execute("UPDATE folder SET price = ? WHERE symbol = (?)", (price['price'], symbol,))
             balance = float(shares) * float(price['price'])
-            c.execute("UPDATE folder SET balance = ? WHERE symbol = (?)", (math.ceil(balance-.4), symbol,))
+            c.execute("UPDATE folder SET balance = ? WHERE symbol = (?)", (balance, symbol,))
             dt = datetime.datetime.now()
             c.execute("UPDATE folder SET update_time = (?) WHERE symbol = (?)", (dt.strftime("%m/%d/%y %H:%M"), symbol,))
             conn.commit()
@@ -514,11 +514,11 @@ def Balance(symbol, balance, verbose):
             c = conn.cursor()
             shares = 1.0
             if float(price['price']) > 0:
-                shares = float(balance) / float(price['price'])
-            c.execute("UPDATE folder SET shares = ? WHERE symbol = (?)", (round(shares,2), symbol,))
+                shares = balance / float(price['price'])
+            c.execute("UPDATE folder SET shares = ? WHERE symbol = (?)", (shares, symbol,))
             c.execute("UPDATE folder SET price_time = (?) WHERE symbol = (?)", (price['price time'], symbol,))
-            c.execute("UPDATE folder SET price = ? WHERE symbol = (?)", (float(price['price']), symbol,))
-            c.execute("UPDATE folder SET balance = ? WHERE symbol = (?)", (math.ceil(float(balance)-.4), symbol,))
+            c.execute("UPDATE folder SET price = ? WHERE symbol = (?)", (price['price'], symbol,))
+            c.execute("UPDATE folder SET balance = ? WHERE symbol = (?)", (balance, symbol,))
             dt = datetime.datetime.now()
             c.execute("UPDATE folder SET update_time = (?) WHERE symbol = (?)", (dt.strftime("%m/%d/%y %H:%M"), symbol,))
             conn.commit()
@@ -554,10 +554,14 @@ def Update(verbose):
         if (verbose):
             print("Update(2) sqlite3: {0}".format(sqlite3.version))
     except Error as e:
-        print("Update(3) {0}".format(e))
+        print("Update(3) dbase: {0}, {1}".format(db_file, e))
         return False, e
     c = conn.cursor()
-    c.execute("SELECT symbol, shares, balance FROM folder where symbol != '$' order by symbol") 
+    try:
+        c.execute("SELECT symbol, shares, balance FROM folder where symbol != '$' order by symbol")
+    except Error as e:
+        print("Update(4) dbase: {0}, {1}".format(db_file, e))
+        return False, e
     rows = c.fetchall()
     conn.commit()
     conn.close()
@@ -690,6 +694,10 @@ def PrintFolder(verbose):
     items = []
     answer = {}
     symbol_options = ""
+    balance_options = ""
+    balance_options += '<option value="1">balance</option>'
+    balance_options += '<option value="2">shares</option>'
+    balance_options += '<option value="3">amount</option>'
     index = 0
     for row in rows:
         json_string = json.loads(row[1])
@@ -710,7 +718,7 @@ def PrintFolder(verbose):
     table = TableCls(items, html_attrs = {'width':'100%','border-spacing':0})
     if (verbose):
         print ("***\n")
-    return table.__html__(), symbol_options
+    return table.__html__(), symbol_options, balance_options
 
 def PrintPercent(verbose):
     defaults = GetDefaults(verbose)

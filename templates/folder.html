@@ -31,9 +31,11 @@
     <div id="content_header"></div>
     <div id="site_content">
         <div class="sidebar">
-        <h3>Latest News</h3>
-        <h5>May 7th, 2018</h5>
-        <p>Began the construction of this page.<br /></p>
+            <h3>Latest News</h3>
+            {% for note in notes %}
+                <h5>{{ note.noteDate() }}</h5>
+                <p>{{ note.content }}</p>
+            {% endfor %}
         <ul>
           <li><a href="https://amazon.com/author/smithja" target="_blank" >my Amazon Bookshelf</a></li>
           <li><a href="https://github.com/meprogrammerguy" target="_blank" >my GitHub page</a></li>
@@ -46,7 +48,7 @@
           <p>
             <input class="search" type="text" onfocus="this.value=''" name="action" value="Ticker symbol" />
             <input name="search" type="image" style="border: 0; margin: 0 0 -9px 5px;" src="{{ url_for('static', filename='search.png') }}" alt="Search" title="Search" />
-            <p>{{search_error | safe}}</p>
+            <p style="color:red;">{{search_error | safe}}</p>
           </p>
         </form>
         </div>
@@ -89,11 +91,10 @@
                 </form>
              </div>
             <h1>Adjustments</h1>
-            <div class="left">
-                <p><span>symbol: </span><select id="id" name="symbol">{{symbol_options | safe}}</select></p>
-            </div>
             <div class="center">
-                <p><span>balance: </span><input type="text" name="balance" value=""/></p>
+                <p><select id="id" name="symbol">{{symbol_options | safe}}</select>
+                <select id="id" name="options">{{balance_options | safe}}</select>
+                <input type="text" name="balance" value=""/></p>
             </div>
             <form action="#" method="post">
             <div class="form_settings">
