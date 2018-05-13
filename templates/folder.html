@@ -54,7 +54,9 @@
         </div>
         <div id="content">
             <h1>Portfolio</h1>
-            {{table | safe}}
+            <form action="#" method="post">
+                {{table | safe}}
+            </form>
             <div class ="left" style="{{ticker_style}}">
                 <h1>Ticker Symbol Lookup</h1>
 	        <p>{{ticker.description}}</p>
@@ -86,21 +88,23 @@
 	        </table>
                 <form action="#" method="post">
                     <div class="form_settings">
-                        <p><span>&nbsp;</span><input class="submit" type="submit" name="action" value="add {{ticker.symbol}}" style="float: right;"/></p>
+                        <p><span>&nbsp;</span><input class="submit" type="submit" name="action" value="add" style="float: right;"/></p>
+                        <input hidden type="text" name="symbol" value="{{ticker.symbol}}"/>
                     </div>
                 </form>
              </div>
             <h1>Adjustments</h1>
-            <div class="center">
-                <p><select id="id" name="symbol">{{symbol_options | safe}}</select>
-                <select id="id" name="options">{{balance_options | safe}}</select>
-                <input type="text" name="balance" value=""/></p>
-            </div>
-            <form action="#" method="post">
-            <div class="form_settings">
-                <p><span>&nbsp;</span><input class="submit" type="submit" name="action" value="adjust" style="float: right;"/></p>
-            </div>
-            </form>
+                <form action="#" method="post">
+                <div class="center">
+                    <p><select id="id" name="symbol">{{symbol_options | safe}}</select>
+                    <select id="id" name="options">{{balance_options | safe}}</select>
+                    <input hidden type="text" name="amount" value="{{amount_options | safe}}"/>
+                    <input type="text" name="balance" value=""/></p>
+                </div>
+                <div class="form_settings">
+                    <p><span>&nbsp;</span><input class="submit" type="submit" name="action" value="adjust" style="float: right;"/></p>
+                </div>
+                </form>
             </div>
         </div>
         <div id="content_footer"></div>

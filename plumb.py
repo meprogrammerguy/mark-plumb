@@ -421,6 +421,11 @@ def CreateFolder(key, verbose):
 
 def Shares(symbol, shares, verbose):
     result = {}
+    if (symbol == "$"):
+        Cash(shares, verbose)
+        result['status'] = True
+        result['shares'] = shares
+        return result
     defaults = GetDefaults(verbose)
     username = getpass.getuser()
     db_file = username + "/"  + defaults['folder db']
@@ -481,6 +486,11 @@ def Shares(symbol, shares, verbose):
 
 def Balance(symbol, balance, verbose):
     result = {}
+    if (symbol == "$"):
+        Cash(balance, verbose)
+        result['status'] = True
+        result['shares'] = balance
+        return result
     defaults = GetDefaults(verbose)
     username = getpass.getuser()
     db_file = username + "/"  + defaults['folder db']
@@ -695,21 +705,25 @@ def PrintFolder(verbose):
     answer = {}
     symbol_options = ""
     balance_options = ""
-    balance_options += '<option value="1">balance</option>'
-    balance_options += '<option value="2">shares</option>'
-    balance_options += '<option value="3">amount</option>'
-    index = 0
+    balance_options += '<option value="balance">balance</option>'
+    balance_options += '<option value="shares">shares</option>'
+    balance_options += '<option value="amount">amount</option>'
+    amount_options = []
     for row in rows:
         json_string = json.loads(row[1])
         col_list = []
         for i in range(len(keys)):
             if (i == 0):
-                index += 1
-                symbol_options += '<option value="{0}">{1}</option>'.format(index, row[i])
+                symbol_options += '<option value="{0}">{1}</option>'.format(row[i], row[i])
             if (i == 1):
                 col_list.append(json_string['companyName'])
             else:
                 if (i == 2 or i == 6):
+                    if (i == 2):
+                        amount_option = []
+                        amount_option.append(row[0])
+                        amount_option.append(row[i])
+                        amount_options.append(amount_option)
                     col_list.append(as_currency(row[i]))
                 else:
                     col_list.append(row[i])
@@ -718,7 +732,27 @@ def PrintFolder(verbose):
     table = TableCls(items, html_attrs = {'width':'100%','border-spacing':0})
     if (verbose):
         print ("***\n")
-    return table.__html__(), symbol_options, balance_options
+    button_table = AddRemoveButtons(table.__html__())
+    return button_table, symbol_options, balance_options, amount_options
+
+def AddRemoveButtons(table):
+    table = table.replace("<thead><tr><th>", "<thead><tr><th></th><th>", 1)
+    pattern = "<tr><td>"
+    index = 0
+    done = False
+    while (not done):
+        start = table.find(pattern, index)
+        if start == -1:
+            done = True
+            continue
+        symbol = table[start + 8 :table.find("</td>", start + 8)]
+        if (symbol != "$"):
+            r_button = '<tr><td><input class="submit" type="submit" name="action" value="remove"/><input hidden type="text" name="symbol" value="{0}"/></td><td>'.format(symbol)
+            table = table[0 : start] + table[start:].replace(pattern, r_button, 1)
+        else:
+            table = table[0 : start] + table[start:].replace(pattern, "<tr><td></td><td>", 1)
+        index = start + 1
+    return table
 
 def PrintPercent(verbose):
     defaults = GetDefaults(verbose)
@@ -1407,8 +1441,8 @@ def TestFolder(verbose):
         if (verbose):
             print ("\tfail.")
     if (verbose):
-        print ("Test #2 - Cash(5000, verbose)")
-    result = Cash(5000, verbose)
+        print ("Test #2 - Balance('$', 5000, verbose)")
+    result = Balance( "$", 5000, verbose)
     if (result):
         if (verbose):
             print ("\tpass.")

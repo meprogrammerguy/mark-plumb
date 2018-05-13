@@ -71,7 +71,7 @@ def main(argv):
         print ("\tWarning, please use --folder switch to set the folder database name")
         exit()
     if (cash > ""):
-        cashResult = plumb.Cash(cash, verbose)
+        cashResult = plumb.Balance("$", cash, verbose)
         if (cashResult):
             print ("balance updated.")
         else:
@@ -119,7 +119,7 @@ def main(argv):
             print ("failed. Error: {0}".format(updateError))
         exit()
     if (printout):
-        printResult, symbol_options, balance_options = plumb.PrintFolder(verbose)
+        printResult, symbol_options, balance_options, amount_options = plumb.PrintFolder(verbose)
         if (printResult > ""):
             pprint.pprint(printResult)
         else:
@@ -130,6 +130,10 @@ def main(argv):
             print ("failed.")
         if (balance_options > ""):
             pprint.pprint(balance_options)
+        else:
+            print ("failed.")
+        if (amount_options is not None):
+            pprint.pprint(amount_options)
         else:
             print ("failed.")
         exit()

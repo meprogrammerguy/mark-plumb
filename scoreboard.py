@@ -5,6 +5,7 @@ from flask import render_template
 from flask import request
 from datetime import datetime
 import pdb
+import ast
 
 import plumb
 
@@ -36,20 +37,48 @@ def folder():
     try:
         if request.method == "POST":
             if (request.form['action'] == "adjust"):
-                print (request.form['action'])
-            elif (request.form['action'][0:3] == "add"):
-                plumb.Add(request.form['action'][4:] , False) 
+                if (request.form['options'] == "balance"):
+                    if (request.form['balance'] == ""):
+                        return(render_folder("display: none;", "balance is blank.", ""))
+                    else:
+                        plumb.Balance(request.form['symbol'], float(request.form['balance']), False)
+                        return(render_folder("display: none;", "balance updated.", ""))
+                elif (request.form['options'] == "shares"):
+                    if (request.form['balance'] == ""):
+                        return(render_folder("display: none;", "shares is blank.", ""))
+                    else:
+                        plumb.Shares(request.form['symbol'], float(request.form['balance']), True)
+                        return(render_folder("display: none;", "shares updated.", ""))
+                else:
+                    if (request.form['balance'] == ""):
+                        return(render_folder("display: none;", "amount is blank.", ""))
+                    else:
+                        amounts = ast.literal_eval(request.form['amount'])
+                        for item in amounts:
+                            if (item[0] == request.form['symbol']):
+                                print (item[1])
+                                amount = item[1]
+                                break
+                        balance = amount + float(request.form['balance'])
+                        print (balance)
+                        plumb.Balance(request.form['symbol'], balance, True)
+                        return(render_folder("display: none;", "amount updated.", ""))
+            elif (request.form['action'] == "remove"):
+                plumb.Remove(request.form['symbol'], False)
+                return(render_folder("display: none;", "company removed.", ""))
+            elif (request.form['action'] == "add"):
+                plumb.Add(request.form['symbol'], False) 
                 return(render_folder("display: none;", "company added.", ""))
             elif (request.form['action'] != "Ticker symbol"):
                 return(render_folder("display: block;", "", request.form['action']))
 
     except Exception as e:
-        return render_template("folder.html", feedback = e) 
+        return (render_folder("display: none;", e, ""))
 
     return(render_folder("display: none;", "", ""))
 
 def render_folder(ticker_style, feedback, symbol):
-    table, symbol_options, balance_options = plumb.PrintFolder(False)
+    table, symbol_options, balance_options, amount_options = plumb.PrintFolder(False)
     notes = plumb.GetAIMNotes(10, False)
     co = {}
     if (symbol > ""):
@@ -59,7 +88,7 @@ def render_folder(ticker_style, feedback, symbol):
             ticker_style = "display: none;"
 
     return(render_template('folder.html', table = table,  ticker_style = ticker_style, symbol_options = symbol_options, balance_options = balance_options, notes = notes, ticker = co,
-        feedback = feedback))
+        feedback = feedback, amount_options = amount_options))
  
 @app.route('/defaults/')
 def defaults():
@@ -72,14 +101,14 @@ def history():
     year_input = dt.year
     year_string = str(dt.year)
     feedback = ""
-    history_style = "display: none;"
+    history_style = "display: block;"
     try:
         if request.method == "POST":
             if (request.form['action'] == "all"):
                 year_input = 1970
                 year_string = "all"
-            elif (request.form['action'] == "see"):     #temporary code while developing page
-                history_style = "display: block;"
+            elif (request.form['action'] == "hide"):     #temporary hide code while developing page
+                history_style = "display: none;"
             elif (request.form['action'].isnumeric()):
                 year_input = int(request.form['action'])
                 if year_input < 100:
