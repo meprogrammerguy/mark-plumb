@@ -113,7 +113,9 @@ def main(argv):
         exit()
     if (look):
         lookResult, lookHTML, lookDB = plumb.Look(verbose)
-        print (lookResult)
+        pprint.pprint(lookResult)
+        pprint.pprint(lookHTML)
+        pprint.pprint(lookDB)
         exit()
     if (update):
         postResult = plumb.Post(verbose)

@@ -20,7 +20,7 @@ def index():
                 return(render_index("{0} saved.".format(request.form['action'])))
 
     except Exception as e:
-        return render_template("index.html", feedback = e) 
+        return (render_folder(feedback))
 
     return(render_index(""))
 
@@ -28,9 +28,13 @@ def render_index(feedback):
     l, table, db = plumb.Look(False)
     allocation_list = plumb.PrintPercent(False)
     notes = plumb.GetAIMNotes(10, False)
-
+    post_display = "post"
+    if (db['market order'] > 0):
+        post_display = "buy"
+    if (db['market order'] < 0):
+        post_display = "sell"
     return render_template('index.html', table = table, allocation_list = allocation_list, balance_list = l['percent list'],
-        initial_value =  l['initial value'], profit_value = l['profit value'], profit_percent = l['profit percent'], notes = notes, feedback = feedback)
+        initial_value =  l['initial value'], profit_value = l['profit value'], profit_percent = l['profit percent'], notes = notes, feedback = feedback, post_display = post_display)
 
 @app.route('/folder/', methods=["GET","POST"])
 def folder():
@@ -47,7 +51,7 @@ def folder():
                     if (request.form['balance'] == ""):
                         return(render_folder("display: none;", "shares is blank.", ""))
                     else:
-                        plumb.Shares(request.form['symbol'], float(request.form['balance']), True)
+                        plumb.Shares(request.form['symbol'], float(request.form['balance']), False)
                         return(render_folder("display: none;", "shares updated.", ""))
                 else:
                     if (request.form['balance'] == ""):
@@ -56,12 +60,10 @@ def folder():
                         amounts = ast.literal_eval(request.form['amount'])
                         for item in amounts:
                             if (item[0] == request.form['symbol']):
-                                print (item[1])
                                 amount = item[1]
                                 break
                         balance = amount + float(request.form['balance'])
-                        print (balance)
-                        plumb.Balance(request.form['symbol'], balance, True)
+                        plumb.Balance(request.form['symbol'], balance, False)
                         return(render_folder("display: none;", "amount updated.", ""))
             elif (request.form['action'] == "remove"):
                 plumb.Remove(request.form['symbol'], False)
