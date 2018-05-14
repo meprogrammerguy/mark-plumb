@@ -365,26 +365,29 @@ def Remove(symbol, verbose):
         print ("***\n")
     return True
 
-def Price(price, price_time, verbose):
+def Price(symbol, price, price_time, verbose):
     defaults = GetDefaults(verbose)
     username = getpass.getuser()
     db_file = username + "/"  + defaults['folder db']
     if (verbose):
         print ("***")
-        print ("Price(1) price: {0}".format(price))
-        print ("Price(2) dbase: {0}".format(db_file))
+        print ("Price(1) symbol: {0}".format(symbol))
+        print ("Price(2) price: {0}".format(price))
+        print ("Price(3) price_time: {0}".format(price_time))
+        print ("Price(4) dbase: {0}".format(db_file))
     result = CreateFolder("$", verbose)
     if (result):
         try:
             conn = sqlite3.connect(db_file)
             if (verbose):
-                print("Price(3) sqlite3: {0}".format(sqlite3.version))
+                print("Price(5) sqlite3: {0}".format(sqlite3.version))
         except Error as e:
-            print("Price(4) {0}".format(e))
+            print("Price(6) {0}".format(e))
             return False
         c = conn.cursor()
-        c.execute("UPDATE folder SET price_time = (?) WHERE symbol = '$'", (datetime.datetime.strptime(price_time, '%m/%d/%y %H:%M'),))
-        c.execute("UPDATE folder SET price = ? WHERE symbol = '$'", (price,))
+        dt = datetime.datetime.strptime(price_time, '%m/%d/%y %H:%M') 
+        c.execute("UPDATE folder SET price_time = (?) WHERE symbol = (?)", (dt.strftime("%m/%d/%y %H:%M"), symbol,))
+        c.execute("UPDATE folder SET price = ? WHERE symbol = (?)", (price, symbol,))
         conn.commit()
         conn.close()
     if (verbose):
@@ -582,7 +585,7 @@ def Update(verbose):
         if ("Error Message" in quote):
             errors.append([row[0], quote['url'], quote["Error Message"]])
             continue
-        Price(quote['price'], quote['price time'], verbose)
+        result = Price(row[0], quote['price'], quote['price time'], verbose)
         result = Shares(row[0], str(row[1]), verbose)
         if (result['status']):
             if (verbose):
@@ -727,14 +730,14 @@ def PrintFolder(verbose):
         if (verbose):
             print ("PrintFolder(2) {0} file is missing, cannot print".format(db_file))
             print ("***\n")
-        return ""
+        return "", "", "", []
     try:
         conn = sqlite3.connect(db_file)
         if (verbose):
             print("PrintFolder(3) sqlite3: {0}".format(sqlite3.version))
     except Error as e:
         print("PrintFolder(4) {0}".format(e))
-        return ""
+        return  e, "", "", []
     c = conn.cursor()
     c.execute("SELECT * FROM folder order by symbol")
     keys = list(map(lambda x: x[0].replace("_"," "), c.description))
@@ -1201,8 +1204,8 @@ def Look(verbose):
             keys.append("safe") # safe is not in the aim db (want to see it though)
         keys.append(key)
     cd = datetime.datetime.now()
-    stock = math.ceil(GetFolderStockValue(verbose) -.4)
-    cash = math.ceil(GetFolderCash(verbose) -.4)
+    stock = GetFolderStockValue(verbose)
+    cash = GetFolderCash(verbose)
     bsa = BuySellAdvice(prev_pc, stock, verbose)
     safe = Safe(stock, verbose)
     mo = MarketOrder(bsa, safe, verbose)
