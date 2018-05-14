@@ -365,7 +365,7 @@ def Remove(symbol, verbose):
         print ("***\n")
     return True
 
-def Price(price, verbose):
+def Price(price, price_time, verbose):
     defaults = GetDefaults(verbose)
     username = getpass.getuser()
     db_file = username + "/"  + defaults['folder db']
@@ -383,8 +383,7 @@ def Price(price, verbose):
             print("Price(4) {0}".format(e))
             return False
         c = conn.cursor()
-        dt = datetime.datetime.now()
-        c.execute("UPDATE folder SET price_time = (?) WHERE symbol = '$'", (dt.strftime("%m/%d/%y %H:%M"),))
+        c.execute("UPDATE folder SET price_time = (?) WHERE symbol = '$'", (datetime.datetime.strptime(price_time, '%m/%d/%y %H:%M'),))
         c.execute("UPDATE folder SET price = ? WHERE symbol = '$'", (price,))
         conn.commit()
         conn.close()
@@ -474,6 +473,8 @@ def Shares(symbol, shares, verbose):
         return result
     folder = GetFolder(verbose)
     price = GetFolderValue(symbol, "price", folder)
+    if price is None:
+        price = 0
     try:
         conn = sqlite3.connect(db_file)
         if (verbose):
@@ -535,6 +536,8 @@ def Balance(symbol, balance, verbose):
         return result
     c = conn.cursor()
     shares = 1.0
+    if (price is None):
+        price = 0
     if price > 0:
         shares = float(balance) / price
     c.execute("UPDATE folder SET shares = ? WHERE symbol = (?)", (shares, symbol,))
@@ -579,7 +582,7 @@ def Update(verbose):
         if ("Error Message" in quote):
             errors.append([row[0], quote['url'], quote["Error Message"]])
             continue
-        Price(quote['price'], verbose)
+        Price(quote['price'], quote['price time'], verbose)
         result = Shares(row[0], str(row[1]), verbose)
         if (result['status']):
             if (verbose):
