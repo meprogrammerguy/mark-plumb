@@ -29,12 +29,16 @@ def render_index(feedback):
     allocation_list = plumb.PrintPercent(False)
     notes = plumb.GetAIMNotes(10, False)
     post_display = "post"
+    post_background = ""
     if (db['market order'] > 0):
+        post_background = "background: blue;"
         post_display = "buy"
     if (db['market order'] < 0):
+        post_background = "background: green;"
         post_display = "sell"
     return render_template('index.html', table = table, allocation_list = allocation_list, balance_list = l['percent list'],
-        initial_value =  l['initial value'], profit_value = l['profit value'], profit_percent = l['profit percent'], notes = notes, feedback = feedback, post_display = post_display)
+        initial_value =  l['initial value'], profit_value = l['profit value'], profit_percent = l['profit percent'], notes = notes, feedback = feedback,
+        post_display = post_display, post_background = post_background)
 
 @app.route('/folder/', methods=["GET","POST"])
 def folder():
@@ -57,14 +61,11 @@ def folder():
                     if (request.form['balance'] == ""):
                         return(render_folder("display: none;", "amount is blank.", ""))
                     else:
-                        amounts = ast.literal_eval(request.form['amount'])
-                        for item in amounts:
-                            if (item[0] == request.form['symbol']):
-                                amount = item[1]
-                                break
-                        balance = amount + float(request.form['balance'])
+                        curr_balance = CurrentBalance(request.form['symbol'], request.form['amount'])
+                        balance = curr_balance + float(request.form['balance'])
+                        log = "company {0}, balance {1}, adjusted by {2}.".format(request.form['symbol'], as_currency(curr_balance), as_currency(float(request.form['balance'])))
                         plumb.Balance(request.form['symbol'], balance, False)
-                        return(render_folder("display: none;", "amount updated.", ""))
+                        return(render_folder("display: none;", log, ""))
             elif (request.form['action'] == "remove"):
                 plumb.Remove(request.form['symbol'], False)
                 return(render_folder("display: none;", "company removed.", ""))
@@ -128,6 +129,19 @@ def history():
 @app.errorhandler(404)
 def page_not_found(e):
     return render_template('404.html'), 404
+
+def CurrentBalance(symbol, string):
+    amounts_list = ast.literal_eval(string)
+    result = [element[1] for element in amounts_list if element[0] == symbol]
+    return result[0]
+
+def as_currency(amount):
+    if (amount is None):
+        amount = 0
+    if amount >= 0:
+        return '${:,.2f}'.format(amount)
+    else:
+        return '(${:,.2f})'.format(-amount)   
 
 if __name__ == "__main__":
 	app.run()

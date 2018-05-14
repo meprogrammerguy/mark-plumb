@@ -17,6 +17,7 @@ import re
 import csv
 import math
 from flask_table import create_table, Table, Col
+import pprint
 
 #region stock
 def Quote(ticker, verbose):
@@ -35,6 +36,7 @@ def Quote(ticker, verbose):
     except urllib.error.HTTPError as err:
         result['exception'] = err
         result['status'] = False
+        result['url'] = url
         if err.code == 404:
             if (verbose):
                 print ("Quote(5) page not found for {0}".format(ticker))
@@ -68,6 +70,7 @@ def Quote(ticker, verbose):
         else:
             closing['exception'] = returnQuote
             closing['status'] = False
+    closing['url'] = url
     return closing
 
 def Company(ticker, verbose):
@@ -362,6 +365,33 @@ def Remove(symbol, verbose):
         print ("***\n")
     return True
 
+def Price(price, verbose):
+    defaults = GetDefaults(verbose)
+    username = getpass.getuser()
+    db_file = username + "/"  + defaults['folder db']
+    if (verbose):
+        print ("***")
+        print ("Price(1) price: {0}".format(price))
+        print ("Price(2) dbase: {0}".format(db_file))
+    result = CreateFolder("$", verbose)
+    if (result):
+        try:
+            conn = sqlite3.connect(db_file)
+            if (verbose):
+                print("Price(3) sqlite3: {0}".format(sqlite3.version))
+        except Error as e:
+            print("Price(4) {0}".format(e))
+            return False
+        c = conn.cursor()
+        dt = datetime.datetime.now()
+        c.execute("UPDATE folder SET price_time = (?) WHERE symbol = '$'", (dt.strftime("%m/%d/%y %H:%M"),))
+        c.execute("UPDATE folder SET price = ? WHERE symbol = '$'", (price,))
+        conn.commit()
+        conn.close()
+    if (verbose):
+        print ("***\n")
+    return True
+
 def Cash(balance, verbose):
     defaults = GetDefaults(verbose)
     username = getpass.getuser()
@@ -442,42 +472,26 @@ def Shares(symbol, shares, verbose):
         result['balance'] = 0
         result['exception'] = e
         return result
-    resultAdd = Add(symbol, verbose)
-    if (resultAdd):
-        price = Quote(symbol, verbose)
-        if (price['status']):
-            try:
-                conn = sqlite3.connect(db_file)
-                if (verbose):
-                    print("Shares(4) sqlite3: {0}".format(sqlite3.version))
-            except Error as e:
-                print("Shares(5) {0}".format(e))
-                result['status'] = False
-                result['balance'] = 0
-                result['exception'] = e
-                return result
-            c = conn.cursor()
-            c.execute("UPDATE folder SET shares = ? WHERE symbol = (?)", (shares, symbol,))
-            c.execute("UPDATE folder SET price_time = (?) WHERE symbol = (?)", (price['price time'], symbol,))
-            c.execute("UPDATE folder SET price = ? WHERE symbol = (?)", (price['price'], symbol,))
-            balance = float(shares) * float(price['price'])
-            c.execute("UPDATE folder SET balance = ? WHERE symbol = (?)", (balance, symbol,))
-            dt = datetime.datetime.now()
-            c.execute("UPDATE folder SET update_time = (?) WHERE symbol = (?)", (dt.strftime("%m/%d/%y %H:%M"), symbol,))
-            conn.commit()
-            conn.close()
-        else:
-            result['exception'] = price['exception']
-            result['status'] = False
-            result['balance'] = 0
-            return result
-    else:
+    folder = GetFolder(verbose)
+    price = GetFolderValue(symbol, "price", folder)
+    try:
+        conn = sqlite3.connect(db_file)
         if (verbose):
-            print ("***\n")
+            print("Shares(4) sqlite3: {0}".format(sqlite3.version))
+    except Error as e:
+        print("Shares(5) {0}".format(e))
         result['status'] = False
         result['balance'] = 0
-        result['exception'] = "Error on Add()"
+        result['exception'] = e
         return result
+    c = conn.cursor()
+    c.execute("UPDATE folder SET shares = ? WHERE symbol = (?)", (shares, symbol,))
+    balance = float(shares) * price
+    c.execute("UPDATE folder SET balance = ? WHERE symbol = (?)", (balance, symbol,))
+    dt = datetime.datetime.now()
+    c.execute("UPDATE folder SET update_time = (?) WHERE symbol = (?)", (dt.strftime("%m/%d/%y %H:%M"), symbol,))
+    conn.commit()
+    conn.close()
     if (verbose):
         print ("***\n")
     result['status'] = True
@@ -507,44 +521,28 @@ def Balance(symbol, balance, verbose):
         result['shares'] = 0
         result['exception'] = e
         return result
-    resultAdd = Add(symbol, verbose)
-    if (resultAdd):
-        price = Quote(symbol, verbose)
-        if (price['status']):
-            try:
-                conn = sqlite3.connect(db_file)
-                if (verbose):
-                    print("Balance(4) sqlite3: {0}".format(sqlite3.version))
-            except Error as e:
-                print("Balance(5) {0}".format(e))
-                result['status'] = False
-                result['shares'] = 0
-                result['exception'] = e
-                return result
-            c = conn.cursor()
-            shares = 1.0
-            if float(price['price']) > 0:
-                shares = balance / float(price['price'])
-            c.execute("UPDATE folder SET shares = ? WHERE symbol = (?)", (shares, symbol,))
-            c.execute("UPDATE folder SET price_time = (?) WHERE symbol = (?)", (price['price time'], symbol,))
-            c.execute("UPDATE folder SET price = ? WHERE symbol = (?)", (price['price'], symbol,))
-            c.execute("UPDATE folder SET balance = ? WHERE symbol = (?)", (balance, symbol,))
-            dt = datetime.datetime.now()
-            c.execute("UPDATE folder SET update_time = (?) WHERE symbol = (?)", (dt.strftime("%m/%d/%y %H:%M"), symbol,))
-            conn.commit()
-            conn.close()
-        else:
-            result['exception'] = price['exception']
-            result['status'] = False
-            result['shares'] = 0
-            return result
-    else:
+    folder = GetFolder(verbose)
+    price = GetFolderValue(symbol, "price", folder)
+    try:
+        conn = sqlite3.connect(db_file)
         if (verbose):
-            print ("***\n")
+            print("Balance(4) sqlite3: {0}".format(sqlite3.version))
+    except Error as e:
+        print("Balance(5) {0}".format(e))
         result['status'] = False
         result['shares'] = 0
-        result['exception'] = "Error on Add()"
+        result['exception'] = e
         return result
+    c = conn.cursor()
+    shares = 1.0
+    if price > 0:
+        shares = float(balance) / price
+    c.execute("UPDATE folder SET shares = ? WHERE symbol = (?)", (shares, symbol,))
+    c.execute("UPDATE folder SET balance = ? WHERE symbol = (?)", (balance, symbol,))
+    dt = datetime.datetime.now()
+    c.execute("UPDATE folder SET update_time = (?) WHERE symbol = (?)", (dt.strftime("%m/%d/%y %H:%M"), symbol,))
+    conn.commit()
+    conn.close()
     if (verbose):
         print ("***\n")
     result['status'] = True
@@ -575,12 +573,20 @@ def Update(verbose):
     rows = c.fetchall()
     conn.commit()
     conn.close()
+    errors = []
     for row in rows:
+        quote = Quote(row[0], verbose)
+        if ("Error Message" in quote):
+            errors.append([row[0], quote['url'], quote["Error Message"]])
+            continue
+        Price(quote['price'], verbose)
         result = Shares(row[0], str(row[1]), verbose)
         if (result['status']):
             if (verbose):
                 print ("symbol: {0}, current shares: {1}, previous balance: {2}, current balance: {3}".format(row[0], row[1], row[2], result['balance']))
     if (verbose):
+        if (errors):
+            pprint.pprint(errors)
         print ("***\n")
     return True, ""
 
@@ -636,6 +642,44 @@ def GetFolderCash(verbose):
     if (verbose):
         print ("***\n")
     return answer['balance']
+
+def GetFolder(verbose):
+    defaults = GetDefaults(verbose)
+    username = getpass.getuser()
+    db_file = username + "/"  + defaults['folder db']
+    if (verbose):
+        print ("***")
+        print ("GetFolder(1) dbase: {0}".format(db_file))
+    if (not os.path.exists(db_file)):
+        if (verbose):
+            print ("GetFolder(2) {0} file is missing, cannot return the key".format(db_file))
+            print ("***\n")
+        return 0
+    try:
+        conn = sqlite3.connect(db_file)
+        if (verbose):
+            print("GetFolder(3) sqlite3: {0}".format(sqlite3.version))
+    except Error as e:
+        print("GetFolder(4) {0}".format(e))
+        return 0
+    c = conn.cursor()
+    c.execute("SELECT * FROM folder order by symbol")
+    keys = list(map(lambda x: x[0].replace("_"," "), c.description))
+    values = c.fetchall()
+    conn.close()
+    if (verbose):
+        print ("***\n")
+    answer = []
+    for row in values:
+        answer.append(dict(zip(keys, row)))
+    return answer
+
+def GetFolderValue(symbol, key, folder_dict):
+    value = None
+    for row in folder_dict:
+        if row['symbol'] == symbol:
+            return row[key]
+    return value
 
 def GetFolderStockValue(verbose):
     defaults = GetDefaults(verbose)
@@ -717,6 +761,11 @@ def PrintFolder(verbose):
                 symbol_options += '<option value="{0}">{1}</option>'.format(row[i], row[i])
             if (i == 1):
                 col_list.append(json_string['companyName'])
+            elif (i == 3):
+                if (row[0] == "$"):
+                    col_list.append("")
+                else:
+                    col_list.append(round(row[i], 2))
             else:
                 if (i == 2 or i == 6):
                     if (i == 2):
@@ -724,7 +773,10 @@ def PrintFolder(verbose):
                         amount_option.append(row[0])
                         amount_option.append(row[i])
                         amount_options.append(amount_option)
-                    col_list.append(as_currency(row[i]))
+                    if (i ==6 and row[0] == "$"):
+                        col_list.append("")
+                    else:
+                        col_list.append(as_currency(row[i]))
                 else:
                     col_list.append(row[i])
         answer = dict(zip(keys, col_list))
@@ -782,13 +834,12 @@ def PrintPercent(verbose):
     for row in rows:
         if (row[2] is not None):
             total = total + row[2]
-    total = math.ceil(total -.4)
     answer = ""
     for row in rows:
         pst = 0
         if (row[2] is not None):
-            pst = int(row[2] / total * 100.+.4)
-        answer = answer + "<li>{0} {1}%</li>".format(row[0], pst)
+            pst = row[2] / total * 100.
+        answer = answer + "<li>{0} {1}</li>".format(row[0], as_percent(pst))
         
     return answer
 #endregion folder
@@ -1132,9 +1183,9 @@ def as_currency(amount):
 
 def as_percent(amount):
     if amount >= 0:
-        return "{0:.0f}%".format(amount)
+        return "{0:.2f}%".format(amount)
     else:
-        return '({0:.0f}%)'.format(-amount)
+        return '({0:.2f}%)'.format(-amount)
 
 def Look(verbose):
     first = GetFirstAIM(verbose)
@@ -1180,12 +1231,12 @@ def Look(verbose):
     items = []
     items.append(pretty)
     table = TableCls(items, html_attrs = {'width':'100%','border-spacing':0})
-    pct_cash = int(cash / pv * 100. +.4)
-    pct_stock = int(stock / pv * 100. +.4)
+    pct_cash = cash / pv * 100.
+    pct_stock = stock / pv * 100.
     pretty['initial value'] = as_currency(first['portfolio value'])
     pretty['profit value'] = as_currency(pv - first['portfolio value'])
-    pretty['profit percent'] = as_percent(int((pv - first['portfolio value']) / pv * 100. +.4))
-    pretty['percent list'] = "<li> Cash {0}%</li><li> Stock {1}%</li>".format(pct_cash, pct_stock)
+    pretty['profit percent'] = as_percent((pv - first['portfolio value']) / pv * 100.)
+    pretty['percent list'] = "<li> Cash {0}</li><li> Stock {1}</li>".format(as_percent(pct_cash), as_percent(pct_stock))
     return pretty, table.__html__(), answer_db
 
 def Post(verbose):
