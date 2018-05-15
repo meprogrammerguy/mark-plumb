@@ -49,23 +49,23 @@ def folder():
                     if (request.form['balance'] == ""):
                         return(render_folder("display: none;", "balance is blank, cannot adjust.", ""))
                     else:
-                        plumb.Balance(request.form['symbol'], float(request.form['balance']), False)
-                        log =  "company {0}, balance is now {1}".format(request.form['symbol'], as_currency(float(request.form['balance'])))
+                        plumb.Balance(request.form['symbol'], request.form['balance'], False)
+                        log =  "company {0}, balance is now {1}".format(request.form['symbol'], as_currency(plumb.to_number(request.form['balance'], False)))
                         return(render_folder("display: none;", log, ""))
                 elif (request.form['options'] == "shares"):
                     if (request.form['balance'] == ""):
                         return(render_folder("display: none;", "shares are blank, cannot adjust.", ""))
                     else:
-                        plumb.Shares(request.form['symbol'], float(request.form['balance']), False)
-                        log =  "company {0}, shares are now {1}".format(request.form['symbol'], round(float(request.form['balance']), 4))
+                        plumb.Shares(request.form['symbol'], request.form['balance'], False)
+                        log =  "company {0}, shares are now {1}".format(request.form['symbol'], round(plumb.to_number(request.form['balance'], False), 4))
                         return(render_folder("display: none;", log, ""))
                 else:
                     if (request.form['balance'] == ""):
                         return(render_folder("display: none;", "amount is blank, cannot adjust.", ""))
                     else:
                         curr_balance = CurrentBalance(request.form['symbol'], request.form['amount'])
-                        balance = curr_balance + float(request.form['balance'])
-                        log = "company {0}, balance {1}, adjusted by {2}.".format(request.form['symbol'], as_currency(curr_balance), as_currency(float(request.form['balance'])))
+                        balance = curr_balance + plumb.to_number(request.form['balance'], False)
+                        log = "company {0}, balance {1}, adjusted by {2}.".format(request.form['symbol'], as_currency(curr_balance), as_currency(plumb.to_number(request.form['balance'], False)))
                         plumb.Balance(request.form['symbol'], balance, False)
                         return(render_folder("display: none;", log, ""))
             elif (request.form['action'] == "remove"):

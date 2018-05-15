@@ -404,6 +404,7 @@ def Price(symbol, price, price_time, verbose):
     return True
 
 def Cash(balance, verbose):
+    balance = to_number(balance, verbose)
     defaults = GetDefaults(verbose)
     username = getpass.getuser()
     db_file = username + "/"  + defaults['folder db']
@@ -463,12 +464,13 @@ def CreateFolder(key, verbose):
 def Shares(symbol, shares, verbose):
     result = {}
     if shares is None:
-        shares = 0
+        shares = "0"
     if (symbol == "$"):
         Cash(shares, verbose)
         result['status'] = True
         result['shares'] = shares
         return result
+    shares = to_number(shares, verbose)
     defaults = GetDefaults(verbose)
     username = getpass.getuser()
     db_file = username + "/"  + defaults['folder db']
@@ -501,7 +503,7 @@ def Shares(symbol, shares, verbose):
         return result
     c = conn.cursor()
     c.execute("UPDATE folder SET shares = ? WHERE symbol = (?)", (shares, symbol,))
-    balance = float(shares) * price
+    balance = shares * price
     c.execute("UPDATE folder SET balance = ? WHERE symbol = (?)", (balance, symbol,))
     dt = datetime.datetime.now()
     c.execute("UPDATE folder SET update_time = (?) WHERE symbol = (?)", (dt.strftime("%m/%d/%y %H:%M"), symbol,))
@@ -516,12 +518,13 @@ def Shares(symbol, shares, verbose):
 def Balance(symbol, balance, verbose):
     result = {}
     if (balance is None):
-        balance = 0
+        balance = "0"
     if (symbol == "$"):
         Cash(balance, verbose)
         result['status'] = True
         result['shares'] = balance
         return result
+    balance = to_number(balance, verbose)
     defaults = GetDefaults(verbose)
     username = getpass.getuser()
     db_file = username + "/"  + defaults['folder db']
@@ -555,7 +558,7 @@ def Balance(symbol, balance, verbose):
     if (price is None):
         price = 0
     if price > 0:
-        shares = float(balance) / price
+        shares = balance / price
     c.execute("UPDATE folder SET shares = ? WHERE symbol = (?)", (shares, symbol,))
     c.execute("UPDATE folder SET balance = ? WHERE symbol = (?)", (balance, symbol,))
     dt = datetime.datetime.now()
@@ -1197,6 +1200,48 @@ def GetFirstAIM(verbose):
         print ("***\n")
     return answer
 
+def to_number(string, verbose):
+    negative = False
+    percent = False
+    if ('(' in string):
+        negative = True
+    if ('%' in string):
+        percent = true
+    if (verbose):
+        print ("***")
+        print ("to_number(1) raw: {0}".format(string))
+        print ("to_number(2) negative: {0}".format(negative))
+        print ("to_number(3) percent: {0}".format(percent))
+
+    string = string.replace("$", "")
+    if (verbose):
+        print ("to_number(4) remove $: {0}".format(string))
+
+    string = string.replace(",", "")
+    if (verbose):
+        print ("to_number(5) remove ,: {0}".format(string))
+
+    string = string.replace("(", "")
+    if (verbose):
+        print ("to_number(6) remove (: {0}".format(string))
+    string = string.replace(")", "")
+    if (verbose):
+        print ("to_number(7) remove ): {0}".format(string))
+
+    string = string.replace("%", "")
+    if (verbose):
+        print ("to_number(8) remove %: {0}".format(string))
+
+    clean_number = float(string)
+    if (percent):
+        clean_number = clean_number / 100.
+    if (negative):
+        clean_number = - clean_number
+    if (verbose):
+        print ("to_number(9) clean_number: {0}".format(clean_number))
+        print ("***\n")
+    return clean_number
+
 def as_currency(amount):
     if (amount is None):
         amount = 0
@@ -1516,8 +1561,8 @@ def TestFolder(verbose):
         if (verbose):
             print ("\tfail.")
     if (verbose):
-        print ("Test #2 - Balance('$', 5000, verbose)")
-    result = Balance( "$", 5000, verbose)
+        print ("Test #2 - Balance('$', '5000', verbose)")
+    result = Balance( "$", "5000", verbose)
     if (result):
         if (verbose):
             print ("\tpass.")
@@ -1526,8 +1571,8 @@ def TestFolder(verbose):
         if (verbose):
             print ("\tfail.")
     if (verbose):
-        print ("Test #3 - Balance('AAPL', 5000, verbose)")
-    result = Balance("AAPL", 5000, verbose)
+        print ("Test #3 - Balance('AAPL', '5000', verbose)")
+    result = Balance("AAPL", "5000", verbose)
     if (result['status']):
         if (verbose):
             print ("\tpass.")
@@ -1536,8 +1581,8 @@ def TestFolder(verbose):
         if (verbose):
             print ("\tfail.")
     if (verbose):
-        print ("Test #4 - Shares('AAPL', 50, verbose)")
-    result = Shares("AAPL", 50, verbose)
+        print ("Test #4 - Shares('AAPL', '50', verbose)")
+    result = Shares("AAPL", "50", verbose)
     if (result['status']):
         if (verbose):
             print ("\tpass.")

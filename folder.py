@@ -19,7 +19,7 @@ def main(argv):
     shares = ""
     printout = False
     try:
-        opts, args = getopt.getopt(argv, "pub:n:s:a:r:f:c:hvt", ["help", "verbose", "test", "folder=", "cash=", "add=", "remove=", "symbol=", "balance=", "number=", "update", "print"])
+        opts, args = getopt.getopt(argv, 'pub:n:s:a:r:f:c:hvt', ['help', 'verbose', 'test', 'folder=', 'cash=', 'add=', 'remove=', 'symbol=', 'balance=', 'number=', 'update', 'print'])
     except getopt.GetoptError as err:
         print(err)
         usage()
