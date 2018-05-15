@@ -338,7 +338,16 @@ def Add(symbol, verbose):
         c.execute("UPDATE folder SET update_time = (?) WHERE symbol = (?)", (dt.strftime("%m/%d/%y %H:%M"), symbol,))
         conn.commit()
         conn.close()
+        quote = Quote(symbol, verbose)
+        errors = []
+        if ("Error Message" in quote):
+            errors.append([symbol, quote['url'], quote["Error Message"]])
+        else:
+            Price(symbol, quote['price'], quote['price time'], verbose)
+            Shares(symbol, None, verbose)
     if (verbose):
+        if (errors):
+            pprint.pprint(errors)
         print ("***\n")
     return True
 
@@ -453,6 +462,8 @@ def CreateFolder(key, verbose):
 
 def Shares(symbol, shares, verbose):
     result = {}
+    if shares is None:
+        shares = 0
     if (symbol == "$"):
         Cash(shares, verbose)
         result['status'] = True
@@ -504,6 +515,8 @@ def Shares(symbol, shares, verbose):
 
 def Balance(symbol, balance, verbose):
     result = {}
+    if (balance is None):
+        balance = 0
     if (symbol == "$"):
         Cash(balance, verbose)
         result['status'] = True
@@ -538,7 +551,7 @@ def Balance(symbol, balance, verbose):
         result['exception'] = e
         return result
     c = conn.cursor()
-    shares = 1.0
+    shares = 0
     if (price is None):
         price = 0
     if price > 0:
@@ -771,7 +784,10 @@ def PrintFolder(verbose):
                 if (row[0] == "$"):
                     col_list.append("")
                 else:
-                    col_list.append(round(row[i], 2))
+                    if row[i] is None:
+                        col_list.append(round(0, 2))
+                    else:
+                        col_list.append(round(row[i], 2))
             else:
                 if (i == 2 or i == 6):
                     if (i == 2):
@@ -798,14 +814,16 @@ def AddRemoveButtons(table):
     pattern = "<tr><td>"
     index = 0
     done = False
+    row = -1
     while (not done):
         start = table.find(pattern, index)
         if start == -1:
             done = True
             continue
         symbol = table[start + 8 :table.find("</td>", start + 8)]
+        row += 1
         if (symbol != "$"):
-            r_button = '<tr><td><input class="submit" type="submit" name="action" value="remove"/><input hidden type="text" name="symbol" value="{0}"/></td><td>'.format(symbol)
+            r_button = '<tr><td><form action="#" method="post"><input class="submit" type="submit" name="action" value="remove"/><input hidden type="text" name="remove_symbol" value="{0}"/></form></td><td>'.format(symbol)
             table = table[0 : start] + table[start:].replace(pattern, r_button, 1)
         else:
             table = table[0 : start] + table[start:].replace(pattern, "<tr><td></td><td>", 1)
@@ -1375,7 +1393,7 @@ def TestStock(verbose):
             print ("\tfail.")
     if (verbose):
         print ("Test #3 - Interval(15, False)")
-    result = Interval(15, False)
+    result = Interval(5, False)
     if (result):
         if (verbose):
             print ("\tpass.")
@@ -1385,7 +1403,7 @@ def TestStock(verbose):
             print ("\tfail.")
     if (verbose):
         print ("Test #4 - Daemon(1200, False)")
-    result = Daemon(1200, False)
+    result = Daemon(600, False)
     if (result):
         if (verbose):
             print ("\tpass.")
@@ -1457,8 +1475,8 @@ def TestStock(verbose):
         print ("Test #11 - GetDefaults(False)")
     result = GetDefaults(False)
     if (result['api key'] == "TEST"
-        and result['interval'] == 15
-        and result['daemon seconds'] == 1200
+        and result['interval'] == 5
+        and result['daemon seconds'] == 600
         and result['open'] == "8:30AM"
         and result['close'] == "03:00PM"
         and result['folder db'] == "folder.db"

@@ -47,19 +47,21 @@ def folder():
             if (request.form['action'] == "adjust"):
                 if (request.form['options'] == "balance"):
                     if (request.form['balance'] == ""):
-                        return(render_folder("display: none;", "balance is blank.", ""))
+                        return(render_folder("display: none;", "balance is blank, cannot adjust.", ""))
                     else:
                         plumb.Balance(request.form['symbol'], float(request.form['balance']), False)
-                        return(render_folder("display: none;", "balance updated.", ""))
+                        log =  "company {0}, balance is now {1}".format(request.form['symbol'], as_currency(float(request.form['balance'])))
+                        return(render_folder("display: none;", log, ""))
                 elif (request.form['options'] == "shares"):
                     if (request.form['balance'] == ""):
-                        return(render_folder("display: none;", "shares is blank.", ""))
+                        return(render_folder("display: none;", "shares are blank, cannot adjust.", ""))
                     else:
                         plumb.Shares(request.form['symbol'], float(request.form['balance']), False)
-                        return(render_folder("display: none;", "shares updated.", ""))
+                        log =  "company {0}, shares are now {1}".format(request.form['symbol'], round(float(request.form['balance']), 4))
+                        return(render_folder("display: none;", log, ""))
                 else:
                     if (request.form['balance'] == ""):
-                        return(render_folder("display: none;", "amount is blank.", ""))
+                        return(render_folder("display: none;", "amount is blank, cannot adjust.", ""))
                     else:
                         curr_balance = CurrentBalance(request.form['symbol'], request.form['amount'])
                         balance = curr_balance + float(request.form['balance'])
@@ -67,13 +69,17 @@ def folder():
                         plumb.Balance(request.form['symbol'], balance, False)
                         return(render_folder("display: none;", log, ""))
             elif (request.form['action'] == "remove"):
-                plumb.Remove(request.form['symbol'], False)
-                return(render_folder("display: none;", "company removed.", ""))
+                plumb.Remove(request.form['remove_symbol'], False)
+                log =  "company {0} has been removed from portfolio.".format(request.form['remove_symbol'])
+                return(render_folder("display: none;", log, ""))
             elif (request.form['action'] == "add"):
-                plumb.Add(request.form['symbol'], False) 
-                return(render_folder("display: none;", "company added.", ""))
+                s = request.form['add_symbol']
+                plumb.Add(s, False)
+                log =  "company {0} has been added to portfolio.".format(s)
+                return(render_folder("display: none;", log, ""))
             elif (request.form['action'] != "Ticker symbol"):
-                return(render_folder("display: block;", "", request.form['action']))
+                s = request.form['action']
+                return(render_folder("display: block;", "", s))
 
     except Exception as e:
         return (render_folder("display: none;", e, ""))
@@ -99,31 +105,41 @@ def defaults():
 
 @app.route('/history/', methods=["GET","POST"])
 def history():
-    dt = datetime.now()
-    notes = plumb.GetAIMNotes(10, False)
-    year_input = dt.year
-    year_string = str(dt.year)
-    feedback = ""
-    history_style = "display: block;"
     try:
         if request.method == "POST":
             if (request.form['action'] == "all"):
                 year_input = 1970
                 year_string = "all"
+                return (render_history("display: block;", "", year_string))
             elif (request.form['action'] == "hide"):     #temporary hide code while developing page
-                history_style = "display: none;"
+                return (render_history("display: none;", "hiding help HTML, remove this at release time", "all"))
             elif (request.form['action'].isnumeric()):
                 year_input = int(request.form['action'])
                 if year_input < 100:
                     year_input += 2000
                 year_string = str(year_input)
+                return (render_history("display: block;", "", year_string))
             else:
                 feedback = "input is not a year or the word all"
-                return render_template("history.html", feedback = feedback, history_style = history_style)
+                return (render_history("display: block;", feedback, ""))
 
     except Exception as e:
-        return render_template("history.html", feedback = e, history_style = history_style) 
+        return (render_history("display: block;", e, ""))
 
+    return(render_history("display: block;", "", ""))
+
+def render_history(history_style, feedback, history_year):
+    if (history_year == ""):
+        dt = datetime.now()
+        year_input = dt.year
+        year_string = str(dt.year)
+    elif (history_year[0].lower() == 'a'):
+        year_input = 1970
+        year_string = "all"
+    else:
+        year_string = history_year
+        year_input = int(year_string)
+    notes = plumb.GetAIMNotes(10, False)
     return render_template('history.html', table = plumb.PrintAIM(str(year_input), False), year_string = year_string, notes = notes, feedback = feedback, history_style = history_style)
 
 @app.errorhandler(404)

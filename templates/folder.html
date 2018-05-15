@@ -54,9 +54,7 @@
         </div>
         <div id="content">
             <h1>Portfolio</h1>
-            <form action="#" method="post">
-                {{table | safe}}
-            </form>
+            {{table | safe}}
             <div class ="left" style="{{ticker_style}}">
                 <h1>Ticker Symbol Lookup</h1>
 	        <p>{{ticker.description}}</p>
@@ -89,7 +87,7 @@
                 <form action="#" method="post">
                     <div class="form_settings">
                         <p><span>&nbsp;</span><input class="submit" type="submit" name="action" value="add" style="float: right;"/></p>
-                        <input hidden type="text" name="symbol" value="{{ticker.symbol}}"/>
+                        <input hidden type="text" name="add_symbol" value="{{ticker.symbol}}"/>
                     </div>
                 </form>
              </div>
