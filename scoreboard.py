@@ -20,7 +20,7 @@ def index():
                 return(render_index("{0} saved.".format(request.form['action'])))
 
     except Exception as e:
-        return (render_folder(feedback))
+        return (render_index(e))
 
     return(render_index(""))
 

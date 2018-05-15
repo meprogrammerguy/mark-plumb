@@ -18,6 +18,7 @@ import csv
 import math
 from flask_table import create_table, Table, Col
 import pprint
+import pyperclip
 
 #region stock
 def Quote(ticker, verbose):
@@ -1335,6 +1336,8 @@ def Post(verbose):
     c.execute("UPDATE aim SET portfolio_value = ? WHERE post_date = (?)", (db_values['portfolio value'], db_values['post date'],))
     conn.commit()
     conn.close()
+    if (db_values['market order'] != 0):
+        pyperclip.copy(str(db_values['market order']))
     if (verbose):
         print ("***\n")
     return True
@@ -1395,7 +1398,7 @@ def PrintAIM(printyear, verbose):
                 elif (i == 1):
                     col_list.append(as_currency(row[i]))
                 elif (i == 2):
-                    stock = math.ceil(GetFolderStockValue(verbose) -.4)
+                    stock = math.ceil(row[1] -.4)
                     safe = Safe(stock, verbose)
                     col_list.append(safe)
                 else:

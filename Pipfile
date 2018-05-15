@@ -12,6 +12,7 @@ name = "pypi"
 flask = "*"
 flask-table = "*"
 python-daemon = "*"
+pyperclip = "*"
 
 
 [dev-packages]
