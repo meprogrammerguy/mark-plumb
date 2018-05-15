@@ -19,6 +19,8 @@ import math
 from flask_table import create_table, Table, Col
 import pprint
 import pyperclip
+import pytz
+from dateutil import tz
 
 #region stock
 def Quote(ticker, verbose):
@@ -168,6 +170,47 @@ def Daemon(seconds, verbose):
         print ("***\n")
     return True
 
+def ResetDefaults(verbose):
+    username = getpass.getuser()
+    db_file = os.getcwd() + "/"  + "defaults.db"
+    if (verbose):
+        print ("***")
+        print ("ResetDefaults(1) dbase: {0}".format(db_file))
+    result = CreateDefaults(verbose)
+    if (result):
+        try:
+            conn = sqlite3.connect(db_file)
+            if (verbose):
+                print("ResetDefaults(2) sqlite3: {0}".format(sqlite3.version))
+        except Error as e:
+            print("ResetDefaults(3) {0}".format(e))
+            return False
+        dt = datetime.datetime.strptime('2018-01-01T14:30:00+00:00', "%Y-%m-%dT%H:%M:%S+00:00") # UTC 9:30AM EST
+        dt = dt.replace(tzinfo=tz.tzutc())
+        local = dt.astimezone(tz.tzlocal())
+        begin = local.strftime('%I:%M%p')
+        dt = datetime.datetime.strptime('2018-01-01T21:00:00+00:00', "%Y-%m-%dT%H:%M:%S+00:00") #UTC 4:00PM EST
+        dt = dt.replace(tzinfo=tz.tzutc())
+        local = dt.astimezone(tz.tzlocal())
+        close = local.strftime('%I:%M%p')
+        c = conn.cursor()
+        c.execute("UPDATE defaults SET api_key = (?) WHERE username = (?)", ("", username,))
+        c.execute("UPDATE defaults SET interval = ? WHERE username = (?)", (5, username,))
+        c.execute("UPDATE defaults SET daemon_seconds = ? WHERE username = (?)", (600, username,))
+        c.execute("UPDATE defaults SET open = (?) WHERE username = (?)", (begin, username,))
+        c.execute("UPDATE defaults SET close = (?) WHERE username = (?)", (close, username,))
+        c.execute("UPDATE defaults SET aim_db = (?) WHERE username = (?)", ("aim.db", username,))
+        c.execute("UPDATE defaults SET folder_db = (?) WHERE username = (?)", ("folder.db", username,))
+        c.execute("UPDATE defaults SET test_root = (?) WHERE username = (?)", ("test/", username,))
+        c.execute("UPDATE defaults SET cash = ? WHERE username = (?)", (5000, username,))
+        c.execute("UPDATE defaults SET stocks = ? WHERE username = (?)", (5000, username,))
+        c.execute("UPDATE defaults SET start = (?) WHERE username = (?)", ("", username,))
+        conn.commit()
+        conn.close()
+    if (verbose):
+        print ("***\n")
+    return True
+
 def GetDefaults(verbose):
     username = getpass.getuser()
     db_file = os.getcwd() + "/"  + "defaults.db"
@@ -301,8 +344,11 @@ def PrintDefaults(verbose):
             if (i == 9 or i == 10):
                 col_list.append(as_currency(row[i]))
             elif (i == 11):
-                dt = datetime.datetime.strptime(row[i], '%Y/%m/%d')
-                col_list.append(dt.strftime("%m/%d/%y"))
+                if (row[i] == ""):
+                    col_list.append("")
+                else:
+                    dt = datetime.datetime.strptime(row[i], '%Y/%m/%d')
+                    col_list.append(dt.strftime("%m/%d/%y"))
             else:
                 col_list.append(row[i])
         answer = dict(zip(keys, col_list))
@@ -1163,6 +1209,8 @@ def GetAIMNotes(count, verbose):
     return notes
 
 def noteDate(value):
+    if (value == ""):
+        return ""
     dt = datetime.datetime.strptime(value, '%Y/%m/%d') 
     return custom_strftime('%B {S}, %Y', dt)
 

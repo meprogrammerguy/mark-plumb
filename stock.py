@@ -20,8 +20,9 @@ def main(argv):
     printout = False
     begin = ""
     end = ""
+    reset = False
     try:
-        opts, args = getopt.getopt(argv, "pb:e:s:i:k:q:hvtc:", ["help", "verbose", "test", "quote=", "key=", "company=", "interval=", "seconds=", "begin=", "end=", "print"])
+        opts, args = getopt.getopt(argv, "rpb:e:s:i:k:q:hvtc:", ["help", "verbose", "test", "quote=", "key=", "company=", "interval=", "seconds=", "begin=", "end=", "print", "reset"])
     except getopt.GetoptError as err:
         print(err)
         usage()
@@ -31,6 +32,8 @@ def main(argv):
             verbose = True
         elif o in ("-t", "--test"):
             test = True
+        elif o in ("-r", "--reset"):
+            reset = True
         elif o in ("-p", "--print"):
             printout = True
         elif o in ("-h", "--help"):
@@ -133,6 +136,13 @@ def main(argv):
         else:
             print ("failed.")
         exit()
+    if (reset):
+        endResult = plumb.ResetDefaults(verbose)
+        if (endResult):
+            print ("saved.")
+        else:
+            print ("failed.")
+        exit()
     usage()
 
 def timecheck(theTime):
@@ -155,11 +165,12 @@ def usage():
     -c --company        retrieves company data from ticker symbol
     -q --quote          get stock quote from ticker symbol
     -k --key            saves the stock page API key
-    -i --interval       saves the time interval (default is 15 minutes)
-    -s --seconds        saves the daemon seconds (default is 1200)
-    -b --begin          saves the beginning bell time (defaults to 8:30AM)
-    -e --end            saves the ending bell time (defaults to 3:00PM)
+    -i --interval       saves the time interval (default is 5 minutes)
+    -s --seconds        saves the daemon seconds (default is 600)
+    -b --begin          saves the beginning bell time (defaults to 9:30AM EST)
+    -e --end            saves the ending bell time (defaults to 4:00PM EST)
     -p --print          print out the defaults database (in HTML table format)
+    -r --reset          reset user back to standard defaults
     """
     print (usage) 
 

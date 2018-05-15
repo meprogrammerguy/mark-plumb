@@ -13,6 +13,8 @@ flask = "*"
 flask-table = "*"
 python-daemon = "*"
 pyperclip = "*"
+pytz = "*"
+python-dateutil = "*"
 
 
 [dev-packages]
