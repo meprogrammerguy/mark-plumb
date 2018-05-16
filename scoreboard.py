@@ -30,14 +30,24 @@ def render_index(feedback):
     notes = plumb.GetAIMNotes(10, False)
     post_display = "post"
     post_background = ""
-    if (db['market order'] > 0):
-        post_background = "background: blue;"
-        post_display = "buy"
-    if (db['market order'] < 0):
-        post_background = "background: green;"
-        post_display = "sell"
-    return render_template('index.html', table = table, allocation_list = allocation_list, balance_list = l['percent list'],
-        initial_value =  l['initial value'], profit_value = l['profit value'], profit_percent = l['profit percent'], notes = notes, feedback = feedback,
+    if "market order" in db:
+        if (db['market order'] > 0):
+            post_background = "background: blue;"
+            post_display = "buy"
+        if (db['market order'] < 0):
+            post_background = "background: green;"
+            post_display = "sell"
+    balance_list = ""
+    initial_value = ""
+    profit_value = ""
+    profit_percent = ""
+    if "percent list" in l:
+        balance_list = l['percent list']
+        initial_value = l['initial value']
+        profit_value = l['profit value']
+        profit_percent = l['profit percent']
+    return render_template('index.html', table = table, allocation_list = allocation_list, balance_list = balance_list,
+        initial_value =  initial_value, profit_value = profit_value, profit_percent = profit_percent, notes = notes, feedback = feedback,
         post_display = post_display, post_background = post_background)
 
 @app.route('/folder/', methods=["GET","POST"])
@@ -118,7 +128,8 @@ def defaults():
 
 def render_defaults(feedback):
     table, column_options = plumb.PrintDefaults(False)
-    return (render_template('defaults.html', table = table, feedback = feedback, column_options = column_options))
+    notes = plumb.GetAIMNotes(10, False)
+    return (render_template('defaults.html', table = table, feedback = feedback, column_options = column_options, notes = notes))
 
 @app.route('/history/', methods=["GET","POST"])
 def history():

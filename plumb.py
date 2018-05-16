@@ -26,13 +26,12 @@ from dateutil import tz
 def Quote(ticker, verbose):
     result = {}
     defaults, types = GetDefaults(verbose)
-    url = "https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol={0}&interval={1}min&apikey={2}".format(ticker, defaults['interval'], defaults['api key'])
+    url = "https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={0}&apikey={1}".format(ticker, defaults['api key'])
     if (verbose):
         print ("***")
         print ("Quote(1) ticker: {0}".format(ticker))
-        print ("Quote(2) interval: {0}".format(defaults['interval']))
-        print ("Quote(3) key: {0}".format(defaults['api key']))
-        print ("Quote(4) URL: {0}".format(url))
+        print ("Quote(2) key: {0}".format(defaults['api key']))
+        print ("Quote(3) URL: {0}".format(url))
     try:
         with contextlib.closing(urllib.request.urlopen(url)) as page:
             soup = BeautifulSoup(page, "html5lib")
@@ -42,12 +41,12 @@ def Quote(ticker, verbose):
         result['url'] = url
         if err.code == 404:
             if (verbose):
-                print ("Quote(5) page not found for {0}".format(ticker))
+                print ("Quote(4) page not found for {0}".format(ticker))
                 print ("***\n")
             return result
         elif err.code == 503:
             if (verbose):
-                print ("Quote(6) service unavailable for {0}".format(ticker))
+                print ("Quote(5) service unavailable for {0}".format(ticker))
                 print ("***\n")
             return result
         else:
@@ -63,8 +62,8 @@ def Quote(ticker, verbose):
                 break
             if (keys != "Meta Data"):
                 for key, value in values.items():
-                    dt = datetime.datetime.strptime(key, '%Y-%m-%d %H:%M:%S')
-                    closing['price time'] = dt.strftime('%m/%d/%y %H:%M')
+                    dt = datetime.datetime.strptime(key, '%Y-%m-%d')
+                    closing['price time'] = dt.strftime('%m/%d/%y')
                     closing['price'] =  value['4. close']
                     break
         if "Meta Data" in returnQuote:
@@ -162,8 +161,7 @@ def ResetDefaults(verbose):
         close = local.strftime('%I:%M%p')
         c = conn.cursor()
         c.execute("UPDATE defaults SET api_key = (?) WHERE username = (?)", ("demo", username,))
-        c.execute("UPDATE defaults SET interval = ? WHERE username = (?)", (5, username,))
-        c.execute("UPDATE defaults SET daemon_seconds = ? WHERE username = (?)", (600, username,))
+        c.execute("UPDATE defaults SET daemon_seconds = ? WHERE username = (?)", (300, username,))
         c.execute("UPDATE defaults SET open = (?) WHERE username = (?)", (begin, username,))
         c.execute("UPDATE defaults SET close = (?) WHERE username = (?)", (close, username,))
         c.execute("UPDATE defaults SET aim_db = (?) WHERE username = (?)", ("aim.db", username,))
@@ -185,14 +183,14 @@ def GetDefaults(verbose):
         if (verbose):
             print ("GetDefaults(2) {0} file is missing, cannot return the key".format(db_file))
             print ("***\n")
-        return ""
+        return "", ""
     try:
         conn = sqlite3.connect(db_file)
         if (verbose):
             print("GetDefaults(3) sqlite3: {0}".format(sqlite3.version))
     except Error as e:
         print("GetDefaults(4) {0}".format(e))
-        return False
+        return "", ""
     c = conn.cursor()
     c.execute("SELECT * FROM defaults WHERE username = (?) order by username", (username,))
     keys = list(map(lambda x: x[0].replace("_"," "), c.description))
@@ -220,7 +218,7 @@ def CreateDefaults(verbose):
         print("CreateDefaults(3) {0}".format(e))
         return False
     c = conn.cursor()
-    c.execute("CREATE TABLE if not exists 'defaults' ( `username` TEXT NOT NULL UNIQUE, `api_key` TEXT, `interval` INTEGER, `daemon_seconds` INTEGER, `open` TEXT, `close` TEXT, `aim_db` TEXT, `folder_db` TEXT, `test_root` TEXT, PRIMARY KEY(`username`) )")
+    c.execute("CREATE TABLE if not exists 'defaults' ( `username` TEXT NOT NULL UNIQUE, `api_key` TEXT, `daemon_seconds` INTEGER, `open` TEXT, `close` TEXT, `aim_db` TEXT, `folder_db` TEXT, `test_root` TEXT, PRIMARY KEY(`username`) )")
     c.execute( "INSERT OR IGNORE INTO defaults(username) VALUES((?))", (username,))
     conn.commit()
     conn.close()
@@ -238,14 +236,14 @@ def PrintDefaults(verbose):
         if (verbose):
             print ("PrintDefaults(2) {0} file is missing, cannot print".format(db_file))
             print ("***\n")
-        return ""
+        return "", ""
     try:
         conn = sqlite3.connect(db_file)
         if (verbose):
             print("PrintDefaults(3) sqlite3: {0}".format(sqlite3.version))
     except Error as e:
         print("PrintDefaults(4) {0}".format(e))
-        return ""
+        return "", ""
     c = conn.cursor()
     c.execute("SELECT * FROM defaults order by username")
     keys = list(map(lambda x: x[0].replace("_"," "), c.description))
@@ -354,8 +352,8 @@ def Price(symbol, price, price_time, verbose):
             print("Price(6) {0}".format(e))
             return False
         c = conn.cursor()
-        dt = datetime.datetime.strptime(price_time, '%m/%d/%y %H:%M') 
-        c.execute("UPDATE folder SET price_time = (?) WHERE symbol = (?)", (dt.strftime("%m/%d/%y %H:%M"), symbol,))
+        dt = datetime.datetime.strptime(price_time, '%m/%d/%y') 
+        c.execute("UPDATE folder SET price_time = (?) WHERE symbol = (?)", (dt.strftime("%m/%d/%y"), symbol,))
         c.execute("UPDATE folder SET price = ? WHERE symbol = (?)", (price, symbol,))
         conn.commit()
         conn.close()
@@ -389,7 +387,7 @@ def Cash(balance, verbose):
         c.execute("UPDATE folder SET shares = ? WHERE symbol = '$'", (round(float(balance), 4),))
         dt = datetime.datetime.now()
         c.execute("UPDATE folder SET update_time = (?) WHERE symbol = '$'", (dt.strftime("%m/%d/%y %H:%M"),))
-        c.execute("UPDATE folder SET price_time = (?) WHERE symbol = '$'", (dt.strftime("%m/%d/%y %H:%M"),))
+        c.execute("UPDATE folder SET price_time = (?) WHERE symbol = '$'", (dt.strftime("%m/%d/%y"),))
         c.execute("UPDATE folder SET price = 1.00 WHERE symbol = '$'")
         conn.commit()
         conn.close()
@@ -674,21 +672,26 @@ def GetFolderStockValue(verbose):
 def PrintFolder(verbose):
     defaults, types = GetDefaults(verbose)
     username = getpass.getuser()
-    db_file = username + "/"  + defaults['folder db']
     if (verbose):
         print ("***")
-        print ("PrintFolder(1) dbase: {0}".format(db_file))
+    if "folder db" not in defaults:
+        if (verbose):
+            print ("PrintFolder(1) could not get defaults, make sure that the defaults dbase is set up")
+        return "", "", "", []
+    db_file = username + "/"  + defaults['folder db']
+    if (verbose):
+        print ("PrintFolder(2) dbase: {0}".format(db_file))
     if (not os.path.exists(db_file)):
         if (verbose):
-            print ("PrintFolder(2) {0} file is missing, cannot print".format(db_file))
+            print ("PrintFolder(3) {0} file is missing, cannot print".format(db_file))
             print ("***\n")
         return "", "", "", []
     try:
         conn = sqlite3.connect(db_file)
         if (verbose):
-            print("PrintFolder(3) sqlite3: {0}".format(sqlite3.version))
+            print("PrintFolder(4) sqlite3: {0}".format(sqlite3.version))
     except Error as e:
-        print("PrintFolder(4) {0}".format(e))
+        print("PrintFolder(5) {0}".format(e))
         return  e, "", "", []
     c = conn.cursor()
     c.execute("SELECT * FROM folder order by symbol")
@@ -771,22 +774,27 @@ def AddRemoveButtons(table):
 
 def PrintPercent(verbose):
     defaults, types = GetDefaults(verbose)
+    if (verbose):
+        print ("***")
+    if "folder db" not in defaults:
+        if (verbose):
+            print ("PrintPercent(1) could not get defaults, make sure that the defaults dbase is set up")
+        return ""
     username = getpass.getuser()
     db_file = username + "/"  + defaults['folder db']
     if (verbose):
-        print ("***")
-        print ("PrintPercent(1) dbase: {0}".format(db_file))
+        print ("PrintPercent(2) dbase: {0}".format(db_file))
     if (not os.path.exists(db_file)):
         if (verbose):
-            print ("PrintPercent(2) {0} file is missing, cannot print".format(db_file))
+            print ("PrintPercent(3) {0} file is missing, cannot print".format(db_file))
             print ("***\n")
         return ""
     try:
         conn = sqlite3.connect(db_file)
         if (verbose):
-            print("PrintPercent(3) sqlite3: {0}".format(sqlite3.version))
+            print("PrintPercent(4) sqlite3: {0}".format(sqlite3.version))
     except Error as e:
-        print("PrintPercent(4) {0}".format(e))
+        print("PrintPercent(5) {0}".format(e))
         return ""
     c = conn.cursor()
     c.execute("SELECT * FROM folder where symbol != '$' order by symbol")
@@ -891,22 +899,27 @@ def MarketOrder(buyselladvice, safe, verbose):
 
 def GetLastAIM(verbose):
     defaults, types = GetDefaults(verbose)
+    if (verbose):
+        print ("***")
+    if "aim db" not in defaults:
+        if (verbose):
+            print ("GetLastAIM(1) could not get defaults, make sure that the defaults dbase is set up")
+        return {}
     username = getpass.getuser()
     db_file = username + "/"  + defaults['aim db']
     if (verbose):
-        print ("***")
-        print ("GetLastAIM(1) dbase: {0}".format(db_file))
+        print ("GetLastAIM(2) dbase: {0}".format(db_file))
     if (not os.path.exists(db_file)):
         if (verbose):
-            print ("GetLastAIM(2) {0} file is missing, cannot return the last row".format(db_file))
+            print ("GetLastAIM(3) {0} file is missing, cannot return the last row".format(db_file))
             print ("***\n")
         return {}
     try:
         conn = sqlite3.connect(db_file)
         if (verbose):
-            print("GetLastAIM(3) sqlite3: {0}".format(sqlite3.version))
+            print("GetLastAIM(4) sqlite3: {0}".format(sqlite3.version))
     except Error as e:
-        print("GetLastAIM(4) {0}".format(e))
+        print("GetLastAIM(5) {0}".format(e))
         return {}
     c = conn.cursor()
     c.execute("SELECT * FROM aim ORDER BY post_date DESC LIMIT 1")
@@ -921,21 +934,26 @@ def GetLastAIM(verbose):
 def GetAIMNotes(count, verbose):
     defaults, types = GetDefaults(verbose)
     username = getpass.getuser()
-    db_file = username + "/"  + defaults['aim db']
     if (verbose):
         print ("***")
-        print ("GetAIMNotes(1) dbase: {0}".format(db_file))
+    if "aim db" not in defaults:
+        if (verbose):
+            print ("GetAIMNotes(1) could not get defaults, make sure that the defaults dbase is set up")
+        return {}
+    db_file = username + "/"  + defaults['aim db']
+    if (verbose):
+        print ("GetAIMNotes(2) dbase: {0}".format(db_file))
     if (not os.path.exists(db_file)):
         if (verbose):
-            print ("GetAIMNotes(2) {0} file is missing, cannot return the notes".format(db_file))
+            print ("GetAIMNotes(3) {0} file is missing, cannot return the notes".format(db_file))
             print ("***\n")
         return {}
     try:
         conn = sqlite3.connect(db_file)
         if (verbose):
-            print("GetAIMNotes(3) sqlite3: {0}".format(sqlite3.version))
+            print("GetAIMNotes(4) sqlite3: {0}".format(sqlite3.version))
     except Error as e:
-        print("GetAIMNotes(4) {0}".format(e))
+        print("GetAIMNotes(5) {0}".format(e))
         return {}
     c = conn.cursor()
     c.execute("SELECT * FROM aim ORDER BY post_date DESC LIMIT ?", (count,))
@@ -976,22 +994,27 @@ def custom_strftime(format, t):
 
 def GetFirstAIM(verbose):
     defaults, types = GetDefaults(verbose)
+    if (verbose):
+        print ("***")
+    if "aim db" not in defaults:
+        if (verbose):
+            print ("GetFirstAIM(1) could not get defaults, make sure that the defaults dbase is set up")
+        return {}
     username = getpass.getuser()
     db_file = username + "/"  + defaults['aim db']
     if (verbose):
-        print ("***")
-        print ("GetFirstAIM(1) dbase: {0}".format(db_file))
+        print ("GetFirstAIM(2) dbase: {0}".format(db_file))
     if (not os.path.exists(db_file)):
         if (verbose):
-            print ("GetFirstAIM(2) {0} file is missing, cannot return the first row".format(db_file))
+            print ("GetFirstAIM(3) {0} file is missing, cannot return the first row".format(db_file))
             print ("***\n")
         return {}
     try:
         conn = sqlite3.connect(db_file)
         if (verbose):
-            print("GetFirstAIM(3) sqlite3: {0}".format(sqlite3.version))
+            print("GetFirstAIM(4) sqlite3: {0}".format(sqlite3.version))
     except Error as e:
-        print("GetFirstAIM(4) {0}".format(e))
+        print("GetFirstAIM(5) {0}".format(e))
         return {}
     c = conn.cursor()
     c.execute("SELECT * FROM aim where post_date = '1970/01/01'")
@@ -1061,6 +1084,10 @@ def as_percent(amount):
 
 def Look(verbose):
     first = GetFirstAIM(verbose)
+    if not first:
+        if (verbose):
+            print ("Look(1) could not get defaults, make sure that the defaults dbase is set up")
+        return {}, "", {}
     prev = GetLastAIM(verbose)
     prev_pc = math.ceil(prev['portfolio control'] -.4)
     db_keys = prev.keys()
@@ -1153,23 +1180,28 @@ def PrintAIM(printyear, verbose):
             intyear = 2000 + intyear
         printyear = str(intyear)
     defaults, types = GetDefaults(verbose)
+    if (verbose):
+        print ("***")
+    if "aim db" not in defaults:
+        if (verbose):
+            print ("PrintAIM(1) could not get defaults, make sure that the defaults dbase is set up")
+        return ""
     username = getpass.getuser()
     db_file = username + "/"  + defaults['aim db']
     if (verbose):
-        print ("***")
-        print ("PrintAIM(1) dbase: {0}".format(db_file))
-        print ("PrintAIM(2) year: {0}".format(printyear))
+        print ("PrintAIM(2) dbase: {0}".format(db_file))
+        print ("PrintAIM(3) year: {0}".format(printyear))
     if (not os.path.exists(db_file)):
         if (verbose):
-            print ("PrintAIM(3) {0} file is missing, cannot print".format(db_file))
+            print ("PrintAIM(4) {0} file is missing, cannot print".format(db_file))
             print ("***\n")
         return ""
     try:
         conn = sqlite3.connect(db_file)
         if (verbose):
-            print("PrintAIM(4) sqlite3: {0}".format(sqlite3.version))
+            print("PrintAIM(5) sqlite3: {0}".format(sqlite3.version))
     except Error as e:
-        print("PrintAIM(5) {0}".format(e))
+        print("PrintAIM(6) {0}".format(e))
         return ""
     c = conn.cursor()
     c.execute("SELECT * FROM aim order by post_date")
@@ -1233,16 +1265,6 @@ def TestStock(verbose):
     if (verbose):
         print ("Test #{0} - UpdateDefaultItem('api key', 'TEST', verbose)".format(count + 1))
     result = UpdateDefaultItem("api key", "TEST", verbose)
-    if (result):
-        if (verbose):
-            print ("\tpass.")
-        count += 1
-    else:
-        if (verbose):
-            print ("\tfail.")
-    if (verbose):
-        print ("Test #{0} - UpdateDefaultItem('interval', 5, False)".format(count + 1))
-    result = UpdateDefaultItem("interval", 5, verbose)
     if (result):
         if (verbose):
             print ("\tpass.")
@@ -1324,7 +1346,6 @@ def TestStock(verbose):
         print ("Test #{0} - GetDefaults(False)".format(count + 1))
     result, types = GetDefaults(verbose)
     if (result['api key'] == "TEST"
-        and result['interval'] == 5
         and result['daemon seconds'] == 600
         and result['folder db'] == "folder.db"
         and result['open'] == "8:30AM"
