@@ -31,16 +31,52 @@
     </div>
     <div id="content_header"></div>
     <div id="site_content">
-      <div id="content">
-        <h1>Defaults</h1>
-        {{table | safe}}
-      </div>
+        <div class="sidebar">
+            <h3>Latest News</h3>
+            {% for note in notes %}
+                <h5>{{ note.date }}</h5>
+                <p>{{ note.content }}</p>
+            {% endfor %}
+            <ul>
+                <li><a href="https://amazon.com/author/smithja" target="_blank" >my Amazon Bookshelf</a></li>
+                <li><a href="https://github.com/meprogrammerguy" target="_blank" >my GitHub page</a></li>
+                <li><a href="http://meprogrammerguy.com/" target="_blank" >my Blog</a></li>
+                <li><a href="https://twitter.com/meprogrammerguy/" target="_blank" >my Twitter</a></li>
+                <li><a href="http://www.wallstreetsurvivor.com/accountoverview/" target="_blank" >Wall Street Survivor</a></li>
+                <li><a href="https://www.alphavantage.co/" target="_blank" >Alpha Vantage</a></li>
+                <li><a href="https://iextrading.com/" target="_blank" >IEX trading</a></li>
+            </ul>
+            <p style="color:red;">{{feedback | safe}}</p>
+        </div>
+        <div id="content">
+            <div>
+                <h1>Defaults</h1>
+                {{table | safe}}
+                <form action="#" method="post">
+                <div class="form_settings">
+                    <p><span>&nbsp;</span><input class="submit" type="submit" name="action" value="reset" style="float: right;"/></p>
+                </div>
+                </form>
+            </div>
+            <div>
+                <h1>Adjustments</h1>
+                <form action="#" method="post">
+                <div class="center">
+                    <p><select id="id" name="column">{{column_options | safe}}</select>
+                    <input type="text" name="value" value=""/></p>
+                </div>
+                <div class="form_settings">
+                    <p><span>&nbsp;</span><input class="submit" type="submit" name="action" value="adjust" style="float: right;"/></p>
+                </div>
+                </form>
+            </div>
+        </div>
     </div>
     <div id="content_footer"></div>
     <div id="footer">
       <p><a href="{{url_for("index")}}">Home</a> | <a href="{{url_for("folder")}}">Folder</a> | <a href="{{url_for("defaults")}}">Defaults</a> | <a href="{{url_for("history")}}">History</a></p>
       <p>Copyright &copy; shadowplay_2  | <a href="http://www.html5webtemplates.co.uk">design from HTML5webtemplates.co.uk</a></p>
     </div>
-  </div>
+    </div>
 </body>
 </html>

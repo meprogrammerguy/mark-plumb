@@ -10,7 +10,6 @@ def main(argv):
     verbose = False
     test = False
     update = False
-    folder = ""
     cash = ""
     add = ""
     remove = ""
@@ -19,7 +18,7 @@ def main(argv):
     shares = ""
     printout = False
     try:
-        opts, args = getopt.getopt(argv, 'pub:n:s:a:r:f:c:hvt', ['help', 'verbose', 'test', 'folder=', 'cash=', 'add=', 'remove=', 'symbol=', 'balance=', 'number=', 'update', 'print'])
+        opts, args = getopt.getopt(argv, 'pub:n:s:a:r:c:hvt', ['help', 'verbose', 'test', 'cash=', 'add=', 'remove=', 'symbol=', 'balance=', 'number=', 'update', 'print'])
     except getopt.GetoptError as err:
         print(err)
         usage()
@@ -36,8 +35,6 @@ def main(argv):
         elif o in ("-h", "--help"):
             usage()
             exit()
-        elif o in ("-f", "--folder"):
-            folder = a
         elif o in ("-a", "--add"):
             add = a.upper()
         elif o in ("-c", "--cash"):
@@ -59,16 +56,9 @@ def main(argv):
         else:
             print ("Test result - fail")
         exit()
-    if (folder > ""):
-        folderResult = plumb.Folder(folder, verbose)
-        if (folderResult):
-            print ("updated.")
-        else:
-            print ("failed.")
-        exit()
-    defaults = plumb.GetDefaults(verbose)
+    defaults, types = plumb.GetDefaults(verbose)
     if defaults['folder db'] is None:
-        print ("\tWarning, please use --folder switch to set the folder database name")
+        print ("\tWarning, the folder database name is not set, please correct this")
         exit()
     if (cash > ""):
         cashResult = plumb.Balance("$", cash, verbose)
@@ -148,13 +138,16 @@ def usage():
     -h --help           prints this help
     -v --verbose        increases the information level
     -t --test           tests the folder routines
-    -f --folder         save database name
+
     -c --cash           enter your cash balance in dollars
+
     -a --add            add company by ticker symbol
     -r --remove         remove company by ticker symbol
+
     -s --symbol         ticker symbol (used with --number or --balance)
     -n --number         number of shares owned (used with --symbol)
     -b --balance        balance in dollars (used with --symbol)
+
     -u --update         update all prices (to within default interval minutes)
     -p --print          print out the folder database (in HTML table format)
     """

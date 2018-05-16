@@ -11,16 +11,13 @@ def main(argv):
     verbose = False
     test = ""
     aim = ""
-    test_dir = ""
-    cash = ""
-    stock = ""
     initialize = False
     notes = ""
     look = False
     update = False
     printyear = ""
     try:
-        opts, args = getopt.getopt(argv, "ip:luc:s:n:d:a::hvt:", ["help", "verbose", "test=", "aim=", "directory=", "notes=", "cash=", "stock=", "look", "update", "print=", "initialize"])
+        opts, args = getopt.getopt(argv, "ip:lun:hvt:", ["help", "verbose", "test=", "notes=", "look", "update", "print=", "initialize"])
     except getopt.GetoptError as err:
         print(err)
         usage()
@@ -33,14 +30,6 @@ def main(argv):
         elif o in ("-h", "--help"):
             usage()
             exit()
-        elif o in ("-a", "--aim"):
-            aim = a
-        elif o in ("-d", "--directory"):
-            test_dir = a
-        elif o in ("-c", "--cash"):
-            cash = a
-        elif o in ("-s", "--stock"):
-            stock = a
         elif o in ("-n", "--notes"):
             notes = a
         elif o in ("-i", "--initialize"):
@@ -65,19 +54,12 @@ def main(argv):
         else:
             print ("failed.")
         exit()
-    if (aim > ""):
-        aimResult = plumb.AIM(aim, verbose)
-        if (aimResult):
-            print ("updated.")
-        else:
-            print ("failed.")
-        exit()
     defaults = plumb.GetDefaults(False)
     if defaults['aim db'] is None:
-        print ("\tWarning, please use --aim switch to set the AIM database name")
+        print ("\tWarning, the AIM database name is missing, please correct")
         exit()
     if defaults['test root'] is None:
-        print ("\tWarning, please use --directory switch to set the test root")
+        print ("\tWarning, the test root path is not set, please correct")
         exit()
     if (test > ""):
         testResult = plumb.TestAIM(test, verbose)
@@ -85,20 +67,6 @@ def main(argv):
             print ("Test result - pass")
         else:
             print ("Test result - fail")
-        exit()
-    if (cash > ""):
-        cashResult = plumb.AIMCash(float(cash), verbose)
-        if (cashResult):
-            print ("updated.")
-        else:
-            print ("failed.")
-        exit()
-    if (stock > ""):
-        stockResult = plumb.AIMStock(float(stock), verbose)
-        if (stockResult):
-            print ("updated.")
-        else:
-            print ("failed.")
         exit()
     if (notes > ""):
         notesResult = plumb.GetAIMNotes(int(notes), verbose)
@@ -141,20 +109,17 @@ def usage():
 
     -h --help           prints this help
     -v --verbose        increases the information level
-    -a --aim            save the database name
-
-    -d --directory      save the test directory (default is test)
     -t --test           runs test routine to check calculations
 
-    -c --cash           save starting cash
-    -s --stock          save starting stock value
     -i --initialize     initialize your AIM database
                             (warning, this will clear out the db)
 
     -l --look           looks at today's AIM position
     -u --update         update today's AIM position to database
+
     -p --print          print out the AIM database (in HTML table format)
                             (--print=all, --print=2018)
+
     -n --notes          show the last <count> of notes  
     """
     print (usage) 

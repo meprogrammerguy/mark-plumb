@@ -99,9 +99,26 @@ def render_folder(ticker_style, feedback, symbol):
     return(render_template('folder.html', table = table,  ticker_style = ticker_style, symbol_options = symbol_options, balance_options = balance_options, notes = notes, ticker = co,
         feedback = feedback, amount_options = amount_options))
  
-@app.route('/defaults/')
+@app.route('/defaults/', methods=["GET","POST"])
 def defaults():
-    return render_template('defaults.html', table = plumb.PrintDefaults(False))
+    try:
+        if request.method == "POST":
+            if (request.form['action'] == "reset"):
+                plumb.ResetDefaults(False)
+                return (render_defaults("defaults have been reset."))
+            elif (request.form['action'] == "adjust"):
+                plumb.UpdateDefaultItem(request.form['column'], request.form['value'], False)
+                log = "{0} has been updated.".format(request.form['column'])
+                return (render_defaults(log))
+
+    except Exception as e:
+        return (render_defaults(e))
+
+    return(render_defaults(""))
+
+def render_defaults(feedback):
+    table, column_options = plumb.PrintDefaults(False)
+    return (render_template('defaults.html', table = table, feedback = feedback, column_options = column_options))
 
 @app.route('/history/', methods=["GET","POST"])
 def history():

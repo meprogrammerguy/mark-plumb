@@ -13,10 +13,10 @@ import plumb
 
 def do_something():
     while True:
-        defaults = plumb.GetDefaults(False)
+        defaults, types = plumb.GetDefaults(False)
         ds = 0
         if (defaults['daemon seconds'] is None):
-            ds = 1200        # 20 minutes (1200 seconds)
+            ds = 600        # 20 minutes (1200 seconds)
         else:
             ds = defaults['daemon seconds']
         begin = defaults['open']
@@ -35,7 +35,7 @@ def do_something():
             et = datetime.strptime(end, '%I:%M%p')
         else:
             et = datetime.strptime(end, '%H:%M')
-        et = et + timedelta(minutes = ds/60) # one final poll to get closing prices
+        et = et + timedelta(minutes = (ds * 4)/60) # a few final polls to get closing prices
         et = et.time()
         filename = "/tmp/{0}_folder_daemon.txt".format(getpass.getuser())
         errname = "/tmp/{0}_folder_daemon_error.txt".format(getpass.getuser())
