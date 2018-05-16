@@ -1371,7 +1371,7 @@ def TestStock(verbose):
             else:
                 if (verbose):
                     print ("\tfail.")
-    if (count == 19):
+    if (count == 17):
         return True
     else:
         if (verbose):
