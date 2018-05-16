@@ -47,14 +47,7 @@ def main(argv):
                 printyear = a.lower()
         else:
             assert False, "unhandled option"
-    if (test_dir > ""):
-        testResult = plumb.Directory(test_dir, verbose)
-        if (testResult):
-            print ("updated.")
-        else:
-            print ("failed.")
-        exit()
-    defaults = plumb.GetDefaults(False)
+    defaults, types = plumb.GetDefaults(False)
     if defaults['aim db'] is None:
         print ("\tWarning, the AIM database name is missing, please correct")
         exit()
@@ -73,11 +66,11 @@ def main(argv):
         print (notesResult)
         exit()
     if (initialize):
-        nowResult, nowError = plumb.AIMDate(verbose)
+        nowResult = plumb.CreateAIM(verbose)
         if (nowResult):
              print ("updated.")
         else:
-            print ("failed. {0}".format(nowError))
+            print ("failed.")
         exit()
     if (look):
         lookResult, lookHTML, lookDB = plumb.Look(verbose)

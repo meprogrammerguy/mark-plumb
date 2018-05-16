@@ -1361,8 +1361,8 @@ def TestFolder(verbose):
     count = 0
     defaults, types = GetDefaults(verbose)
     if (verbose):
-        print ("Test #1 - Folder('test.db', verbose)")
-    result = Folder("test.db", verbose)
+        print ("Test #{0} - UpdateDefaultItem('folder db', 'testfolder.db', verbose)".format(count + 1))
+    result = UpdateDefaultItem("folder db", "testfolder.db", verbose)
     if (result):
         if (verbose):
             print ("\tpass.")
@@ -1371,7 +1371,17 @@ def TestFolder(verbose):
         if (verbose):
             print ("\tfail.")
     if (verbose):
-        print ("Test #2 - Balance('$', '5000', verbose)")
+        print ("Test #{0} - Add('AAPL', verbose)".format(count + 1))
+    result = Add( "AAPL", verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (verbose):
+        print ("Test #{0} - Balance('$', '5000', verbose)".format(count + 1))
     result = Balance( "$", "5000", verbose)
     if (result):
         if (verbose):
@@ -1381,7 +1391,7 @@ def TestFolder(verbose):
         if (verbose):
             print ("\tfail.")
     if (verbose):
-        print ("Test #3 - Balance('AAPL', '5000', verbose)")
+        print ("Test #{0} - Balance('AAPL', '5000', verbose)".format(count + 1))
     result = Balance("AAPL", "5000", verbose)
     if (result['status']):
         if (verbose):
@@ -1391,7 +1401,7 @@ def TestFolder(verbose):
         if (verbose):
             print ("\tfail.")
     if (verbose):
-        print ("Test #4 - Shares('AAPL', '50', verbose)")
+        print ("Test #{0} - Shares('AAPL', '50', verbose)".format(count + 1))
     result = Shares("AAPL", "50", verbose)
     if (result['status']):
         if (verbose):
@@ -1401,7 +1411,7 @@ def TestFolder(verbose):
         if (verbose):
             print ("\tfail.")
     if (verbose):
-        print ("Test #5 - Update(verbose)")
+        print ("Test #{0} - Update(verbose)".format(count + 1))
     result = Update(verbose)
     if (result):
         if (verbose):
@@ -1411,7 +1421,7 @@ def TestFolder(verbose):
         if (verbose):
             print ("\tfail.")
     if (verbose):
-        print ("Test #6 - Remove('AAPL', verbose)")
+        print ("Test #{0} - Remove('AAPL', verbose)".format(count + 1))
     result = Remove("AAPL", verbose)
     if (result):
         if (verbose):
@@ -1421,14 +1431,14 @@ def TestFolder(verbose):
         if (verbose):
             print ("\tfail.")
     username = getpass.getuser()
-    db_file = username + "/" + "test.db"
+    db_file = username + "/" + "testfolder.db"
     if (os.path.exists(db_file)):
         os.unlink(db_file)
         if (verbose):
             print ("Cleanup, remove {0}".format(db_file))
     if (verbose):
-        print ("Test #7 - Folder(<reset back db name>, verbose)")
-    result = Folder(defaults['folder db'], verbose)
+        print ("Test #{0} - UpdateDefaultItem('folder db', 'testfolder.db', verbose)".format(count + 1))
+    result = UpdateDefaultItem("folder db", defaults['folder db'], verbose)
     if (result):
         if (verbose):
             print ("\tpass.")
@@ -1436,8 +1446,11 @@ def TestFolder(verbose):
     else:
         if (verbose):
             print ("\tfail.")
-    if (count == 7):
+    if (count == 8):
         return True
+    else:
+        if (verbose):
+            print ("test count expected 7 passes, received {0}".format(count))
     return False
 
 def TestAIM(location, verbose):
@@ -1446,8 +1459,8 @@ def TestAIM(location, verbose):
     status, keys, rows = LoadTest(location, verbose)
     if (status and (defaults is not None)):
         if (verbose):
-            print ("Test #{0} - AIM('test.db', verbose)".format(count + 1))
-        result = AIM("test.db", verbose)
+            print ("Test #{0} - UpdateDefaultItem('aim db', 'testaim.db', verbose)".format(count + 1))
+        result = UpdateDefaultItem("aim db", "testaim.db", verbose)
         if (result):
             if (verbose):
                 print ("\tpass.")
@@ -1514,14 +1527,14 @@ def TestAIM(location, verbose):
                 if (verbose):
                     print ("\tPortfolioValue({0}) - expected: {1}, calculated: {2}, fail.".format(index, curr['Portfolio Value'], result))
         username = getpass.getuser()
-        db_file = username + "/" + "test.db"
+        db_file = username + "/" + "testaim.db"
         if (os.path.exists(db_file)):
             os.unlink(db_file)
             if (verbose):
                 print ("Cleanup, remove {0}".format(db_file))
         if (verbose):
-            print ("Test #{0} - AIM(<reset back db name>, verbose)".format(count + 1))
-        result = AIM(defaults['aim db'], verbose)
+            print ("Test #{0} - UpdateDefaultItem('aim db', '<reset back to what it was>', verbose)".format(count + 1))
+        result = UpdateDefaultItem("aim db", defaults['aim db'], verbose)
         if (result):
             if (verbose):
                 print ("\tpass.")
