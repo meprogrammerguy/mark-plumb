@@ -70,6 +70,19 @@
                 </div>
                 </form>
             </div>
+            <div class="left">
+                <h1>Stock Polling</h1>
+                <form action="#" method="post">
+                <div>
+                    <p class="center" style="color:{{daemon_color}}">{{daemon_check}}</p>
+                    <p class="center">{{daemon_info}}</p>
+                    {{daemon_table | safe}}
+                </div>
+                <div class="form_settings">
+                    <p><span>&nbsp;</span><input class="submit" type="submit" name="action" value="{{daemon_action}}" style="float: right;"/></p>
+                </div>
+                </form>
+            </div>
         </div>
     </div>
     <div id="content_footer"></div>

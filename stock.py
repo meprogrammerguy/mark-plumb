@@ -16,8 +16,9 @@ def main(argv):
     item = ""
     printout = False
     reset = False
+    log = ""
     try:
-        opts, args = getopt.getopt(argv, "rpi:k:q:hvtc:", ["help", "verbose", "test", "quote=", "key=", "company=", "item=", "print", "reset"])
+        opts, args = getopt.getopt(argv, "l:rpi:k:q:hvtc:", ["help", "verbose", "test", "quote=", "key=", "company=", "item=", "print", "reset", "log="])
     except getopt.GetoptError as err:
         print(err)
         usage()
@@ -42,6 +43,8 @@ def main(argv):
             company = a.upper()
         elif o in ("-k", "--key"):
             key = a
+        elif o in ("-l", "--log"):
+            log = a.lower()
         else:
             assert False, "unhandled option"
     if (test):
@@ -83,6 +86,14 @@ def main(argv):
         else:
             print ("failed.")
         exit()
+    if (log > ""):
+        logResult, status = plumb.PrintDaemon(log, verbose)
+        if (logResult > ""):
+            pprint.pprint(logResult)
+        else:
+            print ("failed.")
+        print("last status: {0}".format(status))
+        exit()
     usage()
 
 def usage():
@@ -110,8 +121,11 @@ def usage():
 
     -p --print          print out the defaults database (in HTML table format)
     -r --reset          reset user back to standard defaults
+
+    -l --log            show daemon log
+                            --log='' (entire log), --log='wake' (wake status)
     """.format(key_list)
     print (usage) 
 
 if __name__ == "__main__":
-  main(sys.argv[1:])
+    main(sys.argv[1:])

@@ -21,6 +21,8 @@ import pprint
 import pyperclip
 import pytz
 from dateutil import tz
+import subprocess
+import signal
 
 #region stock
 def Quote(ticker, verbose):
@@ -1629,3 +1631,110 @@ def LoadTest(location, verbose):
                     values[index] = item               
     return True, keys, values
 #endregion tests
+#region daemon
+def LogDaemon(log, verbose):
+    if (verbose):
+        print ("***")
+    if "status" not in log:
+        print ("LogDaemon(1) - could not find any status to log - cannot continue.")
+        return False
+    status = log['status']
+    del log['status']
+    json_string = json.dumps(log)
+    if (verbose):
+        print ("LogDaemon(2) status: {0}".format(status))
+    username = getpass.getuser()
+    db_file = username + "/daemon.db"
+    if (verbose):
+        print ("LogDaemon(3) dbase: {0}".format(db_file))
+    try:
+        conn = sqlite3.connect(db_file)
+        if (verbose):
+            print("LogDaemon(4) sqlite3: {0}".format(sqlite3.version))
+    except Error as e:
+        print("LogDaemon(6) {0}".format(e))
+        return False
+    c = conn.cursor()
+    c.execute("CREATE TABLE if not exists `log` ( `status` TEXT NOT NULL UNIQUE, `timestamp` TEXT, `json_string` TEXT, PRIMARY KEY(`status`) )")
+    c.execute( "INSERT OR IGNORE INTO log(status) VALUES((?))", (status,))
+    c.execute("UPDATE log SET timestamp = (?) WHERE status = (?)", (datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S.%f"), status,))
+    c.execute("UPDATE log SET json_string = (?) WHERE status = (?)", (json_string, status,))
+    conn.commit()
+    conn.close()
+    if (verbose):
+        print ("***\n")
+    return True
+
+def PrintDaemon(status, verbose):
+    if (status == ""):
+        status = "all"
+    username = getpass.getuser()
+    if (verbose):
+        print ("***")
+    db_file = username + "/daemon.db"
+    if (verbose):
+        print ("PrintDaemon(1) status: {0}".format(status))
+        print ("PrintDaemon(1) dbase: {0}".format(db_file))
+    if (not os.path.exists(db_file)):
+        if (verbose):
+            print ("PrintDaemon(2) {0} file is missing, cannot print".format(db_file))
+            print ("***\n")
+        return "", ""
+    try:
+        conn = sqlite3.connect(db_file)
+        if (verbose):
+            print("PrintDaemon(3) sqlite3: {0}".format(sqlite3.version))
+    except Error as e:
+        print("PrintDaemon(4) {0}".format(e))
+        return  e, ""
+    c = conn.cursor()
+    if (status == "" or status =="all"):
+        c.execute("SELECT * FROM log order by timestamp DESC")
+    else:
+        c.execute("SELECT * FROM log where status = (?) order by timestamp DESC", (status,))
+    keys = list(map(lambda x: x[0].replace("_"," "), c.description))
+    rows = c.fetchall()
+    conn.commit()
+    conn.close()
+    TableCls = create_table('TableCls')
+    for key in keys:
+        if (key != "json string"):
+            TableCls.add_column(key, Col(key))
+        else:
+            TableCls.add_column('pid', Col('pid'))
+    keys[2] = 'pid'
+    items = []
+    answer = {}
+    status = ""
+    for row in rows:
+        if row[0] != "sleep" and status == "":
+            status = row[0]
+        json_string = json.loads(row[2])
+        col_list = []
+        for i in range(len(keys)):
+            if (i == 2):
+                col_list.append(json_string['pid'])
+            else:
+                col_list.append(row[i])
+        answer = dict(zip(keys, col_list))
+        items.append(answer)
+    table = TableCls(items, html_attrs = {'width':'100%','border-spacing':0})
+    if (verbose):
+        print ("***\n")
+    return table.__html__(), status
+
+def get_pid(name):
+    child = subprocess.Popen(['pgrep', '-f', name], stdout=subprocess.PIPE, shell=False)
+    response = child.communicate()[0]
+    return [int(pid) for pid in response.split()]
+
+def kill_pid(pid):
+    return(os.kill(pid, signal.SIGTERM))
+
+def run_script(name):
+    pid = get_pid(name)
+    if pid != []:
+        kill_pid(pid[0])
+    print (os.getcwd())
+    os.system(name)
+#endregion daemon

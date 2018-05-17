@@ -120,6 +120,10 @@ def defaults():
                 plumb.UpdateDefaultItem(request.form['column'], request.form['value'], False)
                 log = "{0} has been updated.".format(request.form['column'])
                 return (render_defaults(log))
+            elif (request.form['action'] == "restart"):
+                plumb.run_script("./folder_daemon.py")
+            elif (request.form['action'] == "start"):
+                plumb.run_script("./folder_daemon.py")
 
     except Exception as e:
         return (render_defaults(e))
@@ -129,7 +133,25 @@ def defaults():
 def render_defaults(feedback):
     table, column_options = plumb.PrintDefaults(False)
     notes = plumb.GetAIMNotes(10, False)
-    return (render_template('defaults.html', table = table, feedback = feedback, column_options = column_options, notes = notes))
+    pid = plumb.get_pid("folder_daemon.py")
+    daemon_check = ""
+    daemon_color = "green;"
+    daemon_action = ""
+    if (pid == []):
+        daemon_check = "WARNING: folder_daemon.py is not running, your stocks are not updating, please start"
+        daemon_color = "red;"
+        daemon_action = "start"
+    else:
+        daemon_check = "folder daemon is running on pid: {0}".format(pid[0])
+        daemon_action = "restart"       
+    daemon_table, status = plumb.PrintDaemon("all", False)
+    daemon_info = ""
+    if (status == "closed"):
+        daemon_info = "The NY stock exchange is closed."
+    else:
+        daemon_info = "Last valid status: {0}".format(status)
+    return (render_template('defaults.html', table = table, feedback = feedback, column_options = column_options, notes = notes,
+        daemon_table = daemon_table, daemon_check = daemon_check, daemon_color = daemon_color, daemon_info = daemon_info, daemon_action = daemon_action))
 
 @app.route('/history/', methods=["GET","POST"])
 def history():
