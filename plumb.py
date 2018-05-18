@@ -819,6 +819,13 @@ def PrintPercent(verbose):
 
 #region aim
 def CreateAIM(verbose):
+    defaults, types = GetDefaults(verbose)
+    if (verbose):
+        print ("***")
+    if "aim db" not in defaults:
+        if (verbose):
+            print ("CreateAIM(1) could not get defaults, make sure that the defaults dbase is set up")
+        return False
     stock = GetFolderStockValue(verbose)
     cash = GetFolderCash(verbose)
     pv = PortfolioValue(cash, stock, verbose)
@@ -838,9 +845,13 @@ def CreateAIM(verbose):
             print("CreateAIM(3) {0}".format(e))
             return False
         c = conn.cursor()
-        c.execute("CREATE TABLE if not exists `aim` ( `post_date` TEXT NOT NULL UNIQUE, `stock_value` REAL, `cash` REAL, `portfolio_control` REAL, `buy_sell_advice` REAL, `market_order` REAL, `portfolio_value` REAL )")
+        c.execute("CREATE TABLE if not exists 'aim' ( `post_date` TEXT NOT NULL UNIQUE, `stock_value` REAL, `cash` REAL, `portfolio_control` REAL, `buy_sell_advice` REAL, `market_order` REAL, `portfolio_value` REAL, `json_string` TEXT, PRIMARY KEY(`post_date`) )")
         c.execute("DELETE FROM aim")
-        c.execute( "INSERT INTO aim VALUES((?),?,?,?,?,?,?)", ("1970/01/01", stock, cash, stock, 0, 0, pv,))
+        dt = datetime.datetime.now()
+        ds = {}
+        ds['start date'] = dt.strftime("%Y/%m/%d") 
+        json_string = json.dumps(ds)
+        c.execute( "INSERT INTO aim VALUES((?),?,?,?,?,?,?,(?))", ("1970/01/01", stock, cash, stock, 0, 0, pv, json_string,))
         conn.commit()
         conn.close()
     if (verbose):
@@ -966,8 +977,9 @@ def GetAIMNotes(count, verbose):
     for row in rows:
         note = {}
         answer = dict(zip(keys, row))
+        js = json.loads(row[7])
         if (answer['post date'] == "1970/01/01"):
-            note['date'] = noteDate(answer['post date'])
+            note['date'] = noteDate(js['start date'])
             note['content'] = "A.I.M. Was initialized with {0}".format(as_currency(answer['cash'] + answer['stock value']))            
         else:
             note['date'] = noteDate(answer['post date'])
@@ -1097,7 +1109,8 @@ def Look(verbose):
     for key in db_keys:
         if (key == 'cash'):
             keys.append("safe") # safe is not in the aim db (want to see it though)
-        keys.append(key)
+        if key != "json string":
+            keys.append(key)
     cd = datetime.datetime.now()
     stock = GetFolderStockValue(verbose)
     cash = GetFolderCash(verbose)
@@ -1124,6 +1137,7 @@ def Look(verbose):
     values_db.append(bsa)
     values_db.append(mo)
     values_db.append(pv)
+    values_db.append({})
     pretty = dict(zip(keys, values))
     answer_db = dict(zip(keys, values_db))
     TableCls = create_table('TableCls')
@@ -1157,6 +1171,14 @@ def Post(verbose):
     look, table, db_values = Look(verbose)
     if (verbose):
         print("Post(5) {0}".format(look))
+    table, symbol_options, balance_options, amount_options = PrintFolder(False)
+    dl = []
+    for item in amount_options:
+        ds = {}
+        ds['symbol'] = item[0]
+        ds['balance'] = as_currency(item[1])
+        dl.append(ds)
+    json_string = json.dumps(dl)
     c = conn.cursor()
     c.execute( "INSERT OR IGNORE INTO aim(post_date) VALUES((?))", (db_values['post date'],))
     c.execute("UPDATE aim SET stock_value = ? WHERE post_date = (?)", (db_values['stock value'], db_values['post date'],))
@@ -1165,6 +1187,7 @@ def Post(verbose):
     c.execute("UPDATE aim SET buy_sell_advice = ? WHERE post_date = (?)", (db_values['buy sell advice'], db_values['post date'],))
     c.execute("UPDATE aim SET market_order = ? WHERE post_date = (?)", (db_values['market order'], db_values['post date'],))
     c.execute("UPDATE aim SET portfolio_value = ? WHERE post_date = (?)", (db_values['portfolio value'], db_values['post date'],))
+    c.execute("UPDATE aim SET json_string = (?) WHERE post_date = (?)", (json_string, db_values['post date'],))
     conn.commit()
     conn.close()
     if (db_values['market order'] != 0):
@@ -1215,7 +1238,8 @@ def PrintAIM(printyear, verbose):
     for key in keys_db:
         if (key == 'cash'):
             keys.append("safe") # safe is not in the aim db (want to see it though)
-        keys.append(key)
+        if key != "json string":
+            keys.append(key)
     TableCls = create_table('TableCls')
     for key in keys:
         TableCls.add_column(key, Col(key))

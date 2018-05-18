@@ -200,7 +200,8 @@ def render_history(history_style, feedback, history_year):
         year_string = history_year
         year_input = int(year_string)
     notes = plumb.GetAIMNotes(10, False)
-    return render_template('history.html', table = plumb.PrintAIM(str(year_input), False), year_string = year_string, notes = notes, feedback = feedback, history_style = history_style)
+    table = plumb.PrintAIM(str(year_input), False)
+    return render_template('history.html', table = table, year_string = year_string, notes = notes, feedback = feedback, history_style = history_style)
 
 @app.errorhandler(404)
 def page_not_found(e):
