@@ -1712,7 +1712,10 @@ def PrintDaemon(status, verbose):
         json_string = json.loads(row[2])
         col_list = []
         for i in range(len(keys)):
-            if (i == 2):
+            if (i == 1):
+                dt = datetime.datetime.strptime(row[i], '%Y/%m/%d %H:%M:%S.%f')
+                col_list.append(dt.strftime("%b %d %I:%M %p"))
+            elif (i == 2):
                 col_list.append(json_string['pid'])
             else:
                 col_list.append(row[i])
@@ -1734,7 +1737,10 @@ def kill_pid(pid):
 def run_script(name):
     pid = get_pid(name)
     if pid != []:
+        log = {}
+        log['status'] = "stop"
+        log['pid'] = pid[0]
+        LogDaemon(log, False)
         kill_pid(pid[0])
-    print (os.getcwd())
     os.system(name)
 #endregion daemon

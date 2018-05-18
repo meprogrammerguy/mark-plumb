@@ -25,6 +25,11 @@ def index():
     return(render_index(""))
 
 def render_index(feedback):
+    pid = plumb.get_pid("folder_daemon.py")
+    if (pid == []):
+        plumb.run_script("./folder_daemon.py")
+        if (feedback == ""):
+            feedback = "daemon started"
     l, table, db = plumb.Look(False)
     allocation_list = plumb.PrintPercent(False)
     notes = plumb.GetAIMNotes(10, False)
@@ -131,6 +136,11 @@ def defaults():
     return(render_defaults(""))
 
 def render_defaults(feedback):
+    defaults, types = plumb.GetDefaults(False)
+    api_key_warning = ""
+    if ("api key" in defaults):
+        if (defaults['api key'] == "" or defaults['api key'] == "demo"):
+            api_key_warning = "Remember to obtain your lifetime API key from Alpha Vantage, this is needed for polling the market prices"
     table, column_options = plumb.PrintDefaults(False)
     notes = plumb.GetAIMNotes(10, False)
     pid = plumb.get_pid("folder_daemon.py")
@@ -149,8 +159,8 @@ def render_defaults(feedback):
     if (status == "closed"):
         daemon_info = "The NY stock exchange is closed."
     else:
-        daemon_info = "Last valid status: {0}".format(status)
-    return (render_template('defaults.html', table = table, feedback = feedback, column_options = column_options, notes = notes,
+        daemon_info = "Last active status: {0}".format(status)
+    return (render_template('defaults.html', table = table, feedback = feedback, column_options = column_options, notes = notes, api_key_warning = api_key_warning,
         daemon_table = daemon_table, daemon_check = daemon_check, daemon_color = daemon_color, daemon_info = daemon_info, daemon_action = daemon_action))
 
 @app.route('/history/', methods=["GET","POST"])
@@ -160,23 +170,23 @@ def history():
             if (request.form['action'] == "all"):
                 year_input = 1970
                 year_string = "all"
-                return (render_history("display: block;", "", year_string))
-            elif (request.form['action'] == "hide"):     #temporary hide code while developing page
-                return (render_history("display: none;", "hiding help HTML, remove this at release time", "all"))
+                return (render_history("display: none;", "", year_string))
+            elif (request.form['action'] == "see"):     #temporary see HTLM code while developing page
+                return (render_history("display: block;", "showing help HTML, remove this at release time", "all"))
             elif (request.form['action'].isnumeric()):
                 year_input = int(request.form['action'])
                 if year_input < 100:
                     year_input += 2000
                 year_string = str(year_input)
-                return (render_history("display: block;", "", year_string))
+                return (render_history("display: none;", "", year_string))
             else:
                 feedback = "input is not a year or the word all"
-                return (render_history("display: block;", feedback, ""))
+                return (render_history("display: none;", feedback, ""))
 
     except Exception as e:
-        return (render_history("display: block;", e, ""))
+        return (render_history("display: none;", e, ""))
 
-    return(render_history("display: block;", "", ""))
+    return(render_history("display: none;", "", ""))
 
 def render_history(history_style, feedback, history_year):
     if (history_year == ""):

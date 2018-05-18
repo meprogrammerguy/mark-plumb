@@ -36,75 +36,77 @@
                 <h5>{{ note.date }}</h5>
                 <p>{{ note.content }}</p>
             {% endfor %}
-        <ul>
-          <li><a href="https://amazon.com/author/smithja" target="_blank" >my Amazon Bookshelf</a></li>
-          <li><a href="https://github.com/meprogrammerguy" target="_blank" >my GitHub page</a></li>
-          <li><a href="http://meprogrammerguy.com/" target="_blank" >my Blog</a></li>
-          <li><a href="https://twitter.com/meprogrammerguy/" target="_blank" >my Twitter</a></li>
-          <li><a href="http://www.wallstreetsurvivor.com/accountoverview/" target="_blank" >Wall Street Survivor</a></li>
-        </ul>
-        <h3>Search</h3>
-        <form method="post" action="#">
-          <p>
-            <input class="search" type="text" onfocus="this.value=''" name="action" value="Ticker symbol" />
-            <input name="search" type="image" style="border: 0; margin: 0 0 -9px 5px;" src="{{ url_for('static', filename='search.png') }}" alt="Search" title="Search" />
-            <p style="color:red;">{{feedback | safe}}</p>
-          </p>
-        </form>
+            <ul>
+                <li><a href="https://amazon.com/author/smithja" target="_blank" >my Amazon Bookshelf</a></li>
+                <li><a href="https://github.com/meprogrammerguy" target="_blank" >my GitHub page</a></li>
+                <li><a href="http://meprogrammerguy.com/" target="_blank" >my Blog</a></li>
+                <li><a href="https://twitter.com/meprogrammerguy/" target="_blank" >my Twitter</a></li>
+                <li><a href="http://www.wallstreetsurvivor.com/accountoverview/" target="_blank" >Wall Street Survivor</a></li>
+            </ul>
+            <h3>Search</h3>
+            <form method="post" action="#">
+                <p>
+                    <input class="search" type="text" onfocus="this.value=''" name="action" value="Ticker symbol" />
+                    <input name="search" type="image" style="border: 0; margin: 0 0 -9px 5px;" src="{{ url_for('static', filename='search.png') }}" alt="Search" title="Search" />
+                    <p style="color:red;">{{feedback | safe}}</p>
+                </p>
+            </form>
         </div>
         <div id="content">
             <h1>Portfolio</h1>
             {{table | safe}}
+            <br class="clear"/>
             <div class ="left" style="{{ticker_style}}">
                 <h1>Ticker Symbol Lookup</h1>
 	        <p>{{ticker.description}}</p>
 	        <table border=1>
-	            <thead>
-	                <tr>
-		            <th>symbol</th>
-		            <th>companyName</th>
-		            <th>exchange</th>
-		            <th>industry</th>
-		            <th>website</th>
-		            <th>CEO</th>
-		            <th>issueType</th>
-		            <th>sector</th>
-		        </tr>
-	            </thead>
-	            <tbody>
-		        <tr>
-		                <td>{{ticker.symbol}}</td>
-		                <td>{{ticker.companyName}}</td>
-		                <td>{{ticker.exchange}}</td>
-		                <td>{{ticker.industry}}</td>
-		                <td>{{ticker.website}}</td>
-		                <td>{{ticker.CEO}}</td>
-		                <td>{{ticker.issueType}}</td>
-		                <td>{{ticker.sector}}</td>
-		        </tr>
-	            </tbody>
+	        <thead>
+	            <tr>
+		        <th>symbol</th>
+		        <th>companyName</th>
+		        <th>exchange</th>
+		        <th>industry</th>
+		        <th>website</th>
+		        <th>CEO</th>
+		        <th>issueType</th>
+		        <th>sector</th>
+		    </tr>
+	        </thead>
+	        <tbody>
+                    <tr>
+		        <td>{{ticker.symbol}}</td>
+		        <td>{{ticker.companyName}}</td>
+		        <td>{{ticker.exchange}}</td>
+		        <td>{{ticker.industry}}</td>
+		        <td>{{ticker.website}}</td>
+		        <td>{{ticker.CEO}}</td>
+		        <td>{{ticker.issueType}}</td>
+		        <td>{{ticker.sector}}</td>
+		    </tr>
+	        </tbody>
 	        </table>
                 <form action="#" method="post">
-                    <div class="form_settings">
-                        <p><span>&nbsp;</span><input class="submit" type="submit" name="action" value="add" style="float: right;"/></p>
-                        <input hidden type="text" name="add_symbol" value="{{ticker.symbol}}"/>
-                    </div>
-                </form>
-             </div>
-            <h1>Adjustments</h1>
-                <form action="#" method="post">
-                <div class="center">
-                    <p><select id="id" name="symbol">{{symbol_options | safe}}</select>
-                    <select id="id" name="options">{{balance_options | safe}}</select>
-                    <input hidden type="text" name="amount" value="{{amount_options | safe}}"/>
-                    <input type="text" name="balance" value=""/></p>
-                </div>
                 <div class="form_settings">
-                    <p><span>&nbsp;</span><input class="submit" type="submit" name="action" value="adjust" style="float: right;"/></p>
+                    <p><span>&nbsp;</span><input class="submit" type="submit" name="action" value="add" style="float: right;"/></p>
+                    <input hidden type="text" name="add_symbol" value="{{ticker.symbol}}"/>
                 </div>
                 </form>
             </div>
+            <br class="clear"/>
+            <h1>Adjustments</h1>
+            <form action="#" method="post">
+            <div class="center">
+                <p><select id="id" name="symbol">{{symbol_options | safe}}</select>
+                <select id="id" name="options">{{balance_options | safe}}</select>
+                <input hidden type="text" name="amount" value="{{amount_options | safe}}"/>
+                <input type="text" name="balance" value=""/></p>
+            </div>
+            <div class="form_settings">
+                <p><span>&nbsp;</span><input class="submit" type="submit" name="action" value="adjust" style="float: right;"/></p>
+            </div>
+            </form>
         </div>
+    </div>
         <div id="content_footer"></div>
         <div id="footer">
             <p><a href="{{url_for("index")}}">Home</a> | <a href="{{url_for("folder")}}">Folder</a> | <a href="{{url_for("defaults")}}">Defaults</a> | <a href="{{url_for("history")}}">History</a></p>
