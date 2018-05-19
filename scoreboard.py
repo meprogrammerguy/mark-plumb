@@ -89,7 +89,7 @@ def folder():
                         curr_balance = CurrentBalance(request.form['symbol'], request.form['amount'])
                         balance = curr_balance + plumb.to_number(request.form['balance'], False)
                         log = "company {0}, balance {1}, adjusted by {2}.".format(request.form['symbol'], as_currency(curr_balance), as_currency(plumb.to_number(request.form['balance'], False)))
-                        plumb.Balance(request.form['symbol'], balance, False)
+                        plumb.Balance(request.form['symbol'], str(balance), False)
                         return(render_folder("display: none;", log, ""))
             elif (request.form['action'] == "remove"):
                 plumb.Remove(request.form['remove_symbol'], False)
