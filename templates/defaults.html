@@ -50,7 +50,7 @@
             <p style="color:red;">{{feedback | safe}}</p>
         </div>
         <div id="content">
-            <h1>Defaults</h1>
+            <h1 class="center">Defaults</h1>
             {{table | safe}}
             <p class="center" style="color:blue;">{{api_key_warning}}</p>
             <form action="#" method="post">
@@ -59,7 +59,7 @@
             </div>
             </form>
             <br class="clear"/>
-            <h1>Adjustments</h1>
+            <h1 class="center">Adjustments</h1>
             <form action="#" method="post">
             <div class="center">
                 <p><select id="id" name="column">{{column_options | safe}}</select>
@@ -70,11 +70,11 @@
             </div>
             </form>
             <br class="clear"/>
-            <h1>Stock Polling</h1>
+            <h1 class="center">Stock Polling</h1>
             <form action="#" method="post">
             <div>
                 <p class="center" style="color:{{daemon_color}}">{{daemon_check}}</p>
-                <p class="center">{{daemon_info}}</p>
+                <p class="center">{{daemon_info | safe}}</p>
                 {{daemon_table | safe}}
             </div>
             <div class="form_settings">

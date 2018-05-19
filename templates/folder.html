@@ -54,11 +54,11 @@
             </form>
         </div>
         <div id="content">
-            <h1>Portfolio</h1>
+            <h1 class="center">Portfolio</h1>
             {{table | safe}}
             <br class="clear"/>
             <div class ="left" style="{{ticker_style}}">
-                <h1>Ticker Symbol Lookup</h1>
+                <h1 class="center">Ticker Symbol Lookup</h1>
 	        <p>{{ticker.description}}</p>
 	        <table border=1>
 	        <thead>
@@ -94,7 +94,7 @@
                 </form>
             </div>
             <br class="clear"/>
-            <h1>Adjustments</h1>
+            <h1 class="center">Adjustments</h1>
             <form action="#" method="post">
             <div class="center">
                 <p><select id="id" name="symbol">{{symbol_options | safe}}</select>
