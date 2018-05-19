@@ -110,7 +110,7 @@ def folder():
 
 def render_folder(ticker_style, feedback, symbol):
     table, symbol_options, balance_options, amount_options = plumb.PrintFolder(False)
-    notes = plumb.GetAIMNotes(10, False)
+    notes, initialize_day = plumb.GetAIMNotes(10, False)
     co = {}
     if (symbol > ""):
         co = plumb.Company(symbol, False)
@@ -149,7 +149,7 @@ def render_defaults(feedback):
         if (defaults['api key'] == "" or defaults['api key'] == "demo"):
             api_key_warning = "Remember to obtain your lifetime API key from Alpha Vantage, this is needed for polling the market prices"
     table, column_options = plumb.PrintDefaults(False)
-    notes = plumb.GetAIMNotes(10, False)
+    notes, initialize_day = plumb.GetAIMNotes(10, False)
     pid = plumb.get_pid("folder_daemon.py")
     daemon_check = ""
     daemon_color = "green;"
@@ -206,7 +206,7 @@ def render_history(history_style, feedback, history_year):
     else:
         year_string = history_year
         year_input = int(year_string)
-    notes = plumb.GetAIMNotes(10, False)
+    notes, initialize_day = plumb.GetAIMNotes(10, False)
     table = plumb.PrintAIM(str(year_input), False)
     return render_template('history.html', table = table, year_string = year_string, notes = notes, feedback = feedback, history_style = history_style)
 
