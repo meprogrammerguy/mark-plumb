@@ -14,14 +14,12 @@
     <div id="header">
       <div id="logo">
         <div id="logo_text">
-          <!-- class="logo_colour", allows you to change the colour of the text -->
           <h1><a href="index.html">plumb the <span class="logo_colour">Mark</span></a></h1>
           <h2>your personal investing scoreboard.</h2>
         </div>
       </div>
       <div id="menubar">
         <ul id="menu">
-          <!-- put class="selected" in the li tag for the selected page - to highlight which page you're on -->
           <li><a href="{{url_for("index")}}">Home</a></li>
           <li><a href="{{url_for("folder")}}">Folder</a></li>
           <li><a href="{{url_for("defaults")}}">Defaults</a></li>
@@ -79,35 +77,51 @@
             <h2>Lists</h2>
             <p>This is an unordered list:</p>
             <ul>
-                <li>Item 1</li>
-                <li>Item 2</li>
-                <li>Item 3</li>
-                <li>Item 4</li>
+                <li>Item 1 <img src="{{ url_for('static', filename='up.jpeg') }}" alt='up' /></li>
+                <li>Item 2 <img src="{{ url_for('static', filename='down.jpeg') }}" alt='down' /></li>
+                <li>Item 3 <img src="{{ url_for('static', filename='side.jpeg') }}" alt='side' /></li>
+                <li>Item 4 <img src="{{ url_for('static', filename='up.jpeg') }}" alt='up' /></li>
             </ul>
             <p>This is an ordered list:</p>
             <ol>
-                <li>Item 1</li>
-                <li>Item 2</li>
-                <li>Item 3</li>
-                <li>Item 4</li>
+                <li>Item 1 <img src="{{ url_for('static', filename='up.jpeg') }}" alt='up' /></li>
+                <li>Item 2 <img src="{{ url_for('static', filename='side.jpeg') }}" alt='side' /></li>
+                <li>Item 3 <img src="{{ url_for('static', filename='up.jpeg') }}" alt='up' /></li>
+                <li>Item 4 <img src="{{ url_for('static', filename='down.jpeg') }}" alt='down' /></li>
             </ol>
             <h2>Images</h2>
             <p>images can be placed on the left, in the center or on the right:</p>
-            <span class="left"><img src="{{ url_for('static', filename='graphic.png') }}" alt="example graphic" /></span>
+            <div class="left">
+            <span><img src="{{ url_for('static', filename='graphic.png') }}" alt="example graphic" /></span>
+            </div>
+            <br class="clear"/>
             <p>
-                Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor
-                incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
-                exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute
-                irure dolor in reprehenderit in voluptate velit esse cillum.
+            Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor
+            incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
+            exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute
+            irure dolor in reprehenderit in voluptate velit esse cillum.
             </p>
-            <span class="center"><img src="{{ url_for('static', filename='graphic.png') }}" alt="example graphic" /></span>
-            <span class="right"><img src="{{ url_for('static', filename='graphic.png') }}" alt="example graphic" /></span>
+            <div class="center">
+            <span><img src="{{ url_for('static', filename='graphic.png') }}" alt="example graphic" /></span>
+            </div>
+            <br class="clear"/>
             <p>
-                Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor
-                incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
-                exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute
-                irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla
-                pariatur.
+            Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor
+            incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
+            exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute
+            irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla
+            pariatur.
+            </p>
+            <div class="right">
+            <span><img src="{{ url_for('static', filename='graphic.png') }}" alt="example graphic" /></span>
+            </div>
+            <br class="clear"/>
+            <p>
+            Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor
+            incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
+            exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute
+            irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla
+            pariatur.
             </p>
             <h2>Tables</h2>
             <p>Tables should be used to display data and not used for laying out your website:</p>
