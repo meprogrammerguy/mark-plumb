@@ -73,8 +73,8 @@
             <h1 class="center">Stock Polling</h1>
             <form action="#" method="post">
             <div>
-                <p class="center" style="color:{{daemon_color}}">{{daemon_check}}</p>
-                <p class="center">{{daemon_info | safe}}</p>
+                <p class="center" style="color:{{daemon_color}}"><strong>{{daemon_check}}</strong></p>
+                <p class="center"><strong>{{daemon_info | safe}}</strong></p>
                 {{daemon_table | safe}}
             </div>
             <div class="form_settings">

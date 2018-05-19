@@ -40,7 +40,7 @@ def render_index(feedback):
     initialize_prompt = ""
     if db == {} or initialize_day:
         post_display = "initialize"
-        initialize_prompt = "You may reinitialize until tomorrow to make sure you have your portfolio the way you want it"
+        initialize_prompt = "You may reinitialize until tomorrow to make sure you have your portfolio balances the way you want."
     post_background = ""
     if not initialize_day:
         if "market order" in db:
@@ -165,7 +165,7 @@ def render_defaults(feedback):
     daemon_table, status = plumb.PrintDaemon("all", False)
     daemon_info = ""
     if (status == "closed"):
-        daemon_info = "<strong>The NY stock exchange is closed.</strong>"
+        daemon_info = "The NY stock exchange is closed."
     else:
         daemon_info = "Last active status: {0}".format(status)
     return (render_template('defaults.html', table = table, feedback = feedback, column_options = column_options, notes = notes, api_key_warning = api_key_warning,
