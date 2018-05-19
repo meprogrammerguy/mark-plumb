@@ -42,13 +42,14 @@ def render_index(feedback):
         post_display = "initialize"
         initialize_prompt = "You may Reinitialize until tomorrow to make sure you have your portfolio the way you want it"
     post_background = ""
-    if "market order" in db:
-        if (db['market order'] > 0):
-            post_background = "background: blue;"
-            post_display = "buy"
-        if (db['market order'] < 0):
-            post_background = "background: green;"
-            post_display = "sell"
+    if not initialize_day:
+        if "market order" in db:
+            if (db['market order'] > 0):
+                post_background = "background: blue;"
+                post_display = "buy"
+            if (db['market order'] < 0):
+                post_background = "background: green;"
+                post_display = "sell"
     balance_list = ""
     initial_value = ""
     profit_value = ""
