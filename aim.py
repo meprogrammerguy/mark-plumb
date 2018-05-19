@@ -16,8 +16,9 @@ def main(argv):
     look = False
     update = False
     printyear = ""
+    allo = False
     try:
-        opts, args = getopt.getopt(argv, "ip:lun:hvt:", ["help", "verbose", "test=", "notes=", "look", "update", "print=", "initialize"])
+        opts, args = getopt.getopt(argv, "aip:lun:hvt:", ["help", "verbose", "test=", "notes=", "look", "update", "print=", "initialize", "allocation"])
     except getopt.GetoptError as err:
         print(err)
         usage()
@@ -25,6 +26,8 @@ def main(argv):
     for o, a in opts:
         if o in ("-v", "--verbose"):
             verbose = True
+        elif o in ("-a", "--allocation"):
+            allo = True
         elif o in ("-t", "--test"):
             test = a
         elif o in ("-h", "--help"):
@@ -91,6 +94,11 @@ def main(argv):
         else:
             print ("failed.")
         exit()
+    if (allo):
+        allocation_list, trending_list = plumb.AllocationTrends(verbose)
+        pprint.pprint(allocation_list)
+        pprint.pprint(trending_list)
+        exit()
     usage()
 
 def usage():
@@ -112,7 +120,8 @@ def usage():
     -p --print          print out the AIM database (in HTML table format)
                             (--print=all, --print=2018)
 
-    -n --notes          show the last <count> of notes  
+    -n --notes          show the last <count> of notes
+    -a --allocation     show allocation and trends in your portfolio  
     """
     print (usage) 
 

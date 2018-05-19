@@ -74,7 +74,8 @@ ul
 ul li
 { list-style-type: square;
   margin: 0px 0px 6px 0px; 
-  padding: 0px;}
+  padding: 0px;
+font-family: 'Space Mono', monospace;}
 
 ol
 { margin: 8px 0px 0px 24px;

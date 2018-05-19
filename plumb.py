@@ -774,30 +774,41 @@ def AddRemoveButtons(table):
         index = start + 1
     return table
 
-def PrintPercent(verbose):
+def AllocationTrends(verbose):
     defaults, types = GetDefaults(verbose)
     if (verbose):
         print ("***")
     if "folder db" not in defaults:
         if (verbose):
-            print ("PrintPercent(1) could not get defaults, make sure that the defaults dbase is set up")
-        return ""
+            print ("AllocationTrends(1) could not get defaults, make sure that the defaults dbase is set up")
+        return "", ""
+    prev = GetLastAIM(verbose)
+    if ("json string" not in prev):
+        if (verbose):
+            print ("AllocationTrends(2) could not get previous balances, make sure you have initialized AIM system")
+        return "", ""
+    js = json.loads(prev['json string'])
+    last_list = []
+    for col in js:
+        if ("symbol" in col):
+            if (col['symbol'] != "$"):
+                last_list.append(col)
     username = getpass.getuser()
     db_file = username + "/"  + defaults['folder db']
     if (verbose):
-        print ("PrintPercent(2) dbase: {0}".format(db_file))
+        print ("AllocationTrends(2) dbase: {0}".format(db_file))
     if (not os.path.exists(db_file)):
         if (verbose):
-            print ("PrintPercent(3) {0} file is missing, cannot print".format(db_file))
+            print ("AllocationTrends(3) {0} file is missing, cannot print".format(db_file))
             print ("***\n")
-        return ""
+        return "", ""
     try:
         conn = sqlite3.connect(db_file)
         if (verbose):
-            print("PrintPercent(4) sqlite3: {0}".format(sqlite3.version))
+            print("AllocationTrends(4) sqlite3: {0}".format(sqlite3.version))
     except Error as e:
-        print("PrintPercent(5) {0}".format(e))
-        return ""
+        print("AllocationTrends(5) {0}".format(e))
+        return "", ""
     c = conn.cursor()
     c.execute("SELECT * FROM folder where symbol != '$' order by symbol")
     rows = c.fetchall()
@@ -807,14 +818,38 @@ def PrintPercent(verbose):
     for row in rows:
         if (row[2] is not None):
             total = total + row[2]
-    answer = ""
+    allocation = ""
     for row in rows:
         pst = 0
         if (row[2] is not None):
             pst = row[2] / total * 100.
-        answer = answer + "<li>{0} {1}</li>".format(row[0], as_percent(pst))
+        allocation = allocation + "<li>{0} {1}</li>".format(row[0], as_percent(pst))
+
+    trends = []
+    for row in rows:
+        for col in last_list:
+            if (row[0] == col['symbol']):
+                pst = 0
+                test = 0
+                trend = {}
+                if (row[2] is not None):
+                    pst = (row[2] - col['balance']) / col['balance'] * 100.
+                    test = abs(int(pst))
+                    if test == 0:
+                        trend['arrow'] = "side.jpeg"
+                        trend['percent'] = "{0} {1}".format(row[0], as_percent(pst))
+                        trend['arrowalt'] = "side"
+                    elif pst > 0:
+                        trend['arrow'] = "up.jpeg"
+                        trend['percent'] = "{0} {1}".format(row[0], as_percent(pst))
+                        trend['arrowalt'] = "up"
+                    else:
+                        trend['arrow'] = "down.jpeg"
+                        trend['percent'] = "{0} {1}".format(row[0], as_percent(pst))
+                        trend['arrowalt'] = "down"
+                    trends.append(trend)
         
-    return answer
+    return allocation, trends
 #endregion folder
 
 #region aim
@@ -1101,6 +1136,9 @@ def as_currency(amount):
         return '(${:,.2f})'.format(-amount)
 
 def as_percent(amount):
+    test = abs(int(amount))
+    if test == 0:
+        amount = 0
     if amount >= 0:
         return "{:.2f}%".format(amount)
     else:
@@ -1161,7 +1199,7 @@ def Look(verbose):
     pretty['initial value'] = as_currency(first['portfolio value'])
     pretty['profit value'] = as_currency(pv - first['portfolio value'])
     pretty['profit percent'] = as_percent((pv - first['portfolio value']) / pv * 100.)
-    pretty['percent list'] = "<li> Cash {0}</li><li> Stock {1}</li>".format(as_percent(pct_cash), as_percent(pct_stock))
+    pretty['percent list'] = "<li>Cash {0}</li><li>Stock {1}</li>".format(as_percent(pct_cash), as_percent(pct_stock))
     return pretty, table.__html__(), answer_db
 
 def Post(verbose):
