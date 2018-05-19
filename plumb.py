@@ -823,11 +823,16 @@ def CreateAIM(verbose):
     if (verbose):
         print ("***")
     if "aim db" not in defaults:
+        log = "CreateAIM(1) could not get defaults, make sure that the defaults dbase is set up"
         if (verbose):
-            print ("CreateAIM(1) could not get defaults, make sure that the defaults dbase is set up")
-        return False
+            print (log)
+        return False, log
     stock = GetFolderStockValue(verbose)
+    if (stock == 0):    # test then set to ==
+        return False, "Please purchase some shares in a company for your Folder before initializing AIM" 
     cash = GetFolderCash(verbose)
+    if (cash == 0):    # test then set to ==
+        return False, "Please add some cash to your Folder before initializing AIM" 
     pv = PortfolioValue(cash, stock, verbose)
     username = getpass.getuser()
     db_file = username + "/"  + defaults['aim db']
@@ -835,28 +840,29 @@ def CreateAIM(verbose):
     if (verbose):
         print ("***")
         print ("CreateAIM(1) dbase: {0}".format(db_file))
-    result = CreateDefaults(verbose)
-    if (result):
-        try:
-            conn = sqlite3.connect(db_file)
-            if (verbose):
-                print("CreateAIM(2) sqlite3: {0}".format(sqlite3.version))
-        except Error as e:
-            print("CreateAIM(3) {0}".format(e))
-            return False
-        c = conn.cursor()
-        c.execute("CREATE TABLE if not exists 'aim' ( `post_date` TEXT NOT NULL UNIQUE, `stock_value` REAL, `cash` REAL, `portfolio_control` REAL, `buy_sell_advice` REAL, `market_order` REAL, `portfolio_value` REAL, `json_string` TEXT, PRIMARY KEY(`post_date`) )")
-        c.execute("DELETE FROM aim")
-        dt = datetime.datetime.now()
-        ds = {}
-        ds['start date'] = dt.strftime("%Y/%m/%d") 
-        json_string = json.dumps(ds)
-        c.execute( "INSERT INTO aim VALUES((?),?,?,?,?,?,?,(?))", ("1970/01/01", stock, cash, stock, 0, 0, pv, json_string,))
-        conn.commit()
-        conn.close()
+    try:
+        conn = sqlite3.connect(db_file)
+        if (verbose):
+            print("CreateAIM(2) sqlite3: {0}".format(sqlite3.version))
+    except Error as e:
+        print("CreateAIM(3) {0}".format(e))
+        return False, e
+    c = conn.cursor()
+    c.execute("CREATE TABLE if not exists 'aim' ( `post_date` TEXT NOT NULL UNIQUE, `stock_value` REAL, `cash` REAL, `portfolio_control` REAL, `buy_sell_advice` REAL, `market_order` REAL, `portfolio_value` REAL, `json_string` TEXT, PRIMARY KEY(`post_date`) )")
+    c.execute("DELETE FROM aim")
+    dt = datetime.datetime.now()
+    ds = {}
+    ds['start date'] = dt.strftime("%Y/%m/%d")
+    table, symbol_options, balance_options, amount_options = PrintFolder(False)
+    dl = GetCurrentStockList(amount_options)
+    dl.insert(0, ds)
+    json_string = json.dumps(dl) 
+    c.execute( "INSERT INTO aim VALUES((?),?,?,?,?,?,?,(?))", ("1970/01/01", stock, cash, stock, 0, 0, pv, json_string,))
+    conn.commit()
+    conn.close()
     if (verbose):
         print ("***\n")
-    return True
+    return True, "AIM system initialized."
 
 def Safe(stockvalue, verbose): 
     if (verbose):
@@ -952,7 +958,7 @@ def GetAIMNotes(count, verbose):
     if "aim db" not in defaults:
         if (verbose):
             print ("GetAIMNotes(1) could not get defaults, make sure that the defaults dbase is set up")
-        return {}
+        return {}, True
     db_file = username + "/"  + defaults['aim db']
     if (verbose):
         print ("GetAIMNotes(2) dbase: {0}".format(db_file))
@@ -960,26 +966,30 @@ def GetAIMNotes(count, verbose):
         if (verbose):
             print ("GetAIMNotes(3) {0} file is missing, cannot return the notes".format(db_file))
             print ("***\n")
-        return {}
+        return {}, True
     try:
         conn = sqlite3.connect(db_file)
         if (verbose):
             print("GetAIMNotes(4) sqlite3: {0}".format(sqlite3.version))
     except Error as e:
         print("GetAIMNotes(5) {0}".format(e))
-        return {}
+        return {}, True
     c = conn.cursor()
     c.execute("SELECT * FROM aim ORDER BY post_date DESC LIMIT ?", (count,))
     keys = list(map(lambda x: x[0].replace("_"," "), c.description))
     rows = c.fetchall()
     conn.close()
     notes = []
+    initialize_day = False
     for row in rows:
         note = {}
         answer = dict(zip(keys, row))
         js = json.loads(row[7])
+        dt = datetime.datetime.now()
+        if (js[0]['start date'] == dt.strftime("%Y/%m/%d")):
+            initialize_day = True
         if (answer['post date'] == "1970/01/01"):
-            note['date'] = noteDate(js['start date'])
+            note['date'] = noteDate(js[0]['start date'])
             note['content'] = "A.I.M. Was initialized with {0}".format(as_currency(answer['cash'] + answer['stock value']))            
         else:
             note['date'] = noteDate(answer['post date'])
@@ -992,7 +1002,7 @@ def GetAIMNotes(count, verbose):
         notes.append(note)
     if (verbose):
         print ("***\n")
-    return notes
+    return notes, initialize_day
 
 def noteDate(value):
     if (value == ""):
@@ -1172,12 +1182,7 @@ def Post(verbose):
     if (verbose):
         print("Post(5) {0}".format(look))
     table, symbol_options, balance_options, amount_options = PrintFolder(False)
-    dl = []
-    for item in amount_options:
-        ds = {}
-        ds['symbol'] = item[0]
-        ds['balance'] = as_currency(item[1])
-        dl.append(ds)
+    dl = GetCurrentStockList(amount_options)
     json_string = json.dumps(dl)
     c = conn.cursor()
     c.execute( "INSERT OR IGNORE INTO aim(post_date) VALUES((?))", (db_values['post date'],))
@@ -1195,6 +1200,15 @@ def Post(verbose):
     if (verbose):
         print ("***\n")
     return True
+
+def GetCurrentStockList(stock_list):
+    dl = []
+    for item in stock_list:
+        ds = {}
+        ds['symbol'] = item[0]
+        ds['balance'] = round(item[1], 2)
+        dl.append(ds)
+    return dl
 
 def PrintAIM(printyear, verbose):
     if (printyear[0] == 'a'):

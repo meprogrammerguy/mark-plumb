@@ -62,15 +62,14 @@ def main(argv):
             print ("Test result - fail")
         exit()
     if (notes > ""):
-        notesResult = plumb.GetAIMNotes(int(notes), verbose)
+        notesResult, initialize_day = plumb.GetAIMNotes(int(notes), verbose)
         print (notesResult)
+        if initialize_day:
+            print("AIM system was initialized today")
         exit()
     if (initialize):
-        nowResult = plumb.CreateAIM(verbose)
-        if (nowResult):
-             print ("updated.")
-        else:
-            print ("failed.")
+        nowResult, log = plumb.CreateAIM(verbose)
+        print (nowResult, log)
         exit()
     if (look):
         lookResult, lookHTML, lookDB = plumb.Look(verbose)

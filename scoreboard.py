@@ -15,9 +15,12 @@ app = Flask(__name__)
 def index():
     try:
         if request.method == "POST":
-            if (request.form['action'] == "post" or request.form['action'] == "buy" or request.form['action'] == "sell"):
+            if (request.form['action'] == "initialize"):
+                result, log = plumb.CreateAIM(False)
+                return(render_index(log))
+            elif (request.form['action'] == "post" or request.form['action'] == "buy" or request.form['action'] == "sell"):
                 plumb.Post(False)
-                return(render_index("{0} saved.".format(request.form['action'])))
+                return(render_index("AIM system {0} saved.".format(request.form['action'])))
 
     except Exception as e:
         return (render_index(e))
@@ -32,8 +35,12 @@ def render_index(feedback):
             feedback = "daemon started"
     l, table, db = plumb.Look(False)
     allocation_list = plumb.PrintPercent(False)
-    notes = plumb.GetAIMNotes(10, False)
+    notes, initialize_day = plumb.GetAIMNotes(10, False)
     post_display = "post"
+    initialize_prompt = ""
+    if db == {} or initialize_day:
+        post_display = "initialize"
+        initialize_prompt = "You may Reinitialize until tomorrow to make sure you have your portfolio the way you want it"
     post_background = ""
     if "market order" in db:
         if (db['market order'] > 0):
@@ -53,7 +60,7 @@ def render_index(feedback):
         profit_percent = l['profit percent']
     return render_template('index.html', table = table, allocation_list = allocation_list, balance_list = balance_list,
         initial_value =  initial_value, profit_value = profit_value, profit_percent = profit_percent, notes = notes, feedback = feedback,
-        post_display = post_display, post_background = post_background)
+        post_display = post_display, post_background = post_background, initialize_prompt = initialize_prompt)
 
 @app.route('/folder/', methods=["GET","POST"])
 def folder():
