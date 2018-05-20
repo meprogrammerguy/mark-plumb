@@ -1331,15 +1331,16 @@ def PrintAIM(printyear, verbose):
     items = []
     answer = {}
     for row in rows:
+        js = json.loads(row[7])
         dt = datetime.datetime.strptime(row[0], '%Y/%m/%d')
         if (intyear == 1970 or dt.year == intyear):
+            if (js is not {}):
+                if ("start date" in js[0]):
+                    dt = datetime.datetime.strptime(js[0]['start date'], '%Y/%m/%d')
             col_list = []
             for i in range(len(keys)):
                 if (i == 0):
-                    if (intyear == 1970):
-                        col_list.append(dt.strftime("%b, %d %Y"))
-                    else:
-                        col_list.append(dt.strftime("%b, %d"))
+                    col_list.append(dt.strftime("%b, %d"))
                 elif (i == 1):
                     col_list.append(as_currency(row[i]))
                 elif (i == 2):
@@ -1853,3 +1854,10 @@ def run_script(name):
         kill_pid(pid[0])
     os.system(name)
 #endregion daemon
+#region history
+def Export(etype, filename, verbose):
+    return True
+
+def Archive(verbose):
+    return True
+#endregion history

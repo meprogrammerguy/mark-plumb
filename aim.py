@@ -17,8 +17,10 @@ def main(argv):
     update = False
     printyear = ""
     allo = False
+    export = ""
+    save = False
     try:
-        opts, args = getopt.getopt(argv, "aip:lun:hvt:", ["help", "verbose", "test=", "notes=", "look", "update", "print=", "initialize", "allocation"])
+        opts, args = getopt.getopt(argv, "se:aip:lun:hvt:", ["help", "verbose", "test=", "notes=", "look", "update", "print=", "initialize", "allocation", "export=", "save"])
     except getopt.GetoptError as err:
         print(err)
         usage()
@@ -35,10 +37,14 @@ def main(argv):
             exit()
         elif o in ("-n", "--notes"):
             notes = a
+        elif o in ("-e", "--export"):
+            export = a
         elif o in ("-i", "--initialize"):
             initialize = True
         elif o in ("-l", "--look"):
             look = True
+        elif o in ("-s", "--save"):
+            save = True
         elif o in ("-u", "--update"):
             update = True
         elif o in ("-p", "--print"):
@@ -99,6 +105,20 @@ def main(argv):
         pprint.pprint(allocation_list)
         pprint.pprint(trending_list)
         exit()
+    if (export > ""):
+        exportResult = plumb.Export(export, "", verbose)
+        if (exportResult):
+             print ("updated.")
+        else:
+            print ("failed.")
+        exit()
+    if (save):
+        saveResult = plumb.Archive(verbose)
+        if (saveResult):
+             print ("updated.")
+        else:
+            print ("failed.")
+        exit()
     usage()
 
 def usage():
@@ -112,16 +132,21 @@ def usage():
     -t --test           runs test routine to check calculations
 
     -i --initialize     initialize your AIM database
-                            (warning, this will clear out the db)
+                        (after an archive you can run this to start over)      
 
     -l --look           looks at today's AIM position
     -u --update         update today's AIM position to database
 
     -p --print          print out the AIM database (in HTML table format)
                             (--print=all, --print=2018)
-
     -n --notes          show the last <count> of notes
-    -a --allocation     show allocation and trends in your portfolio  
+    -a --allocation     show allocation and trends in your portfolio
+ 
+    -e --export         export "activity", "archive", or "portfolio"
+                            to a spreadsheet
+    -s --save           saves the current AIM activity to an archive dbase
+                            (do this to move over your old AIM activity)
+                            (warning, this will clear out the AIM dbase) 
     """
     print (usage) 
 

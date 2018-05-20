@@ -180,7 +180,12 @@ def history():
                 year_string = "all"
                 return (render_history("display: none;", "", year_string))
             elif (request.form['action'] == "see"):     #temporary see HTLM code while developing page
-                return (render_history("display: block;", "showing help HTML, remove this at release time", "all"))
+                return (render_history("display: block;", "showing help HTML, remove this at release time", "all", ""))
+            elif (request.form['action'] == "export"):
+                log = "{0} exported.".format(request.form['column'])
+                return (render_history("display: none;", log, ""))
+            elif (request.form['action'] == "archive"):
+                return (render_history("display: none;", "AIM system archived.", ""))
             elif (request.form['action'].isnumeric()):
                 year_input = int(request.form['action'])
                 if year_input < 100:
