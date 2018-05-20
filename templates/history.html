@@ -53,8 +53,7 @@
             </form>
         </div>
         <div id="content">
-            <h1 class="center">History (year: {{year_string}})</h1>
-            
+            <h1 class="center">Activity ({{year_string}})</h1>
             {{table | safe}}
             <br class="clear"/>
 
@@ -78,17 +77,17 @@
             <h2>Lists</h2>
             <p>This is an unordered list:</p>
             <ul>
-                <li>Item 1 <img src="{{ url_for('static', filename='up.jpeg') }}" alt='up' /></li>
-                <li>Item 2 <img src="{{ url_for('static', filename='down.jpeg') }}" alt='down' /></li>
-                <li>Item 3 <img src="{{ url_for('static', filename='side.jpeg') }}" alt='side' /></li>
-                <li>Item 4 <img src="{{ url_for('static', filename='up.jpeg') }}" alt='up' /></li>
+                <li>Item 1 <img src="{{ url_for('static', filename='up.png') }}" alt='up' /></li>
+                <li>Item 2 <img src="{{ url_for('static', filename='down.png') }}" alt='down' /></li>
+                <li>Item 3 <img src="{{ url_for('static', filename='flat.png') }}" alt='flat' /></li>
+                <li>Item 4 <img src="{{ url_for('static', filename='up.png') }}" alt='up' /></li>
             </ul>
             <p>This is an ordered list:</p>
             <ol>
-                <li>Item 1 <img src="{{ url_for('static', filename='up.jpeg') }}" alt='up' /></li>
-                <li>Item 2 <img src="{{ url_for('static', filename='side.jpeg') }}" alt='side' /></li>
-                <li>Item 3 <img src="{{ url_for('static', filename='up.jpeg') }}" alt='up' /></li>
-                <li>Item 4 <img src="{{ url_for('static', filename='down.jpeg') }}" alt='down' /></li>
+                <li>Item 1 <img src="{{ url_for('static', filename='up.png') }}" alt='up' /></li>
+                <li>Item 2 <img src="{{ url_for('static', filename='flat.png') }}" alt='flat' /></li>
+                <li>Item 3 <img src="{{ url_for('static', filename='up.png') }}" alt='up' /></li>
+                <li>Item 4 <img src="{{ url_for('static', filename='down.png') }}" alt='down' /></li>
             </ol>
             <h2>Images</h2>
             <p>images can be placed on the left, in the center or on the right:</p>

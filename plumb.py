@@ -836,17 +836,14 @@ def AllocationTrends(verbose):
                     pst = (row[2] - col['balance']) / col['balance'] * 100.
                     test = abs(int(pst))
                     if test == 0:
-                        trend['arrow'] = "side.jpeg"
+                        trend['arrow'] = "flat"
                         trend['percent'] = "{0} {1}".format(row[0], as_percent(pst))
-                        trend['arrowalt'] = "side"
                     elif pst > 0:
-                        trend['arrow'] = "up.jpeg"
+                        trend['arrow'] = "up"
                         trend['percent'] = "{0} {1}".format(row[0], as_percent(pst))
-                        trend['arrowalt'] = "up"
                     else:
-                        trend['arrow'] = "down.jpeg"
+                        trend['arrow'] = "down"
                         trend['percent'] = "{0} {1}".format(row[0], as_percent(pst))
-                        trend['arrowalt'] = "down"
                     trends.append(trend)
         
     return allocation, trends
@@ -867,7 +864,10 @@ def CreateAIM(verbose):
         return False, "Please purchase some shares in a company for your Folder before initializing AIM" 
     cash = GetFolderCash(verbose)
     if (cash == 0):    # test then set to ==
-        return False, "Please add some cash to your Folder before initializing AIM" 
+        return False, "Please add some cash to your Folder before initializing AIM"
+    count = GetAIMCount(verbose)
+    if (count > 1):
+        return False, "You must go to the History Tab and archive your AIM data first"
     pv = PortfolioValue(cash, stock, verbose)
     username = getpass.getuser()
     db_file = username + "/"  + defaults['aim db']
@@ -884,7 +884,7 @@ def CreateAIM(verbose):
         return False, e
     c = conn.cursor()
     c.execute("CREATE TABLE if not exists 'aim' ( `post_date` TEXT NOT NULL UNIQUE, `stock_value` REAL, `cash` REAL, `portfolio_control` REAL, `buy_sell_advice` REAL, `market_order` REAL, `portfolio_value` REAL, `json_string` TEXT, PRIMARY KEY(`post_date`) )")
-    c.execute("DELETE FROM aim")
+    c.execute("DELETE FROM aim where post_date = '1970/01/01'")
     dt = datetime.datetime.now()
     ds = {}
     ds['start date'] = dt.strftime("%Y/%m/%d")
@@ -951,6 +951,38 @@ def MarketOrder(buyselladvice, safe, verbose):
         return -answer
     return answer
 
+def GetAIMCount(verbose):
+    defaults, types = GetDefaults(verbose)
+    if (verbose):
+        print ("***")
+    if "aim db" not in defaults:
+        if (verbose):
+            print ("GetAIMCount(1) could not get defaults, make sure that the defaults dbase is set up")
+        return 0
+    username = getpass.getuser()
+    db_file = username + "/"  + defaults['aim db']
+    if (verbose):
+        print ("GetAIMCount(2) dbase: {0}".format(db_file))
+    if (not os.path.exists(db_file)):
+        if (verbose):
+            print ("GetAIMCount(3) {0} file is missing, cannot return the row count".format(db_file))
+            print ("***\n")
+        return 0
+    try:
+        conn = sqlite3.connect(db_file)
+        if (verbose):
+            print("GetAIMCount(4) sqlite3: {0}".format(sqlite3.version))
+    except Error as e:
+        print("GetAIMCount(5) {0}".format(e))
+        return 0
+    c = conn.cursor()
+    c.execute("select * from aim")
+    results = c.fetchall()
+    conn.close()
+    if (verbose):
+        print ("***\n")
+    return len(results)
+
 def GetLastAIM(verbose):
     defaults, types = GetDefaults(verbose)
     if (verbose):
@@ -1002,6 +1034,7 @@ def GetAIMNotes(count, verbose):
             print ("GetAIMNotes(3) {0} file is missing, cannot return the notes".format(db_file))
             print ("***\n")
         return {}, True
+    count = GetAIMCount(verbose)
     try:
         conn = sqlite3.connect(db_file)
         if (verbose):
@@ -1021,9 +1054,9 @@ def GetAIMNotes(count, verbose):
         answer = dict(zip(keys, row))
         js = json.loads(row[7])
         dt = datetime.datetime.now()
-        if (js[0]['start date'] == dt.strftime("%Y/%m/%d")):
-            initialize_day = True
         if (answer['post date'] == "1970/01/01"):
+            if (count < 2):
+                initialize_day = True
             note['date'] = noteDate(js[0]['start date'])
             note['content'] = "A.I.M. Was initialized with {0}".format(as_currency(answer['cash'] + answer['stock value']))            
         else:

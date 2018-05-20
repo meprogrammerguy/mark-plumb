@@ -61,14 +61,14 @@
                 <ul>
                 <h4>Trending</h4>
                 {% for trend in trends %}
-                    {% if trend.arrow == 'side.jpeg' %}
-                        <li>{{trend.percent | safe}} <img src="{{ url_for('static', filename='side.jpeg') }}" alt='side'/></li>
+                    {% if trend.arrow == 'flat' %}
+                        <li>{{trend.percent | safe}} <img src="{{ url_for('static', filename='flat.png') }}" alt='flat'/></li>
                     {% endif %}
-                    {% if trend.arrow == 'up.jpeg' %}
-                        <li>{{trend.percent | safe}} <img src="{{ url_for('static', filename='up.jpeg') }}" alt='up'/></li>
+                    {% if trend.arrow == 'up' %}
+                        <li>{{trend.percent | safe}} <img src="{{ url_for('static', filename='up.png') }}" alt='up'/></li>
                     {% endif %}
-                    {% if trend.arrow == 'down.jpeg' %}
-                        <li>{{trend.percent | safe}} <img src="{{ url_for('static', filename='down.jpeg') }}" alt='down'/></li>
+                    {% if trend.arrow == 'down' %}
+                        <li>{{trend.percent | safe}} <img src="{{ url_for('static', filename='down.png') }}" alt='down'/></li>
                     {% endif %}
                 {% endfor %}
                 </ul>
