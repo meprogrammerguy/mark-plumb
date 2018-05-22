@@ -614,14 +614,14 @@ def GetFolder(verbose):
         if (verbose):
             print ("GetFolder(2) {0} file is missing, cannot return the key".format(db_file))
             print ("***\n")
-        return 0
+        return []
     try:
         conn = sqlite3.connect(db_file)
         if (verbose):
             print("GetFolder(3) sqlite3: {0}".format(sqlite3.version))
     except Error as e:
         print("GetFolder(4) {0}".format(e))
-        return 0
+        return []
     c = conn.cursor()
     c.execute("SELECT * FROM folder order by symbol")
     keys = list(map(lambda x: x[0].replace("_"," "), c.description))
@@ -1853,6 +1853,29 @@ def run_script(name):
     os.system(name)
 #endregion daemon
 #region history
+def ActivitySheet(filename, verbose):
+    return True
+
+def FolderSheet(filename, verbose):
+    folder = GetFolder(verbose)
+    if folder == []:
+        return False
+    header = True
+    sheet = open(filename, 'w', newline='')
+    csvwriter = csv.writer(sheet)
+    for row in folder:
+        if (header):
+            keys = row.keys()
+            header = False
+            csvwriter.writerow(keys)
+        values = row.values()
+        csvwriter.writerow(values)
+    sheet.close()  
+    return True
+
+def ArchiveSheet(filename, verbose):
+    return True
+
 def Export(etype, filename, verbose):
     if (filename =="" or filename == "enter filename"):
         filename = etype
@@ -1869,12 +1892,22 @@ def Export(etype, filename, verbose):
     root = Tk()
     root.withdraw()
     fileName = filedialog.asksaveasfilename(parent=root, **options)
+    root.destroy()
     log = ""
     if len(fileName ) > 0:
         log = "Now saving under {0}".format(fileName)
+        if (etype == "activity"):
+            result = ActivitySheet(filename, verbose)
+        elif (etype == "portfolio"):
+            result = FolderSheet(fileName, verbose)
+        else:
+            result = ArchiveSheet(fileName, verbose)
+            if (verbose):
+                print ("file saved.")
+            else:
+                print ("failed.")
     else:
         log = "save was cancelled."
-    root.destroy()
     return log
 
 def Archive(verbose):
