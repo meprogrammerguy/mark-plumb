@@ -1171,9 +1171,6 @@ def as_currency(amount):
         return '(${:,.2f})'.format(-amount)
 
 def as_percent(amount):
-    test = abs(int(amount))
-    if test == 0:
-        amount = 0
     if amount >= 0:
         return "{:.2f}%".format(amount)
     else:
