@@ -836,8 +836,7 @@ def AllocationTrends(verbose):
                 trend = {}
                 if (row[2] is not None):
                     pst = (row[2] - col['balance']) / col['balance'] * 100.
-                    test = abs(int(pst))
-                    if test == 0:
+                    if pst == 0:
                         trend['arrow'] = "flat"
                         trend['percent'] = "{0} {1}".format(row[0], as_percent(pst))
                     elif pst > 0:
