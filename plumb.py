@@ -851,6 +851,37 @@ def AllocationTrends(verbose):
 #endregion folder
 
 #region aim
+def GetAIM(verbose):
+    defaults, types = GetDefaults(verbose)
+    username = getpass.getuser()
+    db_file = username + "/"  + defaults['aim db']
+    if (verbose):
+        print ("***")
+        print ("GetAIM(1) dbase: {0}".format(db_file))
+    if (not os.path.exists(db_file)):
+        if (verbose):
+            print ("GetAIM(2) {0} file is missing, cannot return the key".format(db_file))
+            print ("***\n")
+        return []
+    try:
+        conn = sqlite3.connect(db_file)
+        if (verbose):
+            print("GetAIM(3) sqlite3: {0}".format(sqlite3.version))
+    except Error as e:
+        print("GetAIM(4) {0}".format(e))
+        return []
+    c = conn.cursor()
+    c.execute("SELECT * FROM aim order by post_date")
+    keys = list(map(lambda x: x[0].replace("_"," "), c.description))
+    values = c.fetchall()
+    conn.close()
+    if (verbose):
+        print ("***\n")
+    answer = []
+    for row in values:
+        answer.append(dict(zip(keys, row)))
+    return answer
+
 def CreateAIM(verbose):
     defaults, types = GetDefaults(verbose)
     if (verbose):
@@ -1854,6 +1885,20 @@ def run_script(name):
 #endregion daemon
 #region history
 def ActivitySheet(filename, verbose):
+    aim = GetAIM(verbose)
+    if aim == []:
+        return False
+    header = True
+    sheet = open(filename, 'w', newline='')
+    csvwriter = csv.writer(sheet)
+    for row in aim:
+        if (header):
+            keys = row.keys()
+            header = False
+            csvwriter.writerow(keys)
+        values = row.values()
+        csvwriter.writerow(values)
+    sheet.close()  
     return True
 
 def FolderSheet(filename, verbose):
@@ -1891,18 +1936,19 @@ def Export(etype, filename, verbose):
     options['title'] = "Saving {0} as a spreadsheet".format(etype)
     root = Tk()
     root.withdraw()
-    fileName = filedialog.asksaveasfilename(parent=root, **options)
+    filename = filedialog.asksaveasfilename(parent=root, **options)
     root.destroy()
     log = ""
-    if len(fileName ) > 0:
-        log = "Now saving under {0}".format(fileName)
+    if len(filename ) > 0:
+        log = "Now saving under {0}".format(filename)
         if (etype == "activity"):
             result = ActivitySheet(filename, verbose)
         elif (etype == "portfolio"):
-            result = FolderSheet(fileName, verbose)
+            result = FolderSheet(filename, verbose)
         else:
-            result = ArchiveSheet(fileName, verbose)
-            if (verbose):
+            result = ArchiveSheet(filename, verbose)
+        if (verbose):
+            if (result):
                 print ("file saved.")
             else:
                 print ("failed.")
