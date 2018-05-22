@@ -56,7 +56,7 @@ def do_something():
         et = et + timedelta(minutes = (ds * 2)/60) # a few final polls to get closing prices
         et = et.time()
         log['final poll'] = et.strftime('%I:%M%p')
-        if weekno < 5 and ct > bt and ct < et:
+        if (log['status'] == "start" or (weekno < 5 and ct > bt and ct < et)):
             try:
                 log['status'] = 'wake'
                 plumb.LogDaemon(log, False)

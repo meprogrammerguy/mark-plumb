@@ -182,7 +182,7 @@ def history():
             elif (request.form['action'] == "see"):     #temporary see HTLM code while developing page
                 return (render_history("display: block;", "showing help HTML, remove this at release time", "all", ""))
             elif (request.form['action'] == "export"):
-                log = "{0} exported.".format(request.form['column'])
+                log = plumb.Export(request.form['column'], request.form['value'], False)
                 return (render_history("display: none;", log, ""))
             elif (request.form['action'] == "archive"):
                 return (render_history("display: none;", "AIM system archived.", ""))

@@ -107,10 +107,7 @@ def main(argv):
         exit()
     if (export > ""):
         exportResult = plumb.Export(export, "", verbose)
-        if (exportResult):
-             print ("updated.")
-        else:
-            print ("failed.")
+        print (exportResult)
         exit()
     if (save):
         saveResult = plumb.Archive(verbose)

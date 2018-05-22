@@ -23,6 +23,8 @@ import pytz
 from dateutil import tz
 import subprocess
 import signal
+from tkinter import *
+from tkinter import filedialog
 
 #region stock
 def Quote(ticker, verbose):
@@ -1856,7 +1858,28 @@ def run_script(name):
 #endregion daemon
 #region history
 def Export(etype, filename, verbose):
-    return True
+    if (filename =="" or filename == "enter filename"):
+        filename = etype
+    myFormats = [
+        ('Text CSV (.csv)','*.csv'),
+        ]
+    desktop = "/home/{0}/Desktop".format(getpass.getuser())
+    options = {}
+    options['defaultextension'] = ".csv"
+    options['filetypes'] = myFormats
+    options['initialdir'] = desktop
+    options['initialfile'] = filename
+    options['title'] = "Saving {0} as a spreadsheet".format(etype)
+    root = Tk()
+    root.withdraw()
+    fileName = filedialog.asksaveasfilename(parent=root, **options)
+    log = ""
+    if len(fileName ) > 0:
+        log = "Now saving under {0}".format(fileName)
+    else:
+        log = "save was cancelled."
+    root.destroy()
+    return log
 
 def Archive(verbose):
     return True
