@@ -1924,13 +1924,10 @@ def ArchiveSheet(filename, verbose):
 def Export(etype, filename, verbose):
     if (filename =="" or filename == "enter filename"):
         filename = etype
-    myFormats = [
-        ('Text CSV (.csv)','*.csv'),
-        ]
     desktop = "/home/{0}/Desktop".format(getpass.getuser())
     options = {}
     options['defaultextension'] = ".csv"
-    options['filetypes'] = myFormats
+    options['filetypes'] = [('Text CSV (.csv)','*.csv'),]
     options['initialdir'] = desktop
     options['initialfile'] = filename
     options['title'] = "Saving {0} as a spreadsheet".format(etype)

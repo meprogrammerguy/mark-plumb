@@ -12,6 +12,7 @@ import pdb
 import plumb
 
 def do_something():
+    start = True
     log = {}
     log['status'] = "start"
     log['pid'] = os.getpid()
@@ -56,7 +57,8 @@ def do_something():
         et = et + timedelta(minutes = (ds * 2)/60) # a few final polls to get closing prices
         et = et.time()
         log['final poll'] = et.strftime('%I:%M%p')
-        if (log['status'] == "start" or (weekno < 5 and ct > bt and ct < et)):
+        if (start or (weekno < 5 and ct > bt and ct < et)):
+            start = False
             try:
                 log['status'] = 'wake'
                 plumb.LogDaemon(log, False)
