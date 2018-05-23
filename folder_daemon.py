@@ -57,19 +57,20 @@ def do_something():
         et = et + timedelta(minutes = (ds * 2)/60) # a few final polls to get closing prices
         et = et.time()
         log['final poll'] = et.strftime('%I:%M%p')
-        if (start or (weekno < 5 and ct > bt and ct < et)):
-            start = False
+        if weekno < 5 and ct > bt and ct < et:
             try:
                 log['status'] = 'wake'
                 plumb.LogDaemon(log, False)
                 result, resultError = plumb.Update(False)
                 if not result:
                     log['status'] = 'error'
+                    log['content'] = resultError
                     plumb.LogDaemon(log, False)
                     with open(filename, "a") as f:
                         f.write("pid: {0}, error: {1}, continuing".format(log['pid'], resultError))
             except Exception as e:
                 log['status'] = 'exception'
+                log['content'] = e
                 plumb.LogDaemon(log, False)
                 with open(filename, "a") as f:
                     f.write("pid: {0}, exception: {1}, continuing".format(log['pid'], e))
@@ -78,8 +79,11 @@ def do_something():
             with open(filename, "w") as f:
                 f.write("pid: {0}, {1} updated on: {2}. (sleeping for {3} seconds)".format(log['pid'], df, time.ctime(), ds))
         else:
+            if start:
+                result, resultError = plumb.Update(False)
             log['status'] = 'closed'
             plumb.LogDaemon(log, False)
+            start = False
             with open(filename, "w") as f:
                 f.write("pid: {0}, now: {1}, open: {2}, close: {3}".format(log['pid'], time.ctime(), bt, et))
         log['status'] = 'sleep'

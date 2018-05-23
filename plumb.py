@@ -1262,7 +1262,7 @@ def Look(verbose):
     pct_stock = stock / pv * 100.
     pretty['initial value'] = as_currency(first['portfolio value'])
     pretty['profit value'] = as_currency(pv - first['portfolio value'])
-    pretty['profit percent'] = as_percent((pv - first['portfolio value']) / pv * 100.)
+    pretty['profit percent'] = as_percent((pv - first['portfolio value']) / first['portfolio value'] * 100.)
     pretty['percent list'] = "<li>Cash {0}</li><li>Stock {1}</li>".format(as_percent(pct_cash), as_percent(pct_stock))
     return pretty, table.__html__(), answer_db
 
