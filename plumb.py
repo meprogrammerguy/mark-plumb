@@ -163,6 +163,7 @@ def ResetDefaults(verbose):
         dt = dt.replace(tzinfo=tz.tzutc())
         local = dt.astimezone(tz.tzlocal())
         close = local.strftime('%I:%M%p')
+        desktop = "/home/{0}/Desktop".format(getpass.getuser())
         c = conn.cursor()
         c.execute("UPDATE defaults SET api_key = (?) WHERE username = (?)", ("demo", username,))
         c.execute("UPDATE defaults SET daemon_seconds = ? WHERE username = (?)", (300, username,))
@@ -171,6 +172,7 @@ def ResetDefaults(verbose):
         c.execute("UPDATE defaults SET aim_db = (?) WHERE username = (?)", ("aim.db", username,))
         c.execute("UPDATE defaults SET folder_db = (?) WHERE username = (?)", ("folder.db", username,))
         c.execute("UPDATE defaults SET test_root = (?) WHERE username = (?)", ("test/", username,))
+        c.execute("UPDATE defaults SET export_dir = (?) WHERE username = (?)", (desktop, username,))
         conn.commit()
         conn.close()
     if (verbose):
@@ -222,7 +224,7 @@ def CreateDefaults(verbose):
         print("CreateDefaults(3) {0}".format(e))
         return False
     c = conn.cursor()
-    c.execute("CREATE TABLE if not exists 'defaults' ( `username` TEXT NOT NULL UNIQUE, `api_key` TEXT, `daemon_seconds` INTEGER, `open` TEXT, `close` TEXT, `aim_db` TEXT, `folder_db` TEXT, `test_root` TEXT, PRIMARY KEY(`username`) )")
+    c.execute("CREATE TABLE if not exists 'defaults' ( `username` TEXT NOT NULL UNIQUE, `api_key` TEXT, `daemon_seconds` INTEGER, `open` TEXT, `close` TEXT, `aim_db` TEXT, `folder_db` TEXT, `test_root` TEXT, `export_dir` TEXT, PRIMARY KEY(`username`) )")
     c.execute( "INSERT OR IGNORE INTO defaults(username) VALUES((?))", (username,))
     conn.commit()
     conn.close()
@@ -1922,9 +1924,13 @@ def ArchiveSheet(filename, verbose):
     return True
 
 def Export(etype, filename, verbose):
+    d, t = GetDefaults(verbose)
     if (filename =="" or filename == "enter filename"):
         filename = etype
-    desktop = "/home/{0}/Desktop".format(getpass.getuser())
+    if "export dir" in d:
+        desktop = d['export dir']
+    else:
+        desktop = "/home/{0}/Desktop".format(getpass.getuser())
     options = {}
     options['defaultextension'] = ".csv"
     options['filetypes'] = [('Text CSV (.csv)','*.csv'),]
