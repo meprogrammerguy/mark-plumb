@@ -81,6 +81,7 @@ def do_something():
         else:
             if start:
                 result, resultError = plumb.Update(False)
+                start = False
             log['status'] = 'closed'
             plumb.LogDaemon(log, False)
             start = False
