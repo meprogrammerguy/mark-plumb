@@ -26,7 +26,7 @@ def do_something():
         defaults, types = plumb.GetDefaults(False)
         ds = 0
         if (defaults['daemon seconds'] is None):
-            ds = 600        # 20 minutes (1200 seconds)
+            ds = 300        # 5 minutes (300 seconds)
         else:
             ds = defaults['daemon seconds']
         df = ""
@@ -58,33 +58,46 @@ def do_something():
         et = et.time()
         log['final poll'] = et.strftime('%I:%M%p')
         if weekno < 5 and ct > bt and ct < et:
-            try:
-                log['status'] = 'wake'
-                plumb.LogDaemon(log, False)
-                result, resultError = plumb.Update(False)
-                if not result:
+            log['status'] = 'wake'
+            plumb.LogDaemon(log, False)
+            result, resultError, exceptionError = price_poll()
+            if not result:
+                if resultError > "":
                     log['status'] = 'error'
                     log['content'] = resultError
                     plumb.LogDaemon(log, False)
                     with open(filename, "a") as f:
                         f.write("pid: {0}, error: {1}, continuing".format(log['pid'], resultError))
-            except Exception as e:
-                log['status'] = 'exception'
-                log['content'] = e
+                if exceptionError > "":
+                    log['status'] = 'exception'
+                    log['content'] = exceptionError
+                    plumb.LogDaemon(log, False)
+                    with open(filename, "a") as f:
+                        f.write("pid: {0}, exception: {1}, continuing".format(log['pid'], exceptionError))
+            else:
+                log['status'] = 'success'
                 plumb.LogDaemon(log, False)
-                with open(filename, "a") as f:
-                    f.write("pid: {0}, exception: {1}, continuing".format(log['pid'], e))
-            log['status'] = 'success'
-            plumb.LogDaemon(log, False)
-            with open(filename, "w") as f:
-                f.write("pid: {0}, {1} updated on: {2}. (sleeping for {3} seconds)".format(log['pid'], df, time.ctime(), ds))
+                with open(filename, "w") as f:
+                    f.write("pid: {0}, {1} updated on: {2}. (sleeping for {3} seconds)".format(log['pid'], df, time.ctime(), ds))
         else:
             if start:
-                result, resultError = plumb.Update(False)
+                result, resultError, exceptionError = price_poll()
+                if not result:
+                    if resultError > "":
+                        log['status'] = 'error'
+                        log['content'] = resultError
+                        plumb.LogDaemon(log, False)
+                        with open(filename, "a") as f:
+                            f.write("pid: {0}, error: {1}, continuing".format(log['pid'], resultError))
+                    if exceptionError > "":
+                        log['status'] = 'exception'
+                        log['content'] = exceptionError
+                        plumb.LogDaemon(log, False)
+                        with open(filename, "a") as f:
+                            f.write("pid: {0}, exception: {1}, continuing".format(log['pid'], exceptionError))
                 start = False
             log['status'] = 'closed'
             plumb.LogDaemon(log, False)
-            start = False
             with open(filename, "w") as f:
                 f.write("pid: {0}, now: {1}, open: {2}, close: {3}".format(log['pid'], time.ctime(), bt, et))
         log['status'] = 'sleep'
@@ -94,6 +107,15 @@ def do_something():
 def run():
     with daemon.DaemonContext(working_directory=os.getcwd()):
         do_something()
+
+def price_poll():
+    try:
+        result, resultError = plumb.Update(False)
+        if not result:
+            return False, resultError, ""
+    except Exception as e:
+        return False, "", e
+    return True, "", ""
 
 if __name__ == "__main__":
     run()

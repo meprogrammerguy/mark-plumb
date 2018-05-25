@@ -101,9 +101,10 @@ def main(argv):
             print ("failed.")
         exit()
     if (allo):
-        allocation_list, trending_list = plumb.AllocationTrends(verbose)
+        allocation_list, trending_list, life_list = plumb.AllocationTrends(verbose)
         pprint.pprint(allocation_list)
         pprint.pprint(trending_list)
+        pprint.pprint(life_list)
         exit()
     if (export > ""):
         exportResult = plumb.Export(export, "", verbose)

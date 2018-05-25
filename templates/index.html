@@ -60,6 +60,20 @@
             </div>
             <div class="right">
                 <ul>
+                <h4>Lifetime</h4>
+                {% for life in lifes %}
+                    {% if life.arrow == 'flat' %}
+                        <li>{{life.percent | safe}} <img src="{{ url_for('static', filename='flat.png') }}" alt='flat'/></li>
+                    {% endif %}
+                    {% if life.arrow == 'up' %}
+                        <li>{{life.percent | safe}} <img src="{{ url_for('static', filename='up.png') }}" alt='up'/></li>
+                    {% endif %}
+                    {% if life.arrow == 'down' %}
+                        <li>{{life.percent | safe}} <img src="{{ url_for('static', filename='down.png') }}" alt='down'/></li>
+                    {% endif %}
+                {% endfor %}
+                </ul>
+                <ul>
                 <h4>Trending</h4>
                 {% for trend in trends %}
                     {% if trend.arrow == 'flat' %}

@@ -797,21 +797,32 @@ def AllocationTrends(verbose):
         if ("symbol" in col):
             if (col['symbol'] != "$"):
                 last_list.append(col)
+    first = GetFirstAIM(verbose)
+    if ("json string" not in first):
+        if (verbose):
+            print ("AllocationTrends(3) could not get initial balances, make sure you have initialized AIM system")
+        return "", ""
+    js = json.loads(first['json string'])
+    first_list = []
+    for col in js:
+        if ("symbol" in col):
+            if (col['symbol'] != "$"):
+                first_list.append(col)
     username = getpass.getuser()
     db_file = username + "/"  + defaults['folder db']
     if (verbose):
-        print ("AllocationTrends(2) dbase: {0}".format(db_file))
+        print ("AllocationTrends(4) dbase: {0}".format(db_file))
     if (not os.path.exists(db_file)):
         if (verbose):
-            print ("AllocationTrends(3) {0} file is missing, cannot print".format(db_file))
+            print ("AllocationTrends(5) {0} file is missing, cannot print".format(db_file))
             print ("***\n")
         return "", ""
     try:
         conn = sqlite3.connect(db_file)
         if (verbose):
-            print("AllocationTrends(4) sqlite3: {0}".format(sqlite3.version))
+            print("AllocationTrends(6) sqlite3: {0}".format(sqlite3.version))
     except Error as e:
-        print("AllocationTrends(5) {0}".format(e))
+        print("AllocationTrends(7) {0}".format(e))
         return "", ""
     c = conn.cursor()
     c.execute("SELECT * FROM folder where symbol != '$' order by symbol")
@@ -848,8 +859,26 @@ def AllocationTrends(verbose):
                         trend['arrow'] = "down"
                         trend['percent'] = "{0} {1}".format(row[0], as_percent(pst))
                     trends.append(trend)
-        
-    return allocation, trends
+    life_trends = []
+    for row in rows:
+        for col in first_list:
+            if (row[0] == col['symbol']):
+                pst = 0
+                test = 0
+                trend = {}
+                if (row[2] is not None):
+                    pst = (row[2] - col['balance']) / col['balance'] * 100.
+                    if pst == 0:
+                        trend['arrow'] = "flat"
+                        trend['percent'] = "{0} {1}".format(row[0], as_percent(pst))
+                    elif pst > 0:
+                        trend['arrow'] = "up"
+                        trend['percent'] = "{0} {1}".format(row[0], as_percent(pst))
+                    else:
+                        trend['arrow'] = "down"
+                        trend['percent'] = "{0} {1}".format(row[0], as_percent(pst))
+                    life_trends.append(trend)        
+    return allocation, trends, life_trends
 #endregion folder
 
 #region aim
@@ -1514,11 +1543,11 @@ def TestStock(verbose):
             else:
                 if (verbose):
                     print ("\tfail.")
-    if (count == 17):
+    if (count == 18):
         return True
     else:
         if (verbose):
-            print ("test count expected 19 passes, received {0}".format(count))
+            print ("test count expected 18 passes, received {0}".format(count))
     return False
 
 def TestFolder(verbose):
