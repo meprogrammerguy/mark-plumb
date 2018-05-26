@@ -110,6 +110,10 @@ def folder():
     return(render_folder("display: none;", "", ""))
 
 def render_folder(ticker_style, feedback, symbol):
+    defaults, types = plumb.GetDefaults(False)
+    folder_name = "folder"
+    if ("folder name" in defaults):
+        folder_name = defaults['folder name']
     table, symbol_options, balance_options, amount_options = plumb.PrintFolder(False)
     notes, initialize_day = plumb.GetAIMNotes(10, False)
     co = {}
@@ -120,7 +124,7 @@ def render_folder(ticker_style, feedback, symbol):
             ticker_style = "display: none;"
 
     return(render_template('folder.html', table = table,  ticker_style = ticker_style, symbol_options = symbol_options, balance_options = balance_options, notes = notes, ticker = co,
-        feedback = feedback, amount_options = amount_options))
+        feedback = feedback, amount_options = amount_options, folder_name = folder_name))
  
 @app.route('/defaults/', methods=["GET","POST"])
 def defaults():
@@ -130,8 +134,13 @@ def defaults():
                 plumb.ResetDefaults(False)
                 return (render_defaults("defaults have been reset."))
             elif (request.form['action'] == "adjust"):
-                plumb.UpdateDefaultItem(request.form['column'], request.form['value'], False)
-                log = "{0} has been updated.".format(request.form['column'])
+                if (request.form['value'] == ""):
+                    log = "field is blank, cannot adjust."
+                elif (request.form['column'] == "folder name" and not plumb.CheckPretty(request.form['value'])):
+                    log = "folder name must be alphanumeric, cannot adjust."
+                else:
+                    plumb.UpdateDefaultItem(request.form['column'], request.form['value'], False)
+                    log = "{0} has been updated.".format(request.form['column'])
                 return (render_defaults(log))
             elif (request.form['action'] == "restart"):
                 plumb.run_script("./folder_daemon.py")

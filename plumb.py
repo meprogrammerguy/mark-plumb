@@ -136,6 +136,8 @@ def UpdateDefaultItem(key, item, verbose):
             c.execute(query, (item, username,))
         conn.commit()
         conn.close()
+        if (key == "folder name"):
+            CreateNames(item, verbose)
     if (verbose):
         print ("***\n")
     return True
@@ -169,12 +171,12 @@ def ResetDefaults(verbose):
         c.execute("UPDATE defaults SET daemon_seconds = ? WHERE username = (?)", (300, username,))
         c.execute("UPDATE defaults SET open = (?) WHERE username = (?)", (begin, username,))
         c.execute("UPDATE defaults SET close = (?) WHERE username = (?)", (close, username,))
-        c.execute("UPDATE defaults SET aim_db = (?) WHERE username = (?)", ("aim.db", username,))
-        c.execute("UPDATE defaults SET folder_db = (?) WHERE username = (?)", ("folder.db", username,))
         c.execute("UPDATE defaults SET test_root = (?) WHERE username = (?)", ("test/", username,))
         c.execute("UPDATE defaults SET export_dir = (?) WHERE username = (?)", (desktop, username,))
+        c.execute("UPDATE defaults SET folder_name = (?) WHERE username = (?)", ("Practice Portfolio", username,))
         conn.commit()
         conn.close()
+        CreateNames("Practice Portfolio", verbose)
     if (verbose):
         print ("***\n")
     return True
@@ -210,6 +212,38 @@ def GetDefaults(verbose):
         print ("***\n")
     return answer, answer_types
 
+def GetNames(verbose):
+    defaults, types = GetDefaults(verbose)
+    username = getpass.getuser()
+    db_file = username + "/names.db"
+    Path(username + "/").mkdir(parents=True, exist_ok=True) 
+    if (verbose):
+        print ("***")
+        print ("GetNames(1) dbase: {0}".format(db_file))
+    if (not os.path.exists(db_file)):
+        if (verbose):
+            print ("GetNames(2) {0} file is missing, cannot return the names".format(db_file))
+            print ("***\n")
+        return []
+    try:
+        conn = sqlite3.connect(db_file)
+        if (verbose):
+            print("GetNames(3) sqlite3: {0}".format(sqlite3.version))
+    except Error as e:
+        print("GetNames(4) {0}".format(e))
+        return []
+    c = conn.cursor()
+    c.execute("SELECT * FROM names order by pretty_name")
+    keys = list(map(lambda x: x[0].replace("_"," "), c.description))
+    values = c.fetchall()
+    conn.close()
+    if (verbose):
+        print ("***\n")
+    answer = []
+    for row in values:
+        answer.append(dict(zip(keys, row)))
+    return answer
+
 def CreateDefaults(verbose):
     username = getpass.getuser()
     db_file = os.getcwd() + "/"  + "defaults.db"
@@ -224,13 +258,67 @@ def CreateDefaults(verbose):
         print("CreateDefaults(3) {0}".format(e))
         return False
     c = conn.cursor()
-    c.execute("CREATE TABLE if not exists 'defaults' ( `username` TEXT NOT NULL UNIQUE, `api_key` TEXT, `daemon_seconds` INTEGER, `open` TEXT, `close` TEXT, `aim_db` TEXT, `folder_db` TEXT, `test_root` TEXT, `export_dir` TEXT, PRIMARY KEY(`username`) )")
+    c.execute("CREATE TABLE if not exists 'defaults' ( `username` TEXT NOT NULL UNIQUE, `api_key` TEXT, `daemon_seconds` INTEGER, `open` TEXT, `close` TEXT, `test_root` TEXT, `export_dir` TEXT, `folder_name` TEXT, PRIMARY KEY(`username`) )")
     c.execute( "INSERT OR IGNORE INTO defaults(username) VALUES((?))", (username,))
     conn.commit()
     conn.close()
     if (verbose):
         print ("***\n")
     return True
+
+def DeleteName(name, verbose):
+    username = getpass.getuser()
+    db_file = username + "/names.db"
+    if (verbose):
+        print ("***")
+        print ("DeleteName(1) dbase: {0}".format(db_file))
+    try:
+        conn = sqlite3.connect(db_file)
+        if (verbose):
+            print("DeleteName(2) sqlite3: {0}".format(sqlite3.version))
+    except Error as e:
+        print("DeleteName(3) {0}".format(e))
+        return False
+    c = conn.cursor()
+    c.execute("DELETE FROM names where pretty_name = (?)", (name,))
+    conn.commit()
+    conn.close()
+    if (verbose):
+        print ("***\n")
+    return True
+
+def CreateNames(pretty, verbose):
+    db_name = pretty.replace(" ", "_")
+    username = getpass.getuser()
+    db_file = username + "/names.db"
+    Path(username + "/").mkdir(parents=True, exist_ok=True) 
+    if (verbose):
+        print ("***")
+        print ("CreateNames(1) pretty_name: {0}".format(pretty))
+        print ("CreateNames(1) db_name: {0}".format(db_name))
+        print ("CreateNames(1) dbase: {0}".format(db_file))
+    try:
+        conn = sqlite3.connect(db_file)
+        if (verbose):
+            print("CreateNames(2) sqlite3: {0}".format(sqlite3.version))
+    except Error as e:
+        print("CreateNames(3) {0}".format(e))
+        return False
+    c = conn.cursor()
+    c.execute("CREATE TABLE if not exists `names` ( `pretty_name` TEXT NOT NULL UNIQUE, `db_name` TEXT, PRIMARY KEY(`pretty_name`) )")
+    c.execute( "INSERT OR IGNORE INTO names(pretty_name) VALUES((?))", (pretty,))
+    c.execute("UPDATE names SET db_name = (?) WHERE pretty_name = (?)", (db_name, pretty,))
+    conn.commit()
+    conn.close()
+    if (verbose):
+        print ("***\n")
+    return True
+
+def CheckPretty(ex):
+    ex = ex.rstrip()
+    if re.match(r'^[a-zA-Z0-9][ A-Za-z0-9_-]*$', ex):
+        return True
+    return False
 
 def PrintDefaults(verbose):
     username = getpass.getuser()
@@ -785,12 +873,12 @@ def AllocationTrends(verbose):
     if "folder db" not in defaults:
         if (verbose):
             print ("AllocationTrends(1) could not get defaults, make sure that the defaults dbase is set up")
-        return "", ""
+        return "", "", ""
     prev = GetLastAIM(verbose)
     if ("json string" not in prev):
         if (verbose):
             print ("AllocationTrends(2) could not get previous balances, make sure you have initialized AIM system")
-        return "", ""
+        return "", "", ""
     js = json.loads(prev['json string'])
     last_list = []
     for col in js:
@@ -801,7 +889,7 @@ def AllocationTrends(verbose):
     if ("json string" not in first):
         if (verbose):
             print ("AllocationTrends(3) could not get initial balances, make sure you have initialized AIM system")
-        return "", ""
+        return "", "", ""
     js = json.loads(first['json string'])
     first_list = []
     for col in js:
@@ -816,14 +904,14 @@ def AllocationTrends(verbose):
         if (verbose):
             print ("AllocationTrends(5) {0} file is missing, cannot print".format(db_file))
             print ("***\n")
-        return "", ""
+        return "", "", ""
     try:
         conn = sqlite3.connect(db_file)
         if (verbose):
             print("AllocationTrends(6) sqlite3: {0}".format(sqlite3.version))
     except Error as e:
         print("AllocationTrends(7) {0}".format(e))
-        return "", ""
+        return "", "",""
     c = conn.cursor()
     c.execute("SELECT * FROM folder where symbol != '$' order by symbol")
     rows = c.fetchall()
@@ -883,9 +971,7 @@ def AllocationTrends(verbose):
 
 #region aim
 def GetAIM(verbose):
-    defaults, types = GetDefaults(verbose)
-    username = getpass.getuser()
-    db_file = username + "/"  + defaults['aim db']
+    db_file = GetDB(verbose)
     if (verbose):
         print ("***")
         print ("GetAIM(1) dbase: {0}".format(db_file))
@@ -914,11 +1000,11 @@ def GetAIM(verbose):
     return answer
 
 def CreateAIM(verbose):
-    defaults, types = GetDefaults(verbose)
+    db_file = GetDB(verbose)
     if (verbose):
         print ("***")
-    if "aim db" not in defaults:
-        log = "CreateAIM(1) could not get defaults, make sure that the defaults dbase is set up"
+    if db_file == "":
+        log = "CreateAIM(1) could not get dbase, make sure that the defaults dbase is set up"
         if (verbose):
             print (log)
         return False, log
@@ -932,8 +1018,6 @@ def CreateAIM(verbose):
     if (count > 1):
         return False, "You must go to the History Tab and archive your AIM data first"
     pv = PortfolioValue(cash, stock, verbose)
-    username = getpass.getuser()
-    db_file = username + "/"  + defaults['aim db']
     Path(username + "/").mkdir(parents=True, exist_ok=True) 
     if (verbose):
         print ("***")
@@ -1015,15 +1099,13 @@ def MarketOrder(buyselladvice, safe, verbose):
     return answer
 
 def GetAIMCount(verbose):
-    defaults, types = GetDefaults(verbose)
+    db_file = GetDB(verbose)
     if (verbose):
         print ("***")
-    if "aim db" not in defaults:
+    if db_file == "":
         if (verbose):
-            print ("GetAIMCount(1) could not get defaults, make sure that the defaults dbase is set up")
+            print ("GetAIMCount(1) could not get dbase name, make sure that the defaults dbase is set up")
         return 0
-    username = getpass.getuser()
-    db_file = username + "/"  + defaults['aim db']
     if (verbose):
         print ("GetAIMCount(2) dbase: {0}".format(db_file))
     if (not os.path.exists(db_file)):
@@ -1047,15 +1129,13 @@ def GetAIMCount(verbose):
     return len(results)
 
 def GetLastAIM(verbose):
-    defaults, types = GetDefaults(verbose)
+    db_file = GetDB(verbose)
     if (verbose):
         print ("***")
-    if "aim db" not in defaults:
+    if db_file == "":
         if (verbose):
-            print ("GetLastAIM(1) could not get defaults, make sure that the defaults dbase is set up")
+            print ("GetLastAIM(1) could not get dbase name, make sure that the defaults dbase is set up")
         return {}
-    username = getpass.getuser()
-    db_file = username + "/"  + defaults['aim db']
     if (verbose):
         print ("GetLastAIM(2) dbase: {0}".format(db_file))
     if (not os.path.exists(db_file)):
@@ -1081,15 +1161,13 @@ def GetLastAIM(verbose):
     return answer
 
 def GetAIMNotes(count, verbose):
-    defaults, types = GetDefaults(verbose)
-    username = getpass.getuser()
+    db_file = GetDB(verbose)
     if (verbose):
         print ("***")
-    if "aim db" not in defaults:
+    if db_file == "":
         if (verbose):
-            print ("GetAIMNotes(1) could not get defaults, make sure that the defaults dbase is set up")
+            print ("GetAIMNotes(1) could not get dbase name, make sure that the defaults dbase is set up")
         return {}, True
-    db_file = username + "/"  + defaults['aim db']
     if (verbose):
         print ("GetAIMNotes(2) dbase: {0}".format(db_file))
     if (not os.path.exists(db_file)):
@@ -1148,15 +1226,13 @@ def custom_strftime(format, t):
     return t.strftime(format).replace('{S}', str(t.day) + suffix(t.day))
 
 def GetFirstAIM(verbose):
-    defaults, types = GetDefaults(verbose)
+    db_file = GetDB(verbose)
     if (verbose):
         print ("***")
-    if "aim db" not in defaults:
+    if db_file == "":
         if (verbose):
-            print ("GetFirstAIM(1) could not get defaults, make sure that the defaults dbase is set up")
+            print ("GetFirstAIM(1) could not get dbase name, make sure that the defaults dbase is set up")
         return {}
-    username = getpass.getuser()
-    db_file = username + "/"  + defaults['aim db']
     if (verbose):
         print ("GetFirstAIM(2) dbase: {0}".format(db_file))
     if (not os.path.exists(db_file)):
@@ -1180,6 +1256,19 @@ def GetFirstAIM(verbose):
     if (verbose):
         print ("***\n")
     return answer
+
+def GetDB(verbose):
+    db_file = ""
+    defaults, types = GetDefaults(verbose)
+    if ("folder name" in defaults):
+        username = getpass.getuser()
+        db_file = username + "/"  + defaults['folder name']
+    names = GetNames(verbose)
+    for name in names:
+        if (name["pretty name"] == defaults['folder name']):
+            db_file = name["db name"]
+            break
+    return db_file
 
 def to_number(string, verbose):
     negative = False
@@ -1249,7 +1338,7 @@ def Look(verbose):
     keys = []
     for key in db_keys:
         if (key == 'cash'):
-            keys.append("safe") # safe is not in the aim db (want to see it though)
+            keys.append("safe") # safe is not in the db (want to see it though)
         if key != "json string":
             keys.append(key)
     cd = datetime.datetime.now()
@@ -1296,9 +1385,7 @@ def Look(verbose):
     return pretty, table.__html__(), answer_db
 
 def Post(verbose):
-    defaults, types = GetDefaults(verbose)
-    username = getpass.getuser()
-    db_file = username + "/"  + defaults['aim db']
+    db_file = GetDB(verbose)
     if (verbose):
         print ("***")
         print ("Post(1) dbase: {0}".format(db_file))
@@ -1349,15 +1436,13 @@ def PrintAIM(printyear, verbose):
         if (intyear < 100):
             intyear = 2000 + intyear
         printyear = str(intyear)
-    defaults, types = GetDefaults(verbose)
+    db_file = GetDB(verbose)
     if (verbose):
         print ("***")
-    if "aim db" not in defaults:
+    if db_file == "":
         if (verbose):
-            print ("PrintAIM(1) could not get defaults, make sure that the defaults dbase is set up")
+            print ("PrintAIM(1) could not get dbase name, make sure that the defaults dbase is set up")
         return ""
-    username = getpass.getuser()
-    db_file = username + "/"  + defaults['aim db']
     if (verbose):
         print ("PrintAIM(2) dbase: {0}".format(db_file))
         print ("PrintAIM(3) year: {0}".format(printyear))
@@ -1382,7 +1467,7 @@ def PrintAIM(printyear, verbose):
     keys = []
     for key in keys_db:
         if (key == 'cash'):
-            keys.append("safe") # safe is not in the aim db (want to see it though)
+            keys.append("safe") # safe is not in the db (want to see it though)
         if key != "json string":
             keys.append(key)
     TableCls = create_table('TableCls')
@@ -1455,26 +1540,6 @@ def TestStock(verbose):
         if (verbose):
             print ("\tfail.")
     if (verbose):
-        print ("Test #{0} - UpdateDefaultItem('folder db', 'folder.db', False)".format(count + 1))
-    result = UpdateDefaultItem("folder db", "folder.db", verbose)
-    if (result):
-        if (verbose):
-            print ("\tpass.")
-        count += 1
-    else:
-        if (verbose):
-            print ("\tfail.")
-    if (verbose):
-        print ("Test #{0} - UpdateDefaultItem('aim db', 'aim.db', False)".format(count + 1))
-    result = UpdateDefaultItem("aim db", "aim.db", verbose)
-    if (result):
-        if (verbose):
-            print ("\tpass.")
-        count += 1
-    else:
-        if (verbose):
-            print ("\tfail.")
-    if (verbose):
         print ("Test #{0} - UpdateDefaultItem('test root', 'test/', False)".format(count + 1))
     result = UpdateDefaultItem("test root", "test/", verbose)
     if (result):
@@ -1519,11 +1584,10 @@ def TestStock(verbose):
     result, types = GetDefaults(verbose)
     if (result['api key'] == "TEST"
         and result['daemon seconds'] == 600
-        and result['folder db'] == "folder.db"
         and result['open'] == "8:30AM"
         and result['close'] == "15:00"
-        and result['aim db'] == "aim.db"
-        and result['test root'] == "test/"):
+        and result['test root'] == "test/"
+        and result['folder name'] == "Practice Portfolio"):
         if (verbose):
             print ("\tpass.")
         count += 1
@@ -1643,7 +1707,7 @@ def TestFolder(verbose):
         return True
     else:
         if (verbose):
-            print ("test count expected 7 passes, received {0}".format(count))
+            print ("test count expected 8 passes, received {0}".format(count))
     return False
 
 def TestAIM(location, verbose):
@@ -1652,8 +1716,8 @@ def TestAIM(location, verbose):
     status, keys, rows = LoadTest(location, verbose)
     if (status and (defaults is not None)):
         if (verbose):
-            print ("Test #{0} - UpdateDefaultItem('aim db', 'testaim.db', verbose)".format(count + 1))
-        result = UpdateDefaultItem("aim db", "testaim.db", verbose)
+            print ("Test #{0} - UpdateDefaultItem('folder name', 'Test Aim', verbose)".format(count + 1))
+        result = UpdateDefaultItem("folder name", "Test Aim", verbose)
         if (result):
             if (verbose):
                 print ("\tpass.")
@@ -1720,14 +1784,14 @@ def TestAIM(location, verbose):
                 if (verbose):
                     print ("\tPortfolioValue({0}) - expected: {1}, calculated: {2}, fail.".format(index, curr['Portfolio Value'], result))
         username = getpass.getuser()
-        db_file = username + "/" + "testaim.db"
+        db_file = username + "/" + "Test_Aim.db"
         if (os.path.exists(db_file)):
             os.unlink(db_file)
             if (verbose):
                 print ("Cleanup, remove {0}".format(db_file))
         if (verbose):
-            print ("Test #{0} - UpdateDefaultItem('aim db', '<reset back to what it was>', verbose)".format(count + 1))
-        result = UpdateDefaultItem("aim db", defaults['aim db'], verbose)
+            print ("Test #{0} - UpdateDefaultItem('folder name', '<reset back to what it was>', verbose)".format(count + 1))
+        result = UpdateDefaultItem("folder name", defaults['folder name'], verbose)
         if (result):
             if (verbose):
                 print ("\tpass.")
@@ -1735,8 +1799,21 @@ def TestAIM(location, verbose):
         else:
             if (verbose):
                 print ("\tfail.")
-        if (count == 452):
+        if (verbose):
+            print ("Test #{0} - DeleteName('Test Aim', verbose)".format(count + 1))
+        result = DeleteName("Test Aim", verbose)
+        if (result):
+            if (verbose):
+                print ("\tpass.")
+            count += 1
+        else:
+            if (verbose):
+                print ("\tfail.")
+        if (count == 453):
             return True
+        else:
+            if (verbose):
+                print ("test count expected 452 passes, received {0}".format(count))
     return False
 
 def myFloat(value):

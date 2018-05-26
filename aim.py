@@ -57,8 +57,8 @@ def main(argv):
         else:
             assert False, "unhandled option"
     defaults, types = plumb.GetDefaults(False)
-    if defaults['aim db'] is None:
-        print ("\tWarning, the AIM database name is missing, please correct")
+    if defaults['folder name'] is None:
+        print ("\tWarning, the database name is missing, please correct")
         exit()
     if defaults['test root'] is None:
         print ("\tWarning, the test root path is not set, please correct")
