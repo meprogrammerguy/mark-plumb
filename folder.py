@@ -57,8 +57,8 @@ def main(argv):
             print ("Test result - fail")
         exit()
     defaults, types = plumb.GetDefaults(verbose)
-    if defaults['folder db'] is None:
-        print ("\tWarning, the folder database name is not set, please correct this")
+    if defaults['folder name'] is None:
+        print ("\tWarning, the database name is not set, please correct this")
         exit()
     if (cash > ""):
         cashResult = plumb.Balance("$", cash, verbose)

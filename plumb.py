@@ -289,6 +289,7 @@ def DeleteName(name, verbose):
 
 def CreateNames(pretty, verbose):
     db_name = pretty.replace(" ", "_")
+    db_name += ".db"
     username = getpass.getuser()
     db_file = username + "/names.db"
     Path(username + "/").mkdir(parents=True, exist_ok=True) 
@@ -366,9 +367,7 @@ def PrintDefaults(verbose):
 
 #region folder
 def Add(symbol, verbose):
-    defaults, types = GetDefaults(verbose)
-    username = getpass.getuser()
-    db_file = username + "/"  + defaults['folder db']
+    db_file = GetDB(verbose)
     if (verbose):
         print ("***")
         print ("Add(1) symbol: {0}".format(symbol))
@@ -404,9 +403,7 @@ def Add(symbol, verbose):
     return True
 
 def Remove(symbol, verbose):
-    defaults, types = GetDefaults(verbose)
-    username = getpass.getuser()
-    db_file = username + "/"  + defaults['folder db']
+    db_file = GetDB(verbose)
     if (verbose):
         print ("***")
         print ("Remove(1) symbol: {0}".format(symbol))
@@ -427,16 +424,14 @@ def Remove(symbol, verbose):
     return True
 
 def Price(symbol, price, price_time, verbose):
-    defaults, types = GetDefaults(verbose)
-    username = getpass.getuser()
-    db_file = username + "/"  + defaults['folder db']
+    db_file = GetDB(verbose)
     if (verbose):
         print ("***")
         print ("Price(1) symbol: {0}".format(symbol))
         print ("Price(2) price: {0}".format(price))
         print ("Price(3) price_time: {0}".format(price_time))
         print ("Price(4) dbase: {0}".format(db_file))
-    result = CreateFolder("$", verbose)
+    result = CreateFolder(symbol, verbose)
     if (result):
         try:
             conn = sqlite3.connect(db_file)
@@ -457,9 +452,7 @@ def Price(symbol, price, price_time, verbose):
 
 def Cash(balance, verbose):
     balance = to_number(balance, verbose)
-    defaults, types = GetDefaults(verbose)
-    username = getpass.getuser()
-    db_file = username + "/"  + defaults['folder db']
+    db_file = GetDB(verbose)
     if (verbose):
         print ("***")
         print ("Cash(1) balance: {0}".format(balance))
@@ -490,9 +483,8 @@ def Cash(balance, verbose):
     return True
 
 def CreateFolder(key, verbose):
-    defaults, types = GetDefaults(verbose)
+    db_file = GetDB(verbose)
     username = getpass.getuser()
-    db_file = username + "/"  + defaults['folder db']
     Path(username + "/").mkdir(parents=True, exist_ok=True) 
     if (verbose):
         print ("***")
@@ -523,9 +515,8 @@ def Shares(symbol, shares, verbose):
         result['shares'] = shares
         return result
     shares = to_number(shares, verbose)
-    defaults, types = GetDefaults(verbose)
+    db_file = GetDB(verbose)
     username = getpass.getuser()
-    db_file = username + "/"  + defaults['folder db']
     Path(username + "/").mkdir(parents=True, exist_ok=True) 
     if (verbose):
         print ("***")
@@ -577,9 +568,8 @@ def Balance(symbol, balance, verbose):
         result['shares'] = balance
         return result
     balance = to_number(balance, verbose)
-    defaults, types = GetDefaults(verbose)
+    db_file = GetDB(verbose)
     username = getpass.getuser()
-    db_file = username + "/"  + defaults['folder db']
     Path(username + "/").mkdir(parents=True, exist_ok=True) 
     if (verbose):
         print ("***")
@@ -624,9 +614,8 @@ def Balance(symbol, balance, verbose):
     return result
 
 def Update(verbose):
-    defaults, types = GetDefaults(verbose)
+    db_file = GetDB(verbose)
     username = getpass.getuser()
-    db_file = username + "/"  + defaults['folder db']
     Path(username + "/").mkdir(parents=True, exist_ok=True) 
     if (verbose):
         print ("***")
@@ -665,9 +654,7 @@ def Update(verbose):
     return True, ""
 
 def GetFolderCash(verbose):
-    defaults, types = GetDefaults(verbose)
-    username = getpass.getuser()
-    db_file = username + "/"  + defaults['folder db']
+    db_file = GetDB(verbose)
     if (verbose):
         print ("***")
         print ("GetFolderCash(1) dbase: {0}".format(db_file))
@@ -694,9 +681,7 @@ def GetFolderCash(verbose):
     return answer['balance']
 
 def GetFolder(verbose):
-    defaults, types = GetDefaults(verbose)
-    username = getpass.getuser()
-    db_file = username + "/"  + defaults['folder db']
+    db_file = GetDB(verbose)
     if (verbose):
         print ("***")
         print ("GetFolder(1) dbase: {0}".format(db_file))
@@ -732,9 +717,7 @@ def GetFolderValue(symbol, key, folder_dict):
     return value
 
 def GetFolderStockValue(verbose):
-    defaults, types = GetDefaults(verbose)
-    username = getpass.getuser()
-    db_file = username + "/"  + defaults['folder db']
+    db_file = GetDB(verbose)
     if (verbose):
         print ("***")
         print ("GetFolderStockValue(1) dbase: {0}".format(db_file))
@@ -764,29 +747,29 @@ def GetFolderStockValue(verbose):
     return answer
 
 def PrintFolder(verbose):
-    defaults, types = GetDefaults(verbose)
-    username = getpass.getuser()
+    db_file = GetDB(verbose)
     if (verbose):
         print ("***")
-    if "folder db" not in defaults:
+    if db_file == "":
         if (verbose):
-            print ("PrintFolder(1) could not get defaults, make sure that the defaults dbase is set up")
+            print ("PrintFolder(1) could not get dbase, make sure that the defaults dbase is set up")
         return "", "", "", []
-    db_file = username + "/"  + defaults['folder db']
     if (verbose):
         print ("PrintFolder(2) dbase: {0}".format(db_file))
+    try:
+        conn = sqlite3.connect(db_file)
+        if (verbose):
+            print("PrintFolder(4) sqlite3: {0}".format(sqlite3.version))
+        if (not checkTableExists(conn, "folder")):
+            Cash("0", verbose)
+    except Error as e:
+        print("PrintFolder(5) {0}".format(e))
+        return  e, "", "", []
     if (not os.path.exists(db_file)):
         if (verbose):
             print ("PrintFolder(3) {0} file is missing, cannot print".format(db_file))
             print ("***\n")
         return "", "", "", []
-    try:
-        conn = sqlite3.connect(db_file)
-        if (verbose):
-            print("PrintFolder(4) sqlite3: {0}".format(sqlite3.version))
-    except Error as e:
-        print("PrintFolder(5) {0}".format(e))
-        return  e, "", "", []
     c = conn.cursor()
     c.execute("SELECT * FROM folder order by symbol")
     keys = list(map(lambda x: x[0].replace("_"," "), c.description))
@@ -867,12 +850,12 @@ def AddRemoveButtons(table):
     return table
 
 def AllocationTrends(verbose):
-    defaults, types = GetDefaults(verbose)
+    db_file = GetDB(verbose)
     if (verbose):
         print ("***")
-    if "folder db" not in defaults:
+    if db_file == "":
         if (verbose):
-            print ("AllocationTrends(1) could not get defaults, make sure that the defaults dbase is set up")
+            print ("AllocationTrends(1) could not get dbase, make sure that the defaults dbase is set up")
         return "", "", ""
     prev = GetLastAIM(verbose)
     if ("json string" not in prev):
@@ -896,8 +879,6 @@ def AllocationTrends(verbose):
         if ("symbol" in col):
             if (col['symbol'] != "$"):
                 first_list.append(col)
-    username = getpass.getuser()
-    db_file = username + "/"  + defaults['folder db']
     if (verbose):
         print ("AllocationTrends(4) dbase: {0}".format(db_file))
     if (not os.path.exists(db_file)):
@@ -1018,6 +999,7 @@ def CreateAIM(verbose):
     if (count > 1):
         return False, "You must go to the History Tab and archive your AIM data first"
     pv = PortfolioValue(cash, stock, verbose)
+    username = getpass.getuser()
     Path(username + "/").mkdir(parents=True, exist_ok=True) 
     if (verbose):
         print ("***")
@@ -1120,13 +1102,26 @@ def GetAIMCount(verbose):
     except Error as e:
         print("GetAIMCount(5) {0}".format(e))
         return 0
-    c = conn.cursor()
-    c.execute("select * from aim")
-    results = c.fetchall()
+    if (checkTableExists(conn, "aim")):
+        c = conn.cursor()
+        c.execute("select * from aim")
+        results = c.fetchall()
+    else:
+        results = ""
     conn.close()
     if (verbose):
         print ("***\n")
     return len(results)
+
+def checkTableExists(dbcon, tablename):
+    dbcur = dbcon.cursor()
+    dbcur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=(?);", (tablename,))
+    test = dbcur.fetchone()
+    if test is None:
+        dbcur.close()
+        return False
+    dbcur.close()
+    return True
 
 def GetLastAIM(verbose):
     db_file = GetDB(verbose)
@@ -1150,12 +1145,14 @@ def GetLastAIM(verbose):
     except Error as e:
         print("GetLastAIM(5) {0}".format(e))
         return {}
-    c = conn.cursor()
-    c.execute("SELECT * FROM aim ORDER BY post_date DESC LIMIT 1")
-    keys = list(map(lambda x: x[0].replace("_"," "), c.description))
-    values = c.fetchone()
-    answer = dict(zip(keys, values))
-    conn.close()
+    answer = {}
+    if (checkTableExists(conn, "aim")):
+        c = conn.cursor()
+        c.execute("SELECT * FROM aim ORDER BY post_date DESC LIMIT 1")
+        keys = list(map(lambda x: x[0].replace("_"," "), c.description))
+        values = c.fetchone()
+        answer = dict(zip(keys, values))
+        conn.close()
     if (verbose):
         print ("***\n")
     return answer
@@ -1183,11 +1180,15 @@ def GetAIMNotes(count, verbose):
     except Error as e:
         print("GetAIMNotes(5) {0}".format(e))
         return {}, True
-    c = conn.cursor()
-    c.execute("SELECT * FROM aim ORDER BY post_date DESC LIMIT ?", (count,))
-    keys = list(map(lambda x: x[0].replace("_"," "), c.description))
-    rows = c.fetchall()
-    conn.close()
+    if (checkTableExists(conn, "aim")):
+        c = conn.cursor()
+        c.execute("SELECT * FROM aim ORDER BY post_date DESC LIMIT ?", (count,))
+        keys = list(map(lambda x: x[0].replace("_"," "), c.description))
+        rows = c.fetchall()
+        conn.close()
+    else:
+        keys = []
+        rows = []
     notes = []
     initialize_day = False
     for row in rows:
@@ -1247,12 +1248,14 @@ def GetFirstAIM(verbose):
     except Error as e:
         print("GetFirstAIM(5) {0}".format(e))
         return {}
-    c = conn.cursor()
-    c.execute("SELECT * FROM aim where post_date = '1970/01/01'")
-    keys = list(map(lambda x: x[0].replace("_"," "), c.description))
-    values = c.fetchone()
-    answer = dict(zip(keys, values))
-    conn.close()
+    answer = {}
+    if (checkTableExists(conn, "aim")):
+        c = conn.cursor()
+        c.execute("SELECT * FROM aim where post_date = '1970/01/01'")
+        keys = list(map(lambda x: x[0].replace("_"," "), c.description))
+        values = c.fetchone()
+        answer = dict(zip(keys, values))
+        conn.close()
     if (verbose):
         print ("***\n")
     return answer
@@ -1266,7 +1269,7 @@ def GetDB(verbose):
     names = GetNames(verbose)
     for name in names:
         if (name["pretty name"] == defaults['folder name']):
-            db_file = name["db name"]
+            db_file =  username + "/" + name["db name"]
             break
     return db_file
 
@@ -1458,12 +1461,15 @@ def PrintAIM(printyear, verbose):
     except Error as e:
         print("PrintAIM(6) {0}".format(e))
         return ""
-    c = conn.cursor()
-    c.execute("SELECT * FROM aim order by post_date")
-    keys_db = list(map(lambda x: x[0].replace("_"," "), c.description))
-    rows = c.fetchall()
-    conn.commit()
-    conn.close()
+    keys_db = []
+    rows = []
+    if (checkTableExists(conn, "aim")):
+        c = conn.cursor()
+        c.execute("SELECT * FROM aim order by post_date")
+        keys_db = list(map(lambda x: x[0].replace("_"," "), c.description))
+        rows = c.fetchall()
+        conn.commit()
+        conn.close()
     keys = []
     for key in keys_db:
         if (key == 'cash'):
@@ -1607,7 +1613,7 @@ def TestStock(verbose):
             else:
                 if (verbose):
                     print ("\tfail.")
-    if (count == 18):
+    if (count == 14):
         return True
     else:
         if (verbose):
@@ -1618,8 +1624,8 @@ def TestFolder(verbose):
     count = 0
     defaults, types = GetDefaults(verbose)
     if (verbose):
-        print ("Test #{0} - UpdateDefaultItem('folder db', 'testfolder.db', verbose)".format(count + 1))
-    result = UpdateDefaultItem("folder db", "testfolder.db", verbose)
+        print ("Test #{0} - UpdateDefaultItem('folder name', 'Test Folder', verbose)".format(count + 1))
+    result = UpdateDefaultItem("folder name", "Test Folder", verbose)
     if (result):
         if (verbose):
             print ("\tpass.")
@@ -1688,14 +1694,14 @@ def TestFolder(verbose):
         if (verbose):
             print ("\tfail.")
     username = getpass.getuser()
-    db_file = username + "/" + "testfolder.db"
+    db_file = username + "/" + "Test_Folder.db"
     if (os.path.exists(db_file)):
         os.unlink(db_file)
         if (verbose):
             print ("Cleanup, remove {0}".format(db_file))
     if (verbose):
-        print ("Test #{0} - UpdateDefaultItem('folder db', 'testfolder.db', verbose)".format(count + 1))
-    result = UpdateDefaultItem("folder db", defaults['folder db'], verbose)
+        print ("Test #{0} - UpdateDefaultItem('folder name', 'Test Folder', verbose)".format(count + 1))
+    result = UpdateDefaultItem("folder name", defaults['folder name'], verbose)
     if (result):
         if (verbose):
             print ("\tpass.")
@@ -1703,11 +1709,21 @@ def TestFolder(verbose):
     else:
         if (verbose):
             print ("\tfail.")
-    if (count == 8):
+    if (verbose):
+        print ("Test #{0} - DeleteName('Test Folder', verbose)".format(count + 1))
+    result = DeleteName("Test Folder", verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (count == 9):
         return True
     else:
         if (verbose):
-            print ("test count expected 8 passes, received {0}".format(count))
+            print ("test count expected 9 passes, received {0}".format(count))
     return False
 
 def TestAIM(location, verbose):

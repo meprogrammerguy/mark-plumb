@@ -30,10 +30,10 @@ def do_something():
         else:
             ds = defaults['daemon seconds']
         df = ""
-        if (defaults['folder db'] is None):
-            df = 'folder.db'
+        if (defaults['folder name'] is None):
+            df = 'Practice_Portfolio.db'
         else:
-            df = defaults['folder db']
+            df = plumb.GetDB(False)
         log['poll seconds'] = ds
         log['dbase name'] = df
         begin = defaults['open']
