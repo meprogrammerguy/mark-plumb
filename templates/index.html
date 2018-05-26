@@ -61,7 +61,7 @@
             <div class="right">
                 <ul>
                 <h4>Lifetime</h4>
-                {% for life in lifes %}
+                {% for life in lives %}
                     {% if life.arrow == 'flat' %}
                         <li>{{life.percent | safe}} <img src="{{ url_for('static', filename='flat.png') }}" alt='flat'/></li>
                     {% endif %}
