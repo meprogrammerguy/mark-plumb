@@ -189,7 +189,7 @@ def history():
                 year_string = "all"
                 return (render_history("display: none;", "", year_string))
             elif (request.form['action'] == "see"):     #temporary see HTLM code while developing page
-                return (render_history("display: block;", "showing help HTML, remove this at release time", "all", ""))
+                return (render_history("display: block;", "showing help HTML, remove this at release time", "", ""))
             elif (request.form['action'] == "export"):
                 log = plumb.Export(request.form['column'], request.form['value'], False)
                 return (render_history("display: none;", log, ""))
@@ -211,19 +211,13 @@ def history():
     return(render_history("display: none;", "", ""))
 
 def render_history(history_style, feedback, history_year):
-    if (history_year == ""):
-        dt = datetime.now()
-        year_input = dt.year
-        year_string = str(dt.year)
-    elif (history_year[0].lower() == 'a'):
+    if (history_year == "" or history_year[0].lower() == 'a'):
         year_input = 1970
-        year_string = "all"
     else:
-        year_string = history_year
         year_input = int(year_string)
     notes, initialize_day = plumb.GetAIMNotes(10, False)
     table = plumb.PrintAIM(str(year_input), False)
-    return render_template('history.html', table = table, year_string = year_string, notes = notes, feedback = feedback, history_style = history_style)
+    return render_template('history.html', table = table, notes = notes, feedback = feedback, history_style = history_style)
 
 @app.errorhandler(404)
 def page_not_found(e):

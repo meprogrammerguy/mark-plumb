@@ -266,23 +266,34 @@ def CreateDefaults(verbose):
         print ("***\n")
     return True
 
-def DeleteName(name, verbose):
+def DeleteName(pretty, verbose):
     username = getpass.getuser()
     db_file = username + "/names.db"
+    db_remove = ""
+    names = GetNames(verbose)
+    for name in names:
+        if (name["pretty name"] == pretty):
+            db_remove =  username + "/" + name["db name"]
+            break
     if (verbose):
         print ("***")
-        print ("DeleteName(1) dbase: {0}".format(db_file))
+        print ("DeleteName(1) pretty: {0}".format(pretty))
+        print ("DeleteName(2) dbase: {0}".format(db_file))
     try:
         conn = sqlite3.connect(db_file)
         if (verbose):
-            print("DeleteName(2) sqlite3: {0}".format(sqlite3.version))
+            print("DeleteName(3) sqlite3: {0}".format(sqlite3.version))
     except Error as e:
-        print("DeleteName(3) {0}".format(e))
+        print("DeleteName(4) {0}".format(e))
         return False
     c = conn.cursor()
-    c.execute("DELETE FROM names where pretty_name = (?)", (name,))
+    c.execute("DELETE FROM names where pretty_name = (?)", (pretty,))
     conn.commit()
     conn.close()
+    if (os.path.exists(db_remove)):
+        os.unlink(db_remove)
+        if (verbose):
+            print ("DeleteName(5), remove {0}".format(db_remove))
     if (verbose):
         print ("***\n")
     return True
@@ -1613,11 +1624,11 @@ def TestStock(verbose):
             else:
                 if (verbose):
                     print ("\tfail.")
-    if (count == 14):
+    if (count == 15):
+        print ("ran 15 tests, all pass")
         return True
     else:
-        if (verbose):
-            print ("test count expected 18 passes, received {0}".format(count))
+        print ("test count expected 15 passes, received {0}".format(count))
     return False
 
 def TestFolder(verbose):
@@ -1694,11 +1705,6 @@ def TestFolder(verbose):
         if (verbose):
             print ("\tfail.")
     username = getpass.getuser()
-    db_file = username + "/" + "Test_Folder.db"
-    if (os.path.exists(db_file)):
-        os.unlink(db_file)
-        if (verbose):
-            print ("Cleanup, remove {0}".format(db_file))
     if (verbose):
         print ("Test #{0} - UpdateDefaultItem('folder name', 'Test Folder', verbose)".format(count + 1))
     result = UpdateDefaultItem("folder name", defaults['folder name'], verbose)
@@ -1720,10 +1726,10 @@ def TestFolder(verbose):
         if (verbose):
             print ("\tfail.")
     if (count == 9):
+        print ("ran 9 tests, all pass")
         return True
     else:
-        if (verbose):
-            print ("test count expected 9 passes, received {0}".format(count))
+        print ("test count expected 9 passes, received {0}".format(count))
     return False
 
 def TestAIM(location, verbose):
@@ -1800,11 +1806,6 @@ def TestAIM(location, verbose):
                 if (verbose):
                     print ("\tPortfolioValue({0}) - expected: {1}, calculated: {2}, fail.".format(index, curr['Portfolio Value'], result))
         username = getpass.getuser()
-        db_file = username + "/" + "Test_Aim.db"
-        if (os.path.exists(db_file)):
-            os.unlink(db_file)
-            if (verbose):
-                print ("Cleanup, remove {0}".format(db_file))
         if (verbose):
             print ("Test #{0} - UpdateDefaultItem('folder name', '<reset back to what it was>', verbose)".format(count + 1))
         result = UpdateDefaultItem("folder name", defaults['folder name'], verbose)
@@ -1826,10 +1827,10 @@ def TestAIM(location, verbose):
             if (verbose):
                 print ("\tfail.")
         if (count == 453):
+            print ("ran 453 tests, all pass")
             return True
         else:
-            if (verbose):
-                print ("test count expected 452 passes, received {0}".format(count))
+            print ("test count expected 453 passes, received {0}".format(count))
     return False
 
 def myFloat(value):
