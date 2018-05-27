@@ -62,7 +62,6 @@
             <br class="clear"/>
 
 <div {{hide_folder}} class="center">
-<ul>
  <p><h4>Folder Name</h4>
             <form action="#" method="post">
 
@@ -74,17 +73,16 @@
                     <input class="submit" type="submit" name="action" value="update"/></p>
             </div>
             </form>
-</ul>
 </div>
             <br class="clear"/>
-            <h1 class="center">Adjustments</h1>
+            <h4 class="center">Adjustments</h4>
             <form action="#" method="post">
             <div class="center">
                 <p><select id="column" name="column">{{column_options | safe}}</select>
                 <input type="text" name="value" value=""/></p>
             </div>
             <div class="form_settings">
-                <p><span>&nbsp;</span><input class="submit" type="submit" name="action" value="adjust" style="float: right;"/></p>
+                <p><span>&nbsp;</span><input class="submit" type="submit" name="action" value="adjust" /></p>
             </div>
             </form>
             <br class="clear"/>

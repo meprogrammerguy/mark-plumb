@@ -1120,6 +1120,11 @@ def GetAIMNotes(count, verbose):
         if (answer['post date'] == "1970/01/01"):
             if (count < 2):
                 initialize_day = True
+            if (js is not {}):
+                if ("start date" in js[0]):
+                    dt = datetime.datetime.strptime(js[0]['start date'], '%Y/%m/%d')
+                    if (dt.date != datetime.datetime.now().date):
+                        initialize_day = False
             note['date'] = noteDate(js[0]['start date'])
             note['content'] = "A.I.M. Was initialized with {0}".format(as_currency(answer['cash'] + answer['stock value']))            
         else:
