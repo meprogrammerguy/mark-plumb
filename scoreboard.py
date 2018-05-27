@@ -158,7 +158,10 @@ def render_defaults(feedback):
     if ("api key" in defaults):
         if (defaults['api key'] == "" or defaults['api key'] == "demo"):
             api_key_warning = "Remember to obtain your lifetime API key from Alpha Vantage, this is needed for polling the market prices"
-    table, column_options = plumb.PrintDefaults(False)
+    table, column_options, name_options, folder_options = plumb.PrintDefaults(False)
+    hide_folder = ""
+    if (name_options == ""):
+        hide_folder = "hidden"
     notes, initialize_day = plumb.GetAIMNotes(10, False)
     pid = plumb.get_pid("folder_daemon.py")
     daemon_check = ""
@@ -178,7 +181,8 @@ def render_defaults(feedback):
     else:
         daemon_info = "Last active status: {0}".format(status)
     return (render_template('defaults.html', table = table, feedback = feedback, column_options = column_options, notes = notes, api_key_warning = api_key_warning,
-        daemon_table = daemon_table, daemon_check = daemon_check, daemon_color = daemon_color, daemon_info = daemon_info, daemon_action = daemon_action))
+        daemon_table = daemon_table, daemon_check = daemon_check, daemon_color = daemon_color, daemon_info = daemon_info, daemon_action = daemon_action,
+        name_options = name_options, folder_options = folder_options, hide_folder = hide_folder))
 
 @app.route('/history/', methods=["GET","POST"])
 def history():
@@ -189,7 +193,7 @@ def history():
                 year_string = "all"
                 return (render_history("display: none;", "", year_string))
             elif (request.form['action'] == "see"):     #temporary see HTLM code while developing page
-                return (render_history("display: block;", "showing help HTML, remove this at release time", "", ""))
+                return (render_history("display: block;", "showing help HTML, remove this at release time", ""))
             elif (request.form['action'] == "export"):
                 log = plumb.Export(request.form['column'], request.form['value'], False)
                 return (render_history("display: none;", log, ""))

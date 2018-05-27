@@ -212,38 +212,6 @@ def GetDefaults(verbose):
         print ("***\n")
     return answer, answer_types
 
-def GetNames(verbose):
-    defaults, types = GetDefaults(verbose)
-    username = getpass.getuser()
-    db_file = username + "/names.db"
-    Path(username + "/").mkdir(parents=True, exist_ok=True) 
-    if (verbose):
-        print ("***")
-        print ("GetNames(1) dbase: {0}".format(db_file))
-    if (not os.path.exists(db_file)):
-        if (verbose):
-            print ("GetNames(2) {0} file is missing, cannot return the names".format(db_file))
-            print ("***\n")
-        return []
-    try:
-        conn = sqlite3.connect(db_file)
-        if (verbose):
-            print("GetNames(3) sqlite3: {0}".format(sqlite3.version))
-    except Error as e:
-        print("GetNames(4) {0}".format(e))
-        return []
-    c = conn.cursor()
-    c.execute("SELECT * FROM names order by pretty_name")
-    keys = list(map(lambda x: x[0].replace("_"," "), c.description))
-    values = c.fetchall()
-    conn.close()
-    if (verbose):
-        print ("***\n")
-    answer = []
-    for row in values:
-        answer.append(dict(zip(keys, row)))
-    return answer
-
 def CreateDefaults(verbose):
     username = getpass.getuser()
     db_file = os.getcwd() + "/"  + "defaults.db"
@@ -266,72 +234,6 @@ def CreateDefaults(verbose):
         print ("***\n")
     return True
 
-def DeleteName(pretty, verbose):
-    username = getpass.getuser()
-    db_file = username + "/names.db"
-    db_remove = ""
-    names = GetNames(verbose)
-    for name in names:
-        if (name["pretty name"] == pretty):
-            db_remove =  username + "/" + name["db name"]
-            break
-    if (verbose):
-        print ("***")
-        print ("DeleteName(1) pretty: {0}".format(pretty))
-        print ("DeleteName(2) dbase: {0}".format(db_file))
-    try:
-        conn = sqlite3.connect(db_file)
-        if (verbose):
-            print("DeleteName(3) sqlite3: {0}".format(sqlite3.version))
-    except Error as e:
-        print("DeleteName(4) {0}".format(e))
-        return False
-    c = conn.cursor()
-    c.execute("DELETE FROM names where pretty_name = (?)", (pretty,))
-    conn.commit()
-    conn.close()
-    if (os.path.exists(db_remove)):
-        os.unlink(db_remove)
-        if (verbose):
-            print ("DeleteName(5), remove {0}".format(db_remove))
-    if (verbose):
-        print ("***\n")
-    return True
-
-def CreateNames(pretty, verbose):
-    db_name = pretty.replace(" ", "_")
-    db_name += ".db"
-    username = getpass.getuser()
-    db_file = username + "/names.db"
-    Path(username + "/").mkdir(parents=True, exist_ok=True) 
-    if (verbose):
-        print ("***")
-        print ("CreateNames(1) pretty_name: {0}".format(pretty))
-        print ("CreateNames(1) db_name: {0}".format(db_name))
-        print ("CreateNames(1) dbase: {0}".format(db_file))
-    try:
-        conn = sqlite3.connect(db_file)
-        if (verbose):
-            print("CreateNames(2) sqlite3: {0}".format(sqlite3.version))
-    except Error as e:
-        print("CreateNames(3) {0}".format(e))
-        return False
-    c = conn.cursor()
-    c.execute("CREATE TABLE if not exists `names` ( `pretty_name` TEXT NOT NULL UNIQUE, `db_name` TEXT, PRIMARY KEY(`pretty_name`) )")
-    c.execute( "INSERT OR IGNORE INTO names(pretty_name) VALUES((?))", (pretty,))
-    c.execute("UPDATE names SET db_name = (?) WHERE pretty_name = (?)", (db_name, pretty,))
-    conn.commit()
-    conn.close()
-    if (verbose):
-        print ("***\n")
-    return True
-
-def CheckPretty(ex):
-    ex = ex.rstrip()
-    if re.match(r'^[a-zA-Z0-9][ A-Za-z0-9_-]*$', ex):
-        return True
-    return False
-
 def PrintDefaults(verbose):
     username = getpass.getuser()
     db_file = os.getcwd() + "/"  + "defaults.db"
@@ -342,20 +244,21 @@ def PrintDefaults(verbose):
         if (verbose):
             print ("PrintDefaults(2) {0} file is missing, cannot print".format(db_file))
             print ("***\n")
-        return "", ""
+        return "", "", ""
     try:
         conn = sqlite3.connect(db_file)
         if (verbose):
             print("PrintDefaults(3) sqlite3: {0}".format(sqlite3.version))
     except Error as e:
         print("PrintDefaults(4) {0}".format(e))
-        return "", ""
+        return "", "", ""
     c = conn.cursor()
     c.execute("SELECT * FROM defaults order by username")
     keys = list(map(lambda x: x[0].replace("_"," "), c.description))
     rows = c.fetchall()
     conn.commit()
     conn.close()
+    names = GetNames(verbose)
     column_options = ""
     TableCls = create_table('TableCls')
     for key in keys:
@@ -371,9 +274,16 @@ def PrintDefaults(verbose):
         answer = dict(zip(keys, col_list))
         items.append(answer)
     table = TableCls(items, html_attrs = {'width':'100%','border-spacing':0})
+    folder_options = ""
+    folder_options += '<option value="switch to">switch to</option>'
+    folder_options += '<option value="delete">delete</option>'
+    name_options = ""
+    for name in names:
+        if (name["pretty name"] != answer["folder name"]):
+            name_options += '<option value="{0}">{0}</option>'.format(name["pretty name"], name["pretty name"])
     if (verbose):
         print ("***\n")
-    return table.__html__(), column_options
+    return table.__html__(), column_options, name_options, folder_options
 #endregion stock
 
 #region folder
@@ -1271,19 +1181,6 @@ def GetFirstAIM(verbose):
         print ("***\n")
     return answer
 
-def GetDB(verbose):
-    db_file = ""
-    defaults, types = GetDefaults(verbose)
-    if ("folder name" in defaults):
-        username = getpass.getuser()
-        db_file = username + "/"  + defaults['folder name']
-    names = GetNames(verbose)
-    for name in names:
-        if (name["pretty name"] == defaults['folder name']):
-            db_file =  username + "/" + name["db name"]
-            break
-    return db_file
-
 def to_number(string, verbose):
     negative = False
     percent = False
@@ -2085,3 +1982,115 @@ def Export(etype, filename, verbose):
 def Archive(verbose):
     return True
 #endregion history
+#region names
+def GetNames(verbose):
+    defaults, types = GetDefaults(verbose)
+    username = getpass.getuser()
+    db_file = username + "/names.db"
+    Path(username + "/").mkdir(parents=True, exist_ok=True) 
+    if (verbose):
+        print ("***")
+        print ("GetNames(1) dbase: {0}".format(db_file))
+    if (not os.path.exists(db_file)):
+        if (verbose):
+            print ("GetNames(2) {0} file is missing, cannot return the names".format(db_file))
+            print ("***\n")
+        return []
+    try:
+        conn = sqlite3.connect(db_file)
+        if (verbose):
+            print("GetNames(3) sqlite3: {0}".format(sqlite3.version))
+    except Error as e:
+        print("GetNames(4) {0}".format(e))
+        return []
+    c = conn.cursor()
+    c.execute("SELECT * FROM names order by pretty_name")
+    keys = list(map(lambda x: x[0].replace("_"," "), c.description))
+    values = c.fetchall()
+    conn.close()
+    if (verbose):
+        print ("***\n")
+    answer = []
+    for row in values:
+        answer.append(dict(zip(keys, row)))
+    return answer
+
+def DeleteName(pretty, verbose):
+    username = getpass.getuser()
+    db_file = username + "/names.db"
+    db_remove = ""
+    names = GetNames(verbose)
+    for name in names:
+        if (name["pretty name"] == pretty):
+            db_remove =  username + "/" + name["db name"]
+            break
+    if (verbose):
+        print ("***")
+        print ("DeleteName(1) pretty: {0}".format(pretty))
+        print ("DeleteName(2) dbase: {0}".format(db_file))
+    try:
+        conn = sqlite3.connect(db_file)
+        if (verbose):
+            print("DeleteName(3) sqlite3: {0}".format(sqlite3.version))
+    except Error as e:
+        print("DeleteName(4) {0}".format(e))
+        return False
+    c = conn.cursor()
+    c.execute("DELETE FROM names where pretty_name = (?)", (pretty,))
+    conn.commit()
+    conn.close()
+    if (os.path.exists(db_remove)):
+        os.unlink(db_remove)
+        if (verbose):
+            print ("DeleteName(5), remove {0}".format(db_remove))
+    if (verbose):
+        print ("***\n")
+    return True
+
+def CreateNames(pretty, verbose):
+    db_name = pretty.replace(" ", "_")
+    db_name += ".db"
+    username = getpass.getuser()
+    db_file = username + "/names.db"
+    Path(username + "/").mkdir(parents=True, exist_ok=True) 
+    if (verbose):
+        print ("***")
+        print ("CreateNames(1) pretty_name: {0}".format(pretty))
+        print ("CreateNames(1) db_name: {0}".format(db_name))
+        print ("CreateNames(1) dbase: {0}".format(db_file))
+    try:
+        conn = sqlite3.connect(db_file)
+        if (verbose):
+            print("CreateNames(2) sqlite3: {0}".format(sqlite3.version))
+    except Error as e:
+        print("CreateNames(3) {0}".format(e))
+        return False
+    c = conn.cursor()
+    c.execute("CREATE TABLE if not exists `names` ( `pretty_name` TEXT NOT NULL UNIQUE, `db_name` TEXT, PRIMARY KEY(`pretty_name`) )")
+    c.execute( "INSERT OR IGNORE INTO names(pretty_name) VALUES((?))", (pretty,))
+    c.execute("UPDATE names SET db_name = (?) WHERE pretty_name = (?)", (db_name, pretty,))
+    conn.commit()
+    conn.close()
+    if (verbose):
+        print ("***\n")
+    return True
+
+def CheckPretty(ex):
+    ex = ex.rstrip()
+    if re.match(r'^[a-zA-Z0-9][ A-Za-z0-9_-]*$', ex):
+        return True
+    return False
+
+def GetDB(verbose):
+    db_file = ""
+    defaults, types = GetDefaults(verbose)
+    if ("folder name" in defaults):
+        username = getpass.getuser()
+        db_file = username + "/"  + defaults['folder name']
+    names = GetNames(verbose)
+    for name in names:
+        if (name["pretty name"] == defaults['folder name']):
+            db_file =  username + "/" + name["db name"]
+            break
+    return db_file
+#endregion names

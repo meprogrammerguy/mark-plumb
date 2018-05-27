@@ -73,11 +73,11 @@ def main(argv):
         pprint.pprint(companyResult)
         exit()
     if (printout):
-        printResult = plumb.PrintDefaults(verbose)
-        if (printResult > ""):
-            pprint.pprint(printResult)
-        else:
-            print ("failed.")
+        printResult, column_options, name_options, folder_options = plumb.PrintDefaults(verbose)
+        pprint.pprint(printResult)
+        pprint.pprint(column_options)
+        pprint.pprint(folder_options)
+        pprint.pprint(name_options)
         exit()
     if (reset):
         endResult = plumb.ResetDefaults(verbose)
