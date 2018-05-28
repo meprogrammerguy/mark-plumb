@@ -15,6 +15,7 @@ python-daemon = "*"
 pyperclip = "*"
 pytz = "*"
 python-dateutil = "*"
+tzlocal = "*"
 
 
 [dev-packages]

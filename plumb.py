@@ -26,6 +26,8 @@ import signal
 from tkinter import *
 from tkinter import filedialog
 import http.client
+from dateutil.tz import tzlocal
+from tzlocal import get_localzone
 
 #region stock
 def Quote(ticker, verbose):
@@ -85,7 +87,8 @@ def Holiday(verbose):
     if (verbose):
         print ("***")
         print ("Holiday(1) URL: {0}".format(url))
-
+    opentime = MarketToTime("09:30", "US/Eastern", verbose)
+    closetime = MarketToTime("16:00", "US/Eastern", verbose)
     dt = datetime.datetime.now()
     today = dt.strftime('%Y-%m-%d')
     defaults, types = GetDefaults(verbose)
@@ -199,21 +202,15 @@ def ResetDefaults(verbose):
         except Error as e:
             print("ResetDefaults(3) {0}".format(e))
             return False
-        dt = datetime.datetime.strptime('2018-01-01T14:30:00+00:00', "%Y-%m-%dT%H:%M:%S+00:00") # UTC 9:30AM EST
-        dt = dt.replace(tzinfo=tz.tzutc())
-        local = dt.astimezone(tz.tzlocal())
-        begin = local.strftime('%I:%M%p')
-        dt = datetime.datetime.strptime('2018-01-01T21:00:00+00:00', "%Y-%m-%dT%H:%M:%S+00:00") #UTC 4:00PM EST
-        dt = dt.replace(tzinfo=tz.tzutc())
-        local = dt.astimezone(tz.tzlocal())
-        close = local.strftime('%I:%M%p')
+        opentime = MarketToTime("09:30", "US/Eastern", verbose)
+        closetime = MarketToTime("16:00", "US/Eastern", verbose)
         desktop = "/home/{0}/Desktop".format(getpass.getuser())
         c = conn.cursor()
         c.execute("UPDATE defaults SET alpha_vantage_key = (?) WHERE username = (?)", ("demo", username,))
         c.execute("UPDATE defaults SET tradier_key = (?) WHERE username = (?)", ("demo", username,))
         c.execute("UPDATE defaults SET daemon_seconds = ? WHERE username = (?)", (300, username,))
-        c.execute("UPDATE defaults SET open = (?) WHERE username = (?)", (begin, username,))
-        c.execute("UPDATE defaults SET close = (?) WHERE username = (?)", (close, username,))
+        c.execute("UPDATE defaults SET open = (?) WHERE username = (?)", (opentime, username,))
+        c.execute("UPDATE defaults SET close = (?) WHERE username = (?)", (closetime, username,))
         c.execute("UPDATE defaults SET test_root = (?) WHERE username = (?)", ("test/", username,))
         c.execute("UPDATE defaults SET export_dir = (?) WHERE username = (?)", (desktop, username,))
         c.execute("UPDATE defaults SET folder_name = (?) WHERE username = (?)", ("Practice Portfolio", username,))
@@ -224,6 +221,19 @@ def ResetDefaults(verbose):
     if (verbose):
         print ("***\n")
     return True
+
+def MarketToTime(theTime, theZone, verbose):
+    dt = datetime.datetime.now()
+    today = dt.strftime('%m/%d/%Y')
+    datestring = "{0} {1}:00".format(today, theTime)
+    date=dt.strptime(datestring,"%m/%d/%Y %H:%M:%S")
+    utc=pytz.utc
+    zone=pytz.timezone(theZone)
+    local_tz = get_localzone() 
+    date_est=zone.localize(date,is_dst=None)
+    date_utc=date_est.astimezone(utc)
+    date_local = date_utc.astimezone(local_tz)
+    return date_local.strftime("%I:%M%p")
 
 def GetDefaults(verbose):
     username = getpass.getuser()
@@ -321,9 +331,13 @@ def PrintDefaults(verbose):
                     col_list.append("[key]")
             elif (i == 9):
                 js = json.loads(row[i])
-                if "status" in js:
-                    dt = datetime.datetime.strptime(js['date'], '%Y-%m-%d') 
-                    col_list.append(dt.strftime('%b %d') + " " + js['status'])
+                if js:
+                    if "status" in js:
+                        if "date" in js:
+                            dt = datetime.datetime.strptime(js['date'], '%Y-%m-%d') 
+                            col_list.append(dt.strftime('%b %d') + " " + js['status'])
+                else:
+                    col_list.append(row[i])
             else:
                 col_list.append(row[i])
         answer = dict(zip(keys, col_list))
