@@ -58,22 +58,18 @@
             <div class="form_settings">
                 <p><span>&nbsp;</span><input class="submit" type="submit" name="action" value="reset" style="float: right;"/></p>
             </div>
-  </form>
-            <br class="clear"/>
-
-<div {{hide_folder}} class="center">
- <p><h4>Folder Name</h4>
-            <form action="#" method="post">
-
-                <select id="column" name="column">{{folder_options | safe}}</select>
-                <select id="value" name="name">{{name_options | safe}}</select>
-            <div class="form_settings">
-
-
-                    <input class="submit" type="submit" name="action" value="update"/></p>
-            </div>
             </form>
-</div>
+            <br class="clear"/>
+            <div {{hide_folder}} class="center">
+                <p><h4>Folder Name</h4>
+                <form action="#" method="post">
+                    <select id="column" name="column">{{folder_options | safe}}</select>
+                    <select id="name" name="name">{{name_options | safe}}</select>
+                <div class="form_settings">
+                    <input class="submit" type="submit" name="action" value="update"/></p>
+                </div>
+                </form>
+            </div>
             <br class="clear"/>
             <h4 class="center">Adjustments</h4>
             <form action="#" method="post">

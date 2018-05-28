@@ -133,6 +133,14 @@ def defaults():
             if (request.form['action'] == "reset"):
                 plumb.ResetDefaults(False)
                 return (render_defaults("defaults have been reset."))
+            elif (request.form['action'] == "update"):
+                if request.form['column'] == "delete":
+                    plumb.DeleteName(request.form['name'], False)
+                    log = '"{0}" has been deleted.'.format(request.form['name'])
+                elif request.form['column'] == "switch to":
+                    plumb.UpdateDefaultItem("folder name", request.form['name'], False)
+                    log = 'folder name has been switched to "{0}".'.format(request.form['name'])
+                return (render_defaults(log))
             elif (request.form['action'] == "adjust"):
                 if (request.form['value'] == ""):
                     log = "field is blank, cannot adjust."
