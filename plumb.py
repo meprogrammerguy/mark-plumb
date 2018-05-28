@@ -119,7 +119,13 @@ def Holiday(verbose):
         if (itm['date'] == today):
             answer = itm
             break
-    UpdateDefaultItem("market status", answer, verbose) 
+    UpdateDefaultItem("market status", answer, verbose)
+    if "open" in answer:
+        UpdateDefaultItem("open", answer['open']['start'], verbose)
+        UpdateDefaultItem("close", answer['open']['end'], verbose)
+    else:
+        UpdateDefaultItem("open", None, verbose)
+        UpdateDefaultItem("close", None, verbose) 
     return answer
 
 def Company(ticker, verbose):

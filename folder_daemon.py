@@ -32,17 +32,22 @@ def do_something():
             ds = defaults['daemon seconds']
         df = ""
         if (defaults['folder name'] is None):
-            df = 'Practice_Portfolio.db'
+            log['status'] = 'error'
+            log['content'] = "folder name is missing in defaults, cannot continue"
+            with open(filename, "a") as f:
+                f.write("pid: {0}, error: {1}, continuing".format(log['pid'], log['content']))
+            plumb.LogDaemon(log, False)
+            break
         else:
             df = plumb.GetDB(False)
         log['poll seconds'] = ds
         log['dbase name'] = df
         begin = defaults['open']
         if (begin is None):
-            begin = "08:30"
+            begin = plumb.MarketToTime("09:30", "US/Eastern", False)
         end = defaults['close']
         if (end is None):
-            end = "16:00"
+            end = plumb.MarketToTime("16:00", "US/Eastern", False)
         weekno = datetime.today().weekday()
         ct = datetime.now().time()
         if "AM" in begin or "PM" in begin:
