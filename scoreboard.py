@@ -162,10 +162,14 @@ def defaults():
 
 def render_defaults(feedback):
     defaults, types = plumb.GetDefaults(False)
-    api_key_warning = ""
-    if ("api key" in defaults):
-        if (defaults['api key'] == "" or defaults['api key'] == "demo"):
-            api_key_warning = "Remember to obtain your lifetime API key from Alpha Vantage, this is needed for polling the market prices"
+    alpha_vantage_key_warning = ""
+    if ("alpha vantage key" in defaults):
+        if (defaults['alpha vantage key'] == "" or defaults['alpha vantage key'] == "demo"):
+            alpha_vantage_key_warning = "Remember to obtain your lifetime API key from Alpha Vantage, this is needed for polling the market prices"
+    tradier_key_warning = ""
+    if ("tradier key" in defaults):
+        if (defaults['tradier key'] == "" or defaults['tradier key'] == "demo"):
+            tradier_key_warning = "Remember to obtain your lifetime API key from tradier, this is needed for getting the market calendar"
     table, column_options, name_options, folder_options = plumb.PrintDefaults(False)
     hide_folder = ""
     if (name_options == ""):
@@ -184,13 +188,15 @@ def render_defaults(feedback):
         daemon_action = "restart"       
     daemon_table, status = plumb.PrintDaemon("all", False)
     daemon_info = ""
-    if (status == "closed"):
-        daemon_info = "The NY stock exchange is closed."
-    else:
-        daemon_info = "Last active status: {0}".format(status)
-    return (render_template('defaults.html', table = table, feedback = feedback, column_options = column_options, notes = notes, api_key_warning = api_key_warning,
+    checkOpen = plumb.Holiday(False)
+    if checkOpen:
+        if (checkOpen['status'] == "closed"):
+            daemon_info = checkOpen['description']
+        else:
+            daemon_info = "{0}, Last active status: {1}".format(checkOpen['description'], status)
+    return (render_template('defaults.html', table = table, feedback = feedback, column_options = column_options, notes = notes, alpha_vantage_key_warning = alpha_vantage_key_warning,
         daemon_table = daemon_table, daemon_check = daemon_check, daemon_color = daemon_color, daemon_info = daemon_info, daemon_action = daemon_action,
-        name_options = name_options, folder_options = folder_options, hide_folder = hide_folder))
+        name_options = name_options, folder_options = folder_options, hide_folder = hide_folder, tradier_key_warning = tradier_key_warning))
 
 @app.route('/history/', methods=["GET","POST"])
 def history():

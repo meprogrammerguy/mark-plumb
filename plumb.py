@@ -86,7 +86,15 @@ def Holiday(verbose):
         print ("***")
         print ("Holiday(1) URL: {0}".format(url))
 
+    dt = datetime.datetime.now()
+    today = dt.strftime('%Y-%m-%d')
     defaults, types = GetDefaults(verbose)
+    if ("market status" in defaults):
+        js = json.loads(defaults['market status'])
+        if "date" in js:
+            if js['date'] == today:
+                return js
+
     connection = http.client.HTTPSConnection('sandbox.tradier.com', 443, timeout = 30)
 
     headers = {}
@@ -103,14 +111,12 @@ def Holiday(verbose):
         print('Exception {0} during request').format(e)
     if (verbose):
         print ("***\n")
-
-    dt = datetime.datetime.now()
-    today = dt.strftime('%Y-%m-%d')
     answer = {}
     for itm in returnContent['calendar']['days']['day']:
         if (itm['date'] == today):
             answer = itm
             break
+    UpdateDefaultItem("market status", answer, verbose) 
     return answer
 
 def Company(ticker, verbose):
@@ -138,6 +144,8 @@ def Company(ticker, verbose):
 def UpdateDefaultItem(key, item, verbose):
     key_db = key.replace(" ", "_")
     d, t = GetDefaults(verbose)
+    if (key_db == "market_status"):
+       item = json.dumps(item)
     if (verbose):
         print ("***")
     if (key not in d):
@@ -209,6 +217,7 @@ def ResetDefaults(verbose):
         c.execute("UPDATE defaults SET test_root = (?) WHERE username = (?)", ("test/", username,))
         c.execute("UPDATE defaults SET export_dir = (?) WHERE username = (?)", (desktop, username,))
         c.execute("UPDATE defaults SET folder_name = (?) WHERE username = (?)", ("Practice Portfolio", username,))
+        c.execute("UPDATE defaults SET market_status = (?) WHERE username = (?)", ("{}", username,))
         conn.commit()
         conn.close()
         CreateNames("Practice Portfolio", verbose)
@@ -261,7 +270,7 @@ def CreateDefaults(verbose):
         print("CreateDefaults(3) {0}".format(e))
         return False
     c = conn.cursor()
-    c.execute("CREATE TABLE if not exists 'defaults' ( `username` TEXT NOT NULL UNIQUE, `folder_name` TEXT, `open` TEXT, `close` TEXT, `daemon_seconds` INTEGER, `test_root` TEXT, `export_dir` TEXT, `alpha_vantage_key` TEXT, `tradier_key` TEXT, PRIMARY KEY(`username`) )")
+    c.execute("CREATE TABLE if not exists 'defaults' ( `username` TEXT NOT NULL UNIQUE, `folder_name` TEXT, `open` TEXT, `close` TEXT, `daemon_seconds` INTEGER, `test_root` TEXT, `export_dir` TEXT, `alpha_vantage_key` TEXT, `tradier_key` TEXT, `market_status` TEXT, PRIMARY KEY(`username`) )")
     c.execute( "INSERT OR IGNORE INTO defaults(username) VALUES((?))", (username,))
     conn.commit()
     conn.close()
@@ -306,7 +315,15 @@ def PrintDefaults(verbose):
         col_list = []
         for i in range(len(row)):
             if (i == 7 or i == 8):
-                col_list.append("[key]")
+                if row[i] == "demo" or row[i] == "":
+                    col_list.append(row[i])
+                else:
+                    col_list.append("[key]")
+            elif (i == 9):
+                js = json.loads(row[i])
+                if "status" in js:
+                    dt = datetime.datetime.strptime(js['date'], '%Y-%m-%d') 
+                    col_list.append(dt.strftime('%b %d') + " " + js['status'])
             else:
                 col_list.append(row[i])
         answer = dict(zip(keys, col_list))

@@ -47,13 +47,15 @@
                 <li><a href="http://www.wallstreetsurvivor.com/accountoverview/" target="_blank" >Wall Street Survivor</a></li>
                 <li><a href="https://www.alphavantage.co/" target="_blank" >Alpha Vantage</a></li>
                 <li><a href="https://iextrading.com/" target="_blank" >IEX trading</a></li>
+                <li><a href="https://developer.tradier.com/" target="_blank" >tradier developer</a></li>
             </ul>
             <p style="color:red;">{{feedback | safe}}</p>
         </div>
         <div id="content">
             <h1 class="center">Defaults</h1>
             {{table | safe}}
-            <p class="center" style="color:blue;">{{api_key_warning}}</p>
+            <p class="center" style="color:blue;">{{alpha_vantage_key_warning}}</p>
+            <p class="center" style="color:blue;">{{tradier_key_warning}}</p>
             <form action="#" method="post">
             <div class="form_settings">
                 <p><span>&nbsp;</span><input class="submit" type="submit" name="action" value="reset" style="float: right;"/></p>

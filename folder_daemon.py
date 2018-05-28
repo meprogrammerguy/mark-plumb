@@ -22,6 +22,7 @@ def do_something():
     filename = "/tmp/{0}_{1}.txt".format(log['username'], log['script'])
     log['filename'] = filename
     plumb.LogDaemon(log, False)
+    plumb.Holiday(False)
     while True:
         defaults, types = plumb.GetDefaults(False)
         ds = 0
