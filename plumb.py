@@ -25,16 +25,17 @@ import subprocess
 import signal
 from tkinter import *
 from tkinter import filedialog
+import http.client
 
 #region stock
 def Quote(ticker, verbose):
     result = {}
     defaults, types = GetDefaults(verbose)
-    url = "https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={0}&apikey={1}".format(ticker, defaults['api key'])
+    url = "https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={0}&apikey={1}".format(ticker, defaults['alpha vantage key'])
     if (verbose):
         print ("***")
         print ("Quote(1) ticker: {0}".format(ticker))
-        print ("Quote(2) key: {0}".format(defaults['api key']))
+        print ("Quote(2) key: {0}".format(defaults['alpha vantage key']))
         print ("Quote(3) URL: {0}".format(url))
     try:
         with contextlib.closing(urllib.request.urlopen(url)) as page:
@@ -78,6 +79,39 @@ def Quote(ticker, verbose):
             closing['status'] = False
     closing['url'] = url
     return closing
+
+def Holiday(verbose):
+    url = "/v1/markets/calendar"
+    if (verbose):
+        print ("***")
+        print ("Holiday(1) URL: {0}".format(url))
+
+    defaults, types = GetDefaults(verbose)
+    connection = http.client.HTTPSConnection('sandbox.tradier.com', 443, timeout = 30)
+
+    headers = {}
+    headers["Accept"] = "application/json"
+    headers["Authorization"] = "Bearer {0}".format(defaults["tradier key"])
+    headers["connection"] = "close"
+
+    connection.request('GET', url, None, headers)
+    try:
+        response = connection.getresponse()
+        content = response.read()
+        returnContent = json.loads(content)
+    except http.client.HTTPException as e:
+        print('Exception {0} during request').format(e)
+    if (verbose):
+        print ("***\n")
+
+    dt = datetime.datetime.now()
+    today = dt.strftime('%Y-%m-%d')
+    answer = {}
+    for itm in returnContent['calendar']['days']['day']:
+        if (itm['date'] == today):
+            answer = itm
+            break
+    return answer
 
 def Company(ticker, verbose):
     url = "https://api.iextrading.com/1.0/stock/{0}/company".format(ticker)
@@ -167,7 +201,8 @@ def ResetDefaults(verbose):
         close = local.strftime('%I:%M%p')
         desktop = "/home/{0}/Desktop".format(getpass.getuser())
         c = conn.cursor()
-        c.execute("UPDATE defaults SET api_key = (?) WHERE username = (?)", ("demo", username,))
+        c.execute("UPDATE defaults SET alpha_vantage_key = (?) WHERE username = (?)", ("demo", username,))
+        c.execute("UPDATE defaults SET tradier_key = (?) WHERE username = (?)", ("demo", username,))
         c.execute("UPDATE defaults SET daemon_seconds = ? WHERE username = (?)", (300, username,))
         c.execute("UPDATE defaults SET open = (?) WHERE username = (?)", (begin, username,))
         c.execute("UPDATE defaults SET close = (?) WHERE username = (?)", (close, username,))
@@ -226,7 +261,7 @@ def CreateDefaults(verbose):
         print("CreateDefaults(3) {0}".format(e))
         return False
     c = conn.cursor()
-    c.execute("CREATE TABLE if not exists 'defaults' ( `username` TEXT NOT NULL UNIQUE, `api_key` TEXT, `daemon_seconds` INTEGER, `open` TEXT, `close` TEXT, `test_root` TEXT, `export_dir` TEXT, `folder_name` TEXT, PRIMARY KEY(`username`) )")
+    c.execute("CREATE TABLE if not exists 'defaults' ( `username` TEXT NOT NULL UNIQUE, `folder_name` TEXT, `open` TEXT, `close` TEXT, `daemon_seconds` INTEGER, `test_root` TEXT, `export_dir` TEXT, `alpha_vantage_key` TEXT, `tradier_key` TEXT, PRIMARY KEY(`username`) )")
     c.execute( "INSERT OR IGNORE INTO defaults(username) VALUES((?))", (username,))
     conn.commit()
     conn.close()
@@ -270,7 +305,10 @@ def PrintDefaults(verbose):
     for row in rows:
         col_list = []
         for i in range(len(row)):
-            col_list.append(row[i])
+            if (i == 7 or i == 8):
+                col_list.append("[key]")
+            else:
+                col_list.append(row[i])
         answer = dict(zip(keys, col_list))
         items.append(answer)
     table = TableCls(items, html_attrs = {'width':'100%','border-spacing':0})
@@ -1439,8 +1477,18 @@ def TestStock(verbose):
         if (verbose):
             print ("\tfail.")
     if (verbose):
-        print ("Test #{0} - UpdateDefaultItem('api key', 'TEST', verbose)".format(count + 1))
-    result = UpdateDefaultItem("api key", "TEST", verbose)
+        print ("Test #{0} - UpdateDefaultItem('alpha vantage key', 'TEST', verbose)".format(count + 1))
+    result = UpdateDefaultItem("alpha vantage key", "TEST", verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (verbose):
+        print ("Test #{0} - UpdateDefaultItem('tradier key', 'TEST', verbose)".format(count + 1))
+    result = UpdateDefaultItem("tradier key", "TEST", verbose)
     if (result):
         if (verbose):
             print ("\tpass.")
@@ -1501,7 +1549,8 @@ def TestStock(verbose):
     if (verbose):
         print ("Test #{0} - GetDefaults(False)".format(count + 1))
     result, types = GetDefaults(verbose)
-    if (result['api key'] == "TEST"
+    if (result['alpha vantage key'] == "TEST"
+        and result['tradier key'] == "TEST"
         and result['daemon seconds'] == 600
         and result['open'] == "8:30AM"
         and result['close'] == "15:00"
@@ -1526,11 +1575,11 @@ def TestStock(verbose):
             else:
                 if (verbose):
                     print ("\tfail.")
-    if (count == 15):
-        print ("ran 15 tests, all pass")
+    if (count == 17):
+        print ("ran 17 tests, all pass")
         return True
     else:
-        print ("test count expected 15 passes, received {0}".format(count))
+        print ("test count expected 17 passes, received {0}".format(count))
     return False
 
 def TestFolder(verbose):

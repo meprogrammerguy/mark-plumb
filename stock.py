@@ -17,8 +17,9 @@ def main(argv):
     printout = False
     reset = False
     log = ""
+    when = False
     try:
-        opts, args = getopt.getopt(argv, "l:rpi:k:q:hvtc:", ["help", "verbose", "test", "quote=", "key=", "company=", "item=", "print", "reset", "log="])
+        opts, args = getopt.getopt(argv, "wl:rpi:k:q:hvtc:", ["help", "verbose", "test", "quote=", "key=", "company=", "item=", "print", "reset", "log=", "when"])
     except getopt.GetoptError as err:
         print(err)
         usage()
@@ -28,6 +29,8 @@ def main(argv):
             verbose = True
         elif o in ("-t", "--test"):
             test = True
+        elif o in ("-w", "--when"):
+            when = True
         elif o in ("-r", "--reset"):
             reset = True
         elif o in ("-p", "--print"):
@@ -94,6 +97,13 @@ def main(argv):
             print ("failed.")
         print("last status: {0}".format(status))
         exit()
+    if (when):
+        whenResult = plumb.Holiday(verbose)
+        if (whenResult):
+            pprint.pprint(whenResult)
+        else:
+            print ("failed.")
+        exit()
     usage()
 
 def usage():
@@ -111,8 +121,10 @@ def usage():
     -h --help           prints this help
     -v --verbose        increases the information level
     -t --test           tests the stock routines
+
     -c --company        retrieves company data from ticker symbol
     -q --quote          get stock quote from ticker symbol
+    -w --when           retrieves the stock exchange holiday information
 
     -k --key            keys in dbase to update (used with --item switch)
                             *** keys currently in dbase ***
