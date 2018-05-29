@@ -121,8 +121,10 @@ def Holiday(verbose):
             break
     UpdateDefaultItem("market status", answer, verbose)
     if "open" in answer:
-        UpdateDefaultItem("open", answer['open']['start'], verbose)
-        UpdateDefaultItem("close", answer['open']['end'], verbose)
+        opentime = MarketToTime(answer['open']['start'], "US/Eastern", verbose)
+        closetime = MarketToTime(answer['open']['end'], "US/Eastern", verbose)
+        UpdateDefaultItem("open", opentime, verbose)
+        UpdateDefaultItem("close", closetime, verbose)
     else:
         UpdateDefaultItem("open", None, verbose)
         UpdateDefaultItem("close", None, verbose) 
