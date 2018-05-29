@@ -1188,6 +1188,7 @@ def GetAIMNotes(count, verbose):
         keys = []
         rows = []
     notes = []
+    defaults, types =  GetDefaults(False)
     initialize_day = False
     for row in rows:
         note = {}
@@ -1203,15 +1204,15 @@ def GetAIMNotes(count, verbose):
                     if (dt.date != datetime.datetime.now().date):
                         initialize_day = False
             note['date'] = noteDate(js[0]['start date'])
-            note['content'] = "A.I.M. Was initialized with {0}".format(as_currency(answer['cash'] + answer['stock value']))            
+            note['content'] = "A.I.M. Was initialized with {0} for '{1}'".format(as_currency(answer['cash'] + answer['stock value']), defaults['folder name'])            
         else:
             note['date'] = noteDate(answer['post date'])
             if (answer['market order'] == 0):
                 note['content'] = "hold current position."
             elif (answer['market order'] < 0):
-                note['content'] = "sold {0} of folder".format(as_currency(answer['market order']))
+                note['content'] = "sold {0} of '{1}'".format(as_currency(answer['market order']), defaults['folder name'])
             else:
-                note['content'] = "purchased {0} for folder".format(as_currency(answer['market order']))
+                note['content'] = "purchased {0} for '{1}'".format(as_currency(answer['market order']), defaults['folder name'])
         notes.append(note)
     if (verbose):
         print ("***\n")
@@ -1326,6 +1327,10 @@ def Look(verbose):
             print ("Look(1) could not get defaults, make sure that the defaults dbase is set up")
         return {}, "", {}
     prev = GetLastAIM(verbose)
+    cd = datetime.datetime.now()
+    pushed = False
+    if cd.strftime("%Y/%m/%d") == prev['post date']:
+        pushed = True
     prev_pc = math.ceil(prev['portfolio control'] -.4)
     db_keys = prev.keys()
     keys = []
@@ -1334,7 +1339,6 @@ def Look(verbose):
             keys.append("safe") # safe is not in the db (want to see it though)
         if key != "json string":
             keys.append(key)
-    cd = datetime.datetime.now()
     stock = GetFolderStockValue(verbose)
     cash = GetFolderCash(verbose)
     bsa = BuySellAdvice(prev_pc, stock, verbose)
@@ -1375,7 +1379,7 @@ def Look(verbose):
     pretty['profit value'] = as_currency(pv - first['portfolio value'])
     pretty['profit percent'] = as_percent((pv - first['portfolio value']) / first['portfolio value'] * 100.)
     pretty['percent list'] = "<li>Cash {0}</li><li>Stock {1}</li>".format(as_percent(pct_cash), as_percent(pct_stock))
-    return pretty, table.__html__(), answer_db
+    return pretty, table.__html__(), answer_db, pushed
 
 def Post(verbose):
     db_file = GetDB(verbose)
@@ -1389,7 +1393,7 @@ def Post(verbose):
     except Error as e:
         print("Post(4) {0}".format(e))
         return False
-    look, table, db_values = Look(verbose)
+    look, table, db_values, pushed = Look(verbose)
     if (verbose):
         print("Post(5) {0}".format(look))
     table, symbol_options, balance_options, amount_options = PrintFolder(False)

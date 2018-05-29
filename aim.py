@@ -81,10 +81,11 @@ def main(argv):
         print (nowResult, log)
         exit()
     if (look):
-        lookResult, lookHTML, lookDB = plumb.Look(verbose)
+        lookResult, lookHTML, lookDB, pushed = plumb.Look(verbose)
         pprint.pprint(lookResult)
         pprint.pprint(lookHTML)
         pprint.pprint(lookDB)
+        print (pushed)
         exit()
     if (update):
         postResult = plumb.Post(verbose)

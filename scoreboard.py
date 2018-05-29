@@ -33,16 +33,19 @@ def render_index(feedback):
         plumb.run_script("./folder_daemon.py")
         if (feedback == ""):
             feedback = "daemon started"
-    l, table, db = plumb.Look(False)
+    l, table, db, pushed = plumb.Look(False)
     allocation_list, trends, lives = plumb.AllocationTrends(False)
     notes, initialize_day = plumb.GetAIMNotes(10, False)
     post_display = "post"
     initialize_prompt = ""
+    pushed_button = ""
     if db == {} or initialize_day:
         post_display = "initialize"
         initialize_prompt = "You may reinitialize until tomorrow to make sure you have your portfolio balances the way you want."
     post_background = ""
     if not initialize_day:
+        if (pushed):
+            pushed_button = "disabled"
         if "market order" in db:
             if (db['market order'] > 0):
                 post_background = "background: blue;"
@@ -61,7 +64,7 @@ def render_index(feedback):
         profit_percent = l['profit percent']
     return render_template('index.html', table = table, allocation_list = allocation_list, balance_list = balance_list,
         initial_value =  initial_value, profit_value = profit_value, profit_percent = profit_percent, notes = notes, feedback = feedback,
-        post_display = post_display, post_background = post_background, initialize_prompt = initialize_prompt, trends = trends, lives = lives)
+        post_display = post_display, post_background = post_background, initialize_prompt = initialize_prompt, trends = trends, lives = lives, pushed_button = pushed_button)
 
 @app.route('/folder/', methods=["GET","POST"])
 def folder():

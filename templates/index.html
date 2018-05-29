@@ -100,14 +100,15 @@
                 <h4>Check list</h4>
                 <li>Correct any issues with your folder to get accurate numbers</li>
                 <li>You do not have to post, buy or sell if you are just looking</li>
-                <li>When you do press the buy or sell make sure to follow through with your broker</li>
+                <li>When you do press buy or sell the button will gray out until tomorrow</li>
+                <li>After pressing the buy or sell make sure to follow through with your broker</li>
             </div>
             <br class="clear"/>
             {{table | safe}}
             <p class="center" style="color:blue;"><strong>{{initialize_prompt | safe}}</strong></p>
             <form action="#" method="post">
             <div class="form_settings">
-                <p><span>&nbsp;</span><input class="submit" type="submit" name="action" value="{{post_display}}" style="{{post_background}} float: right;"/></p>
+                <p><span>&nbsp;</span><input {{pushed_button}} class="submit" type="submit" name="action" value="{{post_display}}" style="{{post_background}} float: right;"/></p>
             </form>
             </div>
             <br class="clear"/>
