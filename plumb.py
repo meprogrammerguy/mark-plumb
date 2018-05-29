@@ -1408,6 +1408,10 @@ def Post(verbose):
     conn.close()
     if (db_values['market order'] != 0):
         pyperclip.copy(str(db_values['market order']))
+        #
+        # you must install this for pyperclip in ubuntu
+        # sudo apt install xclip
+        #
     if (verbose):
         print ("***\n")
     return True
