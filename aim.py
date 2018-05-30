@@ -77,7 +77,6 @@ def main(argv):
         pprint.pprint(lookResult)
         pprint.pprint(lookHTML)
         pprint.pprint(lookDB)
-        print (pushed)
         exit()
     if (update):
         postResult = plumb.Post(verbose)

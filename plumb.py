@@ -651,32 +651,13 @@ def Update(verbose):
         print ("***\n")
     return True, ""
 
-def GetFolderCash(verbose):     # can be removed use GetFolder() instead
-    db_file = GetDB(verbose)
-    if (verbose):
-        print ("***")
-        print ("GetFolderCash(1) dbase: {0}".format(db_file))
-    if (not os.path.exists(db_file)):
-        if (verbose):
-            print ("GetFolderCash(2) {0} file is missing, cannot return the key".format(db_file))
-            print ("***\n")
-        return 0
-    try:
-        conn = sqlite3.connect(db_file)
-        if (verbose):
-            print("GetFolderCash(3) sqlite3: {0}".format(sqlite3.version))
-    except Error as e:
-        print("GetFolderCash(4) {0}".format(e))
-        return 0
-    c = conn.cursor()
-    c.execute("SELECT * FROM folder WHERE symbol = '$'")
-    keys = list(map(lambda x: x[0].replace("_"," "), c.description))
-    values = c.fetchone()
-    answer = dict(zip(keys, values))
-    conn.close()
-    if (verbose):
-        print ("***\n")
-    return answer['balance']
+def GetFolderCash(verbose):
+    folder = GetFolder(verbose)
+    answer = 0
+    for item in folder:
+        if item['symbol'] == "$":
+            answer = item['balance']
+    return answer
 
 def GetFolder(verbose):
     db_file = GetDB(verbose)
@@ -715,65 +696,38 @@ def GetFolderValue(symbol, key, folder_dict):
     return value
 
 def GetFolderStockValue(verbose):
-    db_file = GetDB(verbose)
-    if (verbose):
-        print ("***")
-        print ("GetFolderStockValue(1) dbase: {0}".format(db_file))
-    if (not os.path.exists(db_file)):
-        if (verbose):
-            print ("GetFolderStockValue(2) {0} file is missing, cannot return the key".format(db_file))
-            print ("***\n")
-        return 0
-    try:
-        conn = sqlite3.connect(db_file)
-        if (verbose):
-            print("GetFolderStockValue(3) sqlite3: {0}".format(sqlite3.version))
-    except Error as e:
-        print("GetFolderStockValue(4) {0}".format(e))
-        return 0
-    c = conn.cursor()
-    c.execute("SELECT * FROM folder WHERE symbol != '$' order by symbol")
-    rows = c.fetchall()
-    conn.commit()
-    conn.close()
+    folder = GetFolder(verbose)
     answer = 0
-    for row in rows:
-        if (row[2] is not None):
-            answer += row[2]
-    if (verbose):
-        print ("***\n")
+    for item in folder:
+        if item['symbol'] != "$":
+            answer += item['balance']
     return answer
 
-def PrintFolder(verbose):       #use GetFolder() not regoing to the db
+def PrintFolder(verbose):
     db_file = GetDB(verbose)
     if (verbose):
         print ("***")
-    if db_file == "":
+        print ("PrintFolder(1) dbase: {0}".format(db_file))
+    if (not os.path.exists(db_file)):
         if (verbose):
-            print ("PrintFolder(1) could not get dbase, make sure that the defaults dbase is set up")
-        return "", "", "", []
-    if (verbose):
-        print ("PrintFolder(2) dbase: {0}".format(db_file))
+            print ("PrintFolder(2) {0} file is missing, cannot return the key".format(db_file))
+            print ("***\n")
+        return "", "", "", ""
     try:
         conn = sqlite3.connect(db_file)
         if (verbose):
-            print("PrintFolder(4) sqlite3: {0}".format(sqlite3.version))
-        if (not checkTableExists(conn, "folder")):
-            Cash("0", verbose)
+            print("PrintFolder(3) sqlite3: {0}".format(sqlite3.version))
     except Error as e:
-        print("PrintFolder(5) {0}".format(e))
-        return  e, "", "", []
-    if (not os.path.exists(db_file)):
-        if (verbose):
-            print ("PrintFolder(3) {0} file is missing, cannot print".format(db_file))
-            print ("***\n")
-        return "", "", "", []
-    c = conn.cursor()
-    c.execute("SELECT * FROM folder order by symbol")
-    keys = list(map(lambda x: x[0].replace("_"," "), c.description))
-    rows = c.fetchall()
-    conn.commit()
+        print("PrintFolder(4) {0}".format(e))
+        return "", "", "", ""
+    if (not checkTableExists(conn, "folder")):
+        Cash("0", verbose)
     conn.close()
+    folder = GetFolder(verbose)
+    keys_dict = folder[0].keys()
+    keys = []
+    for key in keys_dict:
+        keys.append(key)
     TableCls = create_table('TableCls')
     for key in keys:
         if (key != "json string"):
@@ -789,7 +743,10 @@ def PrintFolder(verbose):       #use GetFolder() not regoing to the db
     balance_options += '<option value="shares">shares</option>'
     balance_options += '<option value="amount">amount</option>'
     amount_options = []
-    for row in rows:
+    for f in folder:
+        row = []
+        for value in f.values():
+            row.append(value)
         json_string = json.loads(row[1])
         col_list = []
         for i in range(len(keys)):
