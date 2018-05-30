@@ -73,7 +73,7 @@ def folder():
                         return(render_folder("display: none;", "balance is blank, cannot adjust.", ""))
                     else:
                         plumb.Balance(request.form['symbol'], request.form['balance'], False)
-                        log =  "company {0}, balance is now {1}".format(request.form['symbol'], as_currency(plumb.to_number(request.form['balance'], False)))
+                        log =  "company {0}, balance is now {1}".format(request.form['symbol'], plumb.as_currency(plumb.to_number(request.form['balance'], False)))
                         return(render_folder("display: none;", log, ""))
                 elif (request.form['options'] == "shares"):
                     if (request.form['balance'] == ""):
@@ -88,7 +88,7 @@ def folder():
                     else:
                         curr_balance = CurrentBalance(request.form['symbol'], request.form['amount'])
                         balance = curr_balance + plumb.to_number(request.form['balance'], False)
-                        log = "company {0}, balance {1}, adjusted by {2}.".format(request.form['symbol'], as_currency(curr_balance), as_currency(plumb.to_number(request.form['balance'], False)))
+                        log = "company {0}, balance {1}, adjusted by {2}.".format(request.form['symbol'], plumb.as_currency(curr_balance), plumb.as_currency(plumb.to_number(request.form['balance'], False)))
                         plumb.Balance(request.form['symbol'], str(balance), False)
                         return(render_folder("display: none;", log, ""))
             elif (request.form['action'] == "remove"):
@@ -205,37 +205,49 @@ def history():
             if (request.form['action'] == "all"):
                 year_input = 1970
                 year_string = "all"
-                return (render_history("display: none;", "", year_string))
-            elif (request.form['action'] == "see"):     #temporary see HTLM code while developing page
-                return (render_history("display: block;", "showing help HTML, remove this at release time", ""))
+                return (render_history("", year_string))
             elif (request.form['action'] == "export"):
                 log = plumb.Export(request.form['column'], request.form['value'], False)
-                return (render_history("display: none;", log, ""))
+                return (render_history(log, ""))
             elif (request.form['action'] == "archive"):
-                return (render_history("display: none;", "AIM system archived.", ""))
+                return (render_history("AIM system archived.", ""))
             elif (request.form['action'].isnumeric()):
                 year_input = int(request.form['action'])
                 if year_input < 100:
                     year_input += 2000
                 year_string = str(year_input)
-                return (render_history("display: none;", "", year_string))
+                return (render_history("", year_string))
             else:
                 feedback = "input is not a year or the word all"
-                return (render_history("display: none;", feedback, ""))
+                return (render_history(feedback, ""))
 
     except Exception as e:
-        return (render_history("display: none;", e, ""))
+        return (render_history(e, ""))
 
-    return(render_history("display: none;", "", ""))
+    return(render_history("", ""))
 
-def render_history(history_style, feedback, history_year):
+def render_history(feedback, history_year):
     if (history_year == "" or history_year[0].lower() == 'a'):
         year_input = 1970
     else:
         year_input = int(year_string)
     notes, initialize_day = plumb.GetAIMNotes(10, False)
     table = plumb.PrintAIM(str(year_input), False)
-    return render_template('history.html', table = table, notes = notes, feedback = feedback, history_style = history_style)
+    return render_template('history.html', table = table, notes = notes, feedback = feedback)
+
+@app.route('/examples/')
+def examples():
+    return(render_examples())
+
+def render_examples():
+    return render_template('examples.html')
+
+@app.route('/tests/')
+def tests():
+    return(render_tests())
+
+def render_tests():
+    return render_template('tests.html')
 
 @app.errorhandler(404)
 def page_not_found(e):
@@ -245,14 +257,6 @@ def CurrentBalance(symbol, string):
     amounts_list = ast.literal_eval(string)
     result = [element[1] for element in amounts_list if element[0] == symbol]
     return result[0]
-
-def as_currency(amount):
-    if (amount is None):
-        amount = 0
-    if amount >= 0:
-        return '${:,.2f}'.format(amount)
-    else:
-        return '(${:,.2f})'.format(-amount)   
 
 if __name__ == "__main__":
 	app.run()
