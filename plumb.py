@@ -28,6 +28,7 @@ from tkinter import filedialog
 import http.client
 from dateutil.tz import tzlocal
 from tzlocal import get_localzone
+from io import StringIO
 
 #region stock
 def Quote(ticker, verbose):
@@ -155,8 +156,6 @@ def Company(ticker, verbose):
 def UpdateDefaultItem(key, item, verbose):
     key_db = key.replace(" ", "_")
     d, t = GetDefaults(verbose)
-    if (key_db == "market_status"):
-       item = json.dumps(item)
     if (verbose):
         print ("***")
     if (key not in d):
@@ -167,7 +166,7 @@ def UpdateDefaultItem(key, item, verbose):
     db_file = os.getcwd() + "/"  + "defaults.db"
     if (verbose):
         print ("UpdateDefaultItem(2) key: {0}".format(key))
-        print ("UpdateDefaultItem(3) value: {0}".format(item))
+        pprint.pprint("UpdateDefaultItem(3) item: {0}".format(item))
         print ("UpdateDefaultItem(4) type: {0}".format(t[key]))
         print ("UpdateDefaultItem(5) dbase: {0}".format(db_file))
     result = CreateDefaults(verbose)
@@ -1452,6 +1451,9 @@ def PrintAIM(printyear, verbose):
 
 #region tests
 def TestStock(verbose):
+    old_stdout = sys.stdout
+    print_out = StringIO()
+    sys.stdout = print_out
     count = 0
     defaults, types =  GetDefaults(False)
     if (verbose):
@@ -1566,12 +1568,16 @@ def TestStock(verbose):
             else:
                 if (verbose):
                     print ("\tfail.")
-    if (count == 17):
-        print ("ran 17 tests, all pass")
-        return True
+    testResults = False
+    if (count == 18):
+        print ("ran 18 tests, all pass")
+        testResults = True
     else:
-        print ("test count expected 17 passes, received {0}".format(count))
-    return False
+        print ("test count expected 18 passes, received {0}".format(count))
+        testResults =  False
+    sys.stdout = old_stdout
+    result_string = print_out.getvalue()
+    return testResults, result_string
 
 def TestFolder(verbose):
     count = 0

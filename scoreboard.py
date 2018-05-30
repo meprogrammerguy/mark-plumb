@@ -247,7 +247,8 @@ def tests():
     return(render_tests())
 
 def render_tests():
-    return render_template('tests.html')
+    resultFlag, test_stock = plumb.TestStock(True)
+    return render_template('tests.html', test_stock = test_stock)
 
 @app.errorhandler(404)
 def page_not_found(e):
