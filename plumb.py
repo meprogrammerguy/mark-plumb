@@ -1143,10 +1143,12 @@ def GetLastAIM(verbose):
     except Error as e:
         print("GetLastAIM(5) {0}".format(e))
         return {}
+    dt = datetime.datetime.now()
+    today = dt.strftime('%Y-%m-%d')
     answer = {}
     if (checkTableExists(conn, "aim")):
         c = conn.cursor()
-        c.execute("SELECT * FROM aim ORDER BY post_date DESC LIMIT 1")
+        c.execute("SELECT * FROM aim WHERE post_date != (?) ORDER BY post_date DESC LIMIT 1", (today,))
         keys = list(map(lambda x: x[0].replace("_"," "), c.description))
         values = c.fetchone()
         answer = dict(zip(keys, values))
@@ -1328,9 +1330,6 @@ def Look(verbose):
         return {}, "", {}
     prev = GetLastAIM(verbose)
     cd = datetime.datetime.now()
-    pushed = False
-    if cd.strftime("%Y/%m/%d") == prev['post date']:
-        pushed = True
     prev_pc = math.ceil(prev['portfolio control'] -.4)
     db_keys = prev.keys()
     keys = []
@@ -1379,7 +1378,7 @@ def Look(verbose):
     pretty['profit value'] = as_currency(pv - first['portfolio value'])
     pretty['profit percent'] = as_percent((pv - first['portfolio value']) / first['portfolio value'] * 100.)
     pretty['percent list'] = "<li>Cash {0}</li><li>Stock {1}</li>".format(as_percent(pct_cash), as_percent(pct_stock))
-    return pretty, table.__html__(), answer_db, pushed
+    return pretty, table.__html__(), answer_db
 
 def Post(verbose):
     db_file = GetDB(verbose)
@@ -1393,7 +1392,7 @@ def Post(verbose):
     except Error as e:
         print("Post(4) {0}".format(e))
         return False
-    look, table, db_values, pushed = Look(verbose)
+    look, table, db_values = Look(verbose)
     if (verbose):
         print("Post(5) {0}".format(look))
     table, symbol_options, balance_options, amount_options = PrintFolder(False)
@@ -1829,6 +1828,59 @@ def TestAIM(location, verbose):
             return True
         else:
             print ("test count expected 453 passes, received {0}".format(count))
+    return False
+
+def TestHistory(verbose):
+    count = 0
+    defaults, types = GetDefaults(verbose)
+    if (verbose):
+        print ("Test #{0} - PrintAIM('all', verbose)".format(count + 1))
+    result = PrintAIM("all", verbose)
+    if (result > ""):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (verbose):
+        print ("Test #{0} - ActivitySheet('test/activity_test.csv', verbose)".format(count + 1))
+    filename = "{0}activity_test.csv".format(defaults['test root'])
+    result = ActivitySheet(filename, verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (verbose):
+        print ("Test #{0} - FolderSheet('test/folder_test.csv', verbose)".format(count + 1))
+    filename = "{0}folder_test.csv".format(defaults['test root'])
+    result = FolderSheet(filename, verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (verbose):
+        print ("Test #{0} - ArchiveSheet('test/activity_test.csv', verbose)".format(count + 1))
+    filename = "{0}archive_test.csv".format(defaults['test root'])
+    result = ArchiveSheet(filename, verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (count == 4):
+        print ("ran 4 tests, all pass")
+        return True
+    else:
+        print ("test count expected 4 passes, received {0}".format(count))
     return False
 
 def myFloat(value):

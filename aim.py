@@ -73,7 +73,7 @@ def main(argv):
         print (nowResult, log)
         exit()
     if (look):
-        lookResult, lookHTML, lookDB, pushed = plumb.Look(verbose)
+        lookResult, lookHTML, lookDB = plumb.Look(verbose)
         pprint.pprint(lookResult)
         pprint.pprint(lookHTML)
         pprint.pprint(lookDB)
