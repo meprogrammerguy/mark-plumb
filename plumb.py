@@ -747,11 +747,10 @@ def PrintFolder(verbose):
         row = []
         for value in f.values():
             row.append(value)
-        json_string = json.loads(row[1])
+        json_string = json.loads(f['json string'])
+        symbol_options += '<option value="{0}">{1}</option>'.format(f['symbol'], f['symbol'])
         col_list = []
         for i in range(len(keys)):
-            if (i == 0):
-                symbol_options += '<option value="{0}">{1}</option>'.format(row[i], row[i])
             if (i == 1):
                 col_list.append(json_string['companyName'])
             elif (i == 3):
@@ -841,66 +840,55 @@ def AllocationTrends(verbose):      # use GetFolder()
             print ("AllocationTrends(5) {0} file is missing, cannot print".format(db_file))
             print ("***\n")
         return "", "", ""
-    try:
-        conn = sqlite3.connect(db_file)
-        if (verbose):
-            print("AllocationTrends(6) sqlite3: {0}".format(sqlite3.version))
-    except Error as e:
-        print("AllocationTrends(7) {0}".format(e))
-        return "", "",""
-    c = conn.cursor()
-    c.execute("SELECT * FROM folder where symbol != '$' order by symbol")
-    rows = c.fetchall()
-    conn.commit()
-    conn.close()
+    rows = GetFolder(verbose)
     total = 0
     for row in rows:
-        if (row[2] is not None):
-            total = total + row[2]
+        if (row['balance'] is not None):
+            total = total + row['balance']
     allocation = ""
     for row in rows:
         pst = 0
-        if (row[2] is not None):
-            pst = row[2] / total * 100.
-        allocation = allocation + "<li>{0} {1}</li>".format(row[0], as_percent(pst))
+        if (row['balance'] is not None):
+            pst = row['balance'] / total * 100.
+        allocation = allocation + "<li>{0} {1}</li>".format(row['symbol'], as_percent(pst))
 
     trends = []
     for row in rows:
         for col in last_list:
-            if (row[0] == col['symbol']):
+            if (row['symbol'] == col['symbol']):
                 pst = 0
                 test = 0
                 trend = {}
-                if (row[2] is not None):
-                    pst = (row[2] - col['balance']) / col['balance'] * 100.
+                if (row['balance'] is not None):
+                    pst = (row['balance'] - col['balance']) / col['balance'] * 100.
                     if pst == 0:
                         trend['arrow'] = "flat"
-                        trend['percent'] = "{0} {1}".format(row[0], as_percent(pst))
+                        trend['percent'] = "{0} {1}".format(row['symbol'], as_percent(pst))
                     elif pst > 0:
                         trend['arrow'] = "up"
-                        trend['percent'] = "{0} {1}".format(row[0], as_percent(pst))
+                        trend['percent'] = "{0} {1}".format(row['symbol'], as_percent(pst))
                     else:
                         trend['arrow'] = "down"
-                        trend['percent'] = "{0} {1}".format(row[0], as_percent(pst))
+                        trend['percent'] = "{0} {1}".format(row['symbol'], as_percent(pst))
                     trends.append(trend)
     life_trends = []
     for row in rows:
         for col in first_list:
-            if (row[0] == col['symbol']):
+            if (row['symbol'] == col['symbol']):
                 pst = 0
                 test = 0
                 trend = {}
-                if (row[2] is not None):
-                    pst = (row[2] - col['balance']) / col['balance'] * 100.
+                if (row['balance'] is not None):
+                    pst = (row['balance'] - col['balance']) / col['balance'] * 100.
                     if pst == 0:
                         trend['arrow'] = "flat"
-                        trend['percent'] = "{0} {1}".format(row[0], as_percent(pst))
+                        trend['percent'] = "{0} {1}".format(row['symbol'], as_percent(pst))
                     elif pst > 0:
                         trend['arrow'] = "up"
-                        trend['percent'] = "{0} {1}".format(row[0], as_percent(pst))
+                        trend['percent'] = "{0} {1}".format(row['symbol'], as_percent(pst))
                     else:
                         trend['arrow'] = "down"
-                        trend['percent'] = "{0} {1}".format(row[0], as_percent(pst))
+                        trend['percent'] = "{0} {1}".format(row['symbol'], as_percent(pst))
                     life_trends.append(trend)        
     return allocation, trends, life_trends
 #endregion folder
