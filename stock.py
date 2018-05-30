@@ -55,10 +55,7 @@ def main(argv):
             assert False, "unhandled option"
     if (test):
         testResult, testPrint = plumb.TestStock(verbose)
-        if (testResult):
-            print ("{0}\nTest result - pass".format(testPrint))
-        else:
-            print ("{0}\nTest result - fail".format(testPrint))
+        print (testPrint)
         exit()
     if (key > "" and item > ""):
         if item > "":

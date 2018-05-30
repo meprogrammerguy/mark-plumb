@@ -1580,6 +1580,9 @@ def TestStock(verbose):
     return testResults, result_string
 
 def TestFolder(verbose):
+    old_stdout = sys.stdout
+    print_out = StringIO()
+    sys.stdout = print_out
     count = 0
     defaults, types = GetDefaults(verbose)
     if (verbose):
@@ -1673,14 +1676,20 @@ def TestFolder(verbose):
     else:
         if (verbose):
             print ("\tfail.")
+    testResults = False
     if (count == 9):
         print ("ran 9 tests, all pass")
-        return True
+        testResults = True
     else:
         print ("test count expected 9 passes, received {0}".format(count))
-    return False
+    sys.stdout = old_stdout
+    result_string = print_out.getvalue()
+    return testResults, result_string
 
 def TestAIM(location, verbose):
+    old_stdout = sys.stdout
+    print_out = StringIO()
+    sys.stdout = print_out
     count = 0
     defaults, types = GetDefaults(False)
     status, keys, rows = LoadTest(location, verbose)
@@ -1774,14 +1783,20 @@ def TestAIM(location, verbose):
         else:
             if (verbose):
                 print ("\tfail.")
+        testResults = False
         if (count == 453):
             print ("ran 453 tests, all pass")
-            return True
+            testResults = True
         else:
             print ("test count expected 453 passes, received {0}".format(count))
-    return False
+    sys.stdout = old_stdout
+    result_string = print_out.getvalue()
+    return testResults, result_string
 
 def TestHistory(verbose):
+    old_stdout = sys.stdout
+    print_out = StringIO()
+    sys.stdout = print_out
     count = 0
     defaults, types = GetDefaults(verbose)
     if (verbose):
@@ -1827,12 +1842,15 @@ def TestHistory(verbose):
     else:
         if (verbose):
             print ("\tfail.")
+    testResults = False
     if (count == 4):
         print ("ran 4 tests, all pass")
-        return True
+        testResults = True
     else:
         print ("test count expected 4 passes, received {0}".format(count))
-    return False
+    sys.stdout = old_stdout
+    result_string = print_out.getvalue()
+    return testResults, result_string
 
 def myFloat(value):
     try:

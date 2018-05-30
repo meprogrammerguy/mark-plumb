@@ -53,11 +53,8 @@ def main(argv):
         else:
             assert False, "unhandled option"
     if (test):
-        testResult = plumb.TestFolder(verbose)
-        if (testResult):
-            print ("Test result - pass")
-        else:
-            print ("Test result - fail")
+        testResult, testPrint = plumb.TestFolder(verbose)
+        print(testPrint)
         exit()
     defaults, types = plumb.GetDefaults(verbose)
     if defaults['folder name'] is None:

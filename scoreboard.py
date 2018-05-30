@@ -248,7 +248,10 @@ def tests():
 
 def render_tests():
     resultFlag, test_stock = plumb.TestStock(True)
-    return render_template('tests.html', test_stock = test_stock)
+    resultFlag, test_folder = plumb.TestFolder(True)
+    resultFlag, test_history = plumb.TestHistory(True)
+    resultFlag, test_aim = plumb.TestAIM("aim", True)
+    return render_template('tests.html', test_stock = test_stock, test_folder = test_folder, test_history = test_history, test_aim = test_aim)
 
 @app.errorhandler(404)
 def page_not_found(e):
