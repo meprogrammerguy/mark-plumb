@@ -18,8 +18,9 @@ def main(argv):
     reset = False
     log = ""
     when = False
+    get = False
     try:
-        opts, args = getopt.getopt(argv, "wl:rpi:k:q:hvtc:", ["help", "verbose", "test", "quote=", "key=", "company=", "item=", "print", "reset", "log=", "when"])
+        opts, args = getopt.getopt(argv, "gwl:rpi:k:q:hvtc:", ["help", "verbose", "test", "quote=", "key=", "company=", "item=", "print", "reset", "log=", "when", "get"])
     except getopt.GetoptError as err:
         print(err)
         usage()
@@ -29,6 +30,8 @@ def main(argv):
             verbose = True
         elif o in ("-t", "--test"):
             test = True
+        elif o in ("-g", "--get"):
+            get = True
         elif o in ("-w", "--when"):
             when = True
         elif o in ("-r", "--reset"):
@@ -104,6 +107,13 @@ def main(argv):
         else:
             print ("failed.")
         exit()
+    if (get):
+        getResult, types = plumb.GetDefaults(verbose)
+        if (getResult):
+            pprint.pprint(getResult)
+        else:
+            print ("failed.")
+        exit()
     usage()
 
 def usage():
@@ -133,6 +143,7 @@ def usage():
 
     -p --print          print out the defaults database (in HTML table format)
     -r --reset          reset user back to standard defaults
+    -g --get            Gets/Shows all default fields
 
     -l --log            show daemon log
                             --log='' (entire log), --log='wake' (wake status)

@@ -9,17 +9,12 @@ import datetime
 
 def main(argv):
     verbose = False
-    test = ""
-    aim = ""
-    initialize = False
-    notes = ""
-    look = False
-    update = False
-    allo = False
+    test = False
+    printyear = ""
     export = ""
     save = False
     try:
-        opts, args = getopt.getopt(argv, "se:ailun:hvt:", ["help", "verbose", "test=", "notes=", "look", "update", "initialize", "allocation", "export=", "save"])
+        opts, args = getopt.getopt(argv, "se:p:hvt", ["help", "verbose", "test", "notes=", "look", "update", "print=", "initialize", "allocation", "export=", "save"])
     except getopt.GetoptError as err:
         print(err)
         usage()
@@ -27,25 +22,22 @@ def main(argv):
     for o, a in opts:
         if o in ("-v", "--verbose"):
             verbose = True
-        elif o in ("-a", "--allocation"):
-            allo = True
         elif o in ("-t", "--test"):
-            test = a
+            test = True
         elif o in ("-h", "--help"):
             usage()
             exit()
-        elif o in ("-n", "--notes"):
-            notes = a
         elif o in ("-e", "--export"):
             export = a
-        elif o in ("-i", "--initialize"):
-            initialize = True
-        elif o in ("-l", "--look"):
-            look = True
         elif o in ("-s", "--save"):
             save = True
-        elif o in ("-u", "--update"):
-            update = True
+        elif o in ("-p", "--print"):
+            if (a[0] == '-'):
+                if ("verbose" in a):
+                    verbose = True
+                printyear = str(datetime.datetime.now().year)
+            else:
+                printyear = a.lower()
         else:
             assert False, "unhandled option"
     defaults, types = plumb.GetDefaults(False)
@@ -55,42 +47,19 @@ def main(argv):
     if defaults['test root'] is None:
         print ("\tWarning, the test root path is not set, please correct")
         exit()
-    if (test > ""):
-        testResult = plumb.TestAIM(test, verbose)
+    if (test):
+        testResult = plumb.TestHistory(test, verbose)
         if (testResult):
             print ("Test result - pass")
         else:
             print ("Test result - fail")
         exit()
-    if (notes > ""):
-        notesResult, initialize_day = plumb.GetAIMNotes(int(notes), verbose)
-        print (notesResult)
-        if initialize_day:
-            print("AIM system was initialized today")
-        exit()
-    if (initialize):
-        nowResult, log = plumb.CreateAIM(verbose)
-        print (nowResult, log)
-        exit()
-    if (look):
-        lookResult, lookHTML, lookDB, pushed = plumb.Look(verbose)
-        pprint.pprint(lookResult)
-        pprint.pprint(lookHTML)
-        pprint.pprint(lookDB)
-        print (pushed)
-        exit()
-    if (update):
-        postResult = plumb.Post(verbose)
-        if (postResult):
-             print ("updated.")
+    if (printyear > ""):
+        printResult = plumb.PrintAIM(printyear, verbose)
+        if (printResult > ""):
+            pprint.pprint(printResult)
         else:
             print ("failed.")
-        exit()
-    if (allo):
-        allocation_list, trending_list, life_list = plumb.AllocationTrends(verbose)
-        pprint.pprint(allocation_list)
-        pprint.pprint(trending_list)
-        pprint.pprint(life_list)
         exit()
     if (export > ""):
         exportResult = plumb.Export(export, "", verbose)
@@ -107,23 +76,17 @@ def main(argv):
 
 def usage():
     usage = """
-    ****************
-    **  AIM Tool  **
-    ****************
+    ********************
+    **  History Tool  **
+    ********************
 
     -h --help           prints this help
     -v --verbose        increases the information level
     -t --test           runs test routine to check calculations
 
-    -i --initialize     initialize your AIM database
-                        (after an archive you can run this to start over)      
+    -p --print          print out the AIM actitivy (in HTML table format)
+                            (--print=all, --print=2018)
 
-    -l --look           looks at today's AIM position
-    -u --update         update today's AIM position to database
-
-    -n --notes          show the last <count> of notes
-    -a --allocation     show allocation and trends in your portfolio
- 
     -e --export         export "activity", "archive", or "portfolio"
                             to a spreadsheet
     -s --save           saves the current AIM activity to an archive dbase

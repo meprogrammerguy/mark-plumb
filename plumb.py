@@ -651,7 +651,7 @@ def Update(verbose):
         print ("***\n")
     return True, ""
 
-def GetFolderCash(verbose):
+def GetFolderCash(verbose):     # can be removed use GetFolder() instead
     db_file = GetDB(verbose)
     if (verbose):
         print ("***")
@@ -744,7 +744,7 @@ def GetFolderStockValue(verbose):
         print ("***\n")
     return answer
 
-def PrintFolder(verbose):
+def PrintFolder(verbose):       #use GetFolder() not regoing to the db
     db_file = GetDB(verbose)
     if (verbose):
         print ("***")
@@ -847,7 +847,7 @@ def AddRemoveButtons(table):
         index = start + 1
     return table
 
-def AllocationTrends(verbose):
+def AllocationTrends(verbose):      # use GetFolder() 
     db_file = GetDB(verbose)
     if (verbose):
         print ("***")

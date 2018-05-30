@@ -17,8 +17,9 @@ def main(argv):
     balance = ""
     shares = ""
     printout = False
+    get = False
     try:
-        opts, args = getopt.getopt(argv, 'pub:n:s:a:r:c:hvt', ['help', 'verbose', 'test', 'cash=', 'add=', 'remove=', 'symbol=', 'balance=', 'number=', 'update', 'print'])
+        opts, args = getopt.getopt(argv, 'gpub:n:s:a:r:c:hvt', ['help', 'verbose', 'test', 'cash=', 'add=', 'remove=', 'symbol=', 'balance=', 'number=', 'update', 'print', 'get'])
     except getopt.GetoptError as err:
         print(err)
         usage()
@@ -28,6 +29,8 @@ def main(argv):
             verbose = True
         elif o in ("-t", "--test"):
             test = True
+        elif o in ("-g", "--get"):
+            get = True
         elif o in ("-u", "--update"):
             update = True
         elif o in ("-p", "--print"):
@@ -127,6 +130,10 @@ def main(argv):
         else:
             print ("failed.")
         exit()
+    if (get):
+        getResult = plumb.GetFolder(verbose)
+        pprint.pprint(getResult)
+        exit()
     usage()
 
 def usage():
@@ -150,6 +157,7 @@ def usage():
 
     -u --update         update all prices (to within default interval minutes)
     -p --print          print out the folder database (in HTML table format)
+    -g --get            Get/Show current folder
     """
     print (usage) 
 
