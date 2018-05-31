@@ -247,7 +247,7 @@ def tests():
     return(render_tests())
 
 def render_tests():
-    resultFlag, test_stock = plumb.TestStock(True)
+    resultFlag, test_stock = plumb.TestDefaults(True)
     resultFlag, test_folder = plumb.TestFolder(True)
     resultFlag, test_history = plumb.TestHistory(True)
     resultFlag, test_aim = plumb.TestAIM("aim", True)

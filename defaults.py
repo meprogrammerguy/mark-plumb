@@ -54,7 +54,7 @@ def main(argv):
         else:
             assert False, "unhandled option"
     if (test):
-        testResult, testPrint = plumb.TestStock(verbose)
+        testResult, testPrint = plumb.TestDefaults(verbose)
         print (testPrint)
         exit()
     if (key > "" and item > ""):
@@ -121,13 +121,13 @@ def usage():
         if key != "username":
             key_list += "{0}\n\t\t\t\t".format(key)
     usage = """
-    ******************
-    **  Stock Tool  **
-    ******************
+    *********************
+    **  Defaults Tool  **
+    *********************
 
     -h --help           prints this help
     -v --verbose        increases the information level
-    -t --test           tests the stock routines
+    -t --test           tests the default routines
 
     -c --company        retrieves company data from ticker symbol
     -q --quote          get stock quote from ticker symbol

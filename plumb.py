@@ -1461,7 +1461,7 @@ def PrintAIM(printyear, verbose):
 #endregion aim
 
 #region tests
-def TestStock(verbose):
+def TestDefaults(verbose):
     old_stdout = sys.stdout
     print_out = StringIO()
     sys.stdout = print_out
