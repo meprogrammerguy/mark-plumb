@@ -94,7 +94,7 @@ def Holiday(verbose):
     today = dt.strftime('%Y-%m-%d')
     defaults, types = GetDefaults(verbose)
     if ("market status" in defaults):
-        js = json.loads(defaults['market status'])
+        js = defaults['market status']
         if "date" in js:
             if js['date'] == today:
                 return js
@@ -120,7 +120,7 @@ def Holiday(verbose):
         if (itm['date'] == today):
             answer = itm
             break
-    UpdateDefaultItem("market status", answer, verbose)
+    UpdateDefaultItem("market status", json.dumps(answer), verbose)
     if "open" in answer:
         opentime = MarketToTime(answer['open']['start'], "US/Eastern", verbose)
         closetime = MarketToTime(answer['open']['end'], "US/Eastern", verbose)
@@ -268,6 +268,7 @@ def GetDefaults(verbose):
     types = [tup[2] for tup in c.fetchall()]
     conn.close()
     answer = dict(zip(keys, values))
+    answer['market status'] = json.loads(answer['market status']) 
     answer_types = dict(zip(keys, types))
     if (verbose):
         print ("***\n")
