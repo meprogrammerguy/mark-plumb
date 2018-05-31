@@ -482,6 +482,39 @@ def Cash(balance, verbose):
         print ("***\n")
     return True
 
+def GetFolderCount(verbose):
+    db_file = GetDB(verbose)
+    if (verbose):
+        print ("***")
+    if db_file == "":
+        if (verbose):
+            print ("GetFolderCount(1) could not get dbase name, make sure that the defaults dbase is set up")
+        return 0
+    if (verbose):
+        print ("GetFolderCount(2) dbase: {0}".format(db_file))
+    if (not os.path.exists(db_file)):
+        if (verbose):
+            print ("GetFolderCount(3) {0} file is missing, cannot return the row count".format(db_file))
+            print ("***\n")
+        return 0
+    try:
+        conn = sqlite3.connect(db_file)
+        if (verbose):
+            print("GetFolderCount(4) sqlite3: {0}".format(sqlite3.version))
+    except Error as e:
+        print("GetFolderCount(5) {0}".format(e))
+        return 0
+    if (checkTableExists(conn, "folder")):
+        c = conn.cursor()
+        c.execute("select * from folder")
+        results = c.fetchall()
+    else:
+        results = ""
+    conn.close()
+    if (verbose):
+        print ("***\n")
+    return len(results)
+
 def CreateFolder(key, verbose):
     db_file = GetDB(verbose)
     username = getpass.getuser()
@@ -501,6 +534,9 @@ def CreateFolder(key, verbose):
     c.execute( "INSERT OR IGNORE INTO folder(symbol) VALUES((?))", (key,))
     conn.commit()
     conn.close()
+    count = GetFolderCount(verbose)
+    if (count == 1 and key != "$"):
+        Cash("0", verbose)
     if (verbose):
         print ("***\n")
     return True
@@ -730,6 +766,8 @@ def PrintFolder(verbose):
         Cash("0", verbose)
     conn.close()
     folder = GetFolder(verbose)
+    if (folder == []):
+        return "", "", "", ""
     keys_dict = folder[0].keys()
     keys = []
     for key in keys_dict:
