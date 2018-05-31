@@ -688,7 +688,11 @@ def GetFolder(verbose):
     answer = []
     for row in values:
         answer.append(dict(zip(keys, row)))
-    return answer
+    answers = []
+    for js in answer:
+        js['json string'] = json.loads(js['json string'])
+        answers.append(js)
+    return answers
 
 def GetFolderValue(symbol, key, folder_dict):
     value = None
@@ -749,7 +753,7 @@ def PrintFolder(verbose):
         row = []
         for value in f.values():
             row.append(value)
-        json_string = json.loads(f['json string'])
+        json_string = f['json string']
         symbol_options += '<option value="{0}">{1}</option>'.format(f['symbol'], f['symbol'])
         col_list = []
         for i in range(len(keys)):
@@ -923,7 +927,11 @@ def GetAIM(verbose):
     answer = []
     for row in values:
         answer.append(dict(zip(keys, row)))
-    return answer
+    answers = []
+    for js in answer:
+        js['json string'] = json.loads(js['json string'])
+        answers.append(js)
+    return answers
 
 def CreateAIM(verbose):
     db_file = GetDB(verbose)
