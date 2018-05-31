@@ -120,7 +120,7 @@ def Holiday(verbose):
         if (itm['date'] == today):
             answer = itm
             break
-    UpdateDefaultItem("market status", json.dumps(answer), verbose)
+    UpdateDefaultItem("market status", answer, verbose)
     if "open" in answer:
         opentime = MarketToTime(answer['open']['start'], "US/Eastern", verbose)
         closetime = MarketToTime(answer['open']['end'], "US/Eastern", verbose)
@@ -179,6 +179,8 @@ def UpdateDefaultItem(key, item, verbose):
             print("UpdateDefaultItem(7) {0}".format(e))
             return False
         c = conn.cursor()
+        if key == "market status":
+            item = json.dumps(item)
         query = ""
         if (t[key] == "INTEGER" or t[key] == "REAL"):
             query = "UPDATE defaults SET {0} = ? WHERE username = (?)".format(key_db)
