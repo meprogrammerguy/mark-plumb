@@ -85,6 +85,7 @@ def QuoteAlphaVantage(ticker, verbose):
     return closing
 
 def QuoteTradier(quotes, verbose):
+    answers = []
     url = "/v1/markets/quotes?symbols={0}".format(quotes)
     if (verbose):
         print ("***")
@@ -103,20 +104,29 @@ def QuoteTradier(quotes, verbose):
         content = response.read()
         returnContent = json.loads(content)
     except http.client.HTTPException as e:
-        print('Exception {0} during request').format(e)
+        answer = {}
+        answer['url'] = url
+        answer["Error Message"] = e
+        answers.append(answer)
+        return answers
     if (verbose):
         print ("***\n")
-    pprint.pprint(returnContent)
-    answer = {}
     for itm in returnContent['quotes']['quote']:
-        if (type(itm) is dict):
-            row = itm
-            print ("dict")
-        else:
+        answer = {}
+        if (itm == "symbol"):
             row = returnContent['quotes']['quote']
-            print ("list")
-        pdb.set_trace()
-    return answer
+        else:
+            row = itm
+        answer['symbol'] = row['symbol']
+        if row['close'] is None:
+            answer['price'] = row['last']
+        else:
+            answer['price'] = row['close']
+            answer['url'] = url
+        answers.append(answer)
+        if (itm == "symbol"):
+            break
+    return answers
 
 def Holiday(verbose):
     url = "/v1/markets/calendar"
@@ -424,12 +434,12 @@ def Add(symbol, verbose):
         c.execute("UPDATE folder SET update_time = (?) WHERE symbol = (?)", (dt.strftime("%m/%d/%y %H:%M"), symbol,))
         conn.commit()
         conn.close()
-        quote = QuoteAlphaVantage(symbol, verbose)
+        quote = QuoteTradier(symbol, verbose)
         errors = []
         if ("Error Message" in quote):
-            errors.append([symbol, quote['url'], quote["Error Message"]])
+            errors.append([symbol, quote[0]['url'], quote[0]["Error Message"]])
         else:
-            Price(symbol, quote['price'], quote['price time'], verbose)
+            Price(symbol, quote[0]['price'], dt.strftime("%m/%d/%y"), verbose)
             Shares(symbol, None, verbose)
     if (verbose):
         if (errors):
@@ -707,17 +717,24 @@ def Update(verbose):
     rows = c.fetchall()
     conn.commit()
     conn.close()
+    dt = datetime.datetime.now()
+    quote_list = ""
+    for row in rows:
+        quote_list += row[0] + ","
+    quote_list = quote_list[:-1]
+    quotes = QuoteTradier(quote_list, verbose)
     errors = []
     for row in rows:
-        quote = QuoteAlphaVantage(row[0], verbose)
-        if ("Error Message" in quote):
-            errors.append([row[0], quote['url'], quote["Error Message"]])
-            continue
-        result = Price(row[0], quote['price'], quote['price time'], verbose)
-        result = Shares(row[0], str(row[1]), verbose)
-        if (result['status']):
-            if (verbose):
-                print ("symbol: {0}, current shares: {1}, previous balance: {2}, current balance: {3}".format(row[0], row[1], row[2], result['balance']))
+        for quote in quotes:
+            if row[0] == quote["symbol"]:
+                if ("Error Message" in quote):
+                    errors.append([row[0], quote['url'], quote["Error Message"]])
+                    continue
+                result = Price(row[0], quote['price'], dt.strftime("%m/%d/%y"), verbose)
+                result = Shares(row[0], str(row[1]), verbose)
+                if (result['status']):
+                    if (verbose):
+                        print ("symbol: {0}, current shares: {1}, previous balance: {2}, current balance: {3}".format(row[0], row[1], row[2], result['balance']))
     if (verbose):
         if (errors):
             pprint.pprint(errors)
@@ -922,52 +939,56 @@ def AllocationTrends(verbose):      # use GetFolder()
     rows = GetFolder(verbose)
     total = 0
     for row in rows:
-        if (row['balance'] is not None):
-            total = total + row['balance']
+        if (row['symbol'] != "$"):
+            if (row['balance'] is not None):
+                total = total + row['balance']
     allocation = ""
     for row in rows:
         pst = 0
-        if (row['balance'] is not None):
-            pst = row['balance'] / total * 100.
-        allocation = allocation + "<li>{0} {1}</li>".format(row['symbol'], as_percent(pst))
+        if (row['symbol'] != "$"):
+            if (row['balance'] is not None):
+                pst = row['balance'] / total * 100.
+            allocation = allocation + "<li>{0} {1}</li>".format(row['symbol'], as_percent(pst))
 
     trends = []
     for row in rows:
         for col in last_list:
-            if (row['symbol'] == col['symbol']):
-                pst = 0
-                test = 0
-                trend = {}
-                if (row['balance'] is not None):
-                    pst = (row['balance'] - col['balance']) / col['balance'] * 100.
-                    if pst == 0:
-                        trend['arrow'] = "flat"
-                        trend['percent'] = "{0} {1}".format(row['symbol'], as_percent(pst))
-                    elif pst > 0:
-                        trend['arrow'] = "up"
-                        trend['percent'] = "{0} {1}".format(row['symbol'], as_percent(pst))
-                    else:
-                        trend['arrow'] = "down"
-                        trend['percent'] = "{0} {1}".format(row['symbol'], as_percent(pst))
+            if (row['symbol'] != "$"):
+                if (row['symbol'] == col['symbol']):
+                    pst = 0
+                    test = 0
+                    trend = {}
+                    if (row['balance'] is not None):
+                        pst = (row['balance'] - col['balance']) / col['balance'] * 100.
+                        if pst == 0:
+                            trend['arrow'] = "flat"
+                            trend['percent'] = "{0} {1}".format(row['symbol'], as_percent(pst))
+                        elif pst > 0:
+                            trend['arrow'] = "up"
+                            trend['percent'] = "{0} {1}".format(row['symbol'], as_percent(pst))
+                        else:
+                            trend['arrow'] = "down"
+                            trend['percent'] = "{0} {1}".format(row['symbol'], as_percent(pst))
                     trends.append(trend)
     life_trends = []
     for row in rows:
         for col in first_list:
-            if (row['symbol'] == col['symbol']):
-                pst = 0
-                test = 0
-                trend = {}
-                if (row['balance'] is not None):
-                    pst = (row['balance'] - col['balance']) / col['balance'] * 100.
-                    if pst == 0:
-                        trend['arrow'] = "flat"
-                        trend['percent'] = "{0} {1}".format(row['symbol'], as_percent(pst))
-                    elif pst > 0:
-                        trend['arrow'] = "up"
-                        trend['percent'] = "{0} {1}".format(row['symbol'], as_percent(pst))
-                    else:
-                        trend['arrow'] = "down"
-                        trend['percent'] = "{0} {1}".format(row['symbol'], as_percent(pst))
+            if (row['symbol'] != "$"):
+                if (row['symbol'] == col['symbol']):
+                    pst = 0
+                    test = 0
+                    trend = {}
+                    if (row['balance'] is not None):
+                        pst = (row['balance'] - col['balance']) / col['balance'] * 100.
+                        if pst == 0:
+                            trend['arrow'] = "flat"
+                            trend['percent'] = "{0} {1}".format(row['symbol'], as_percent(pst))
+                        elif pst > 0:
+                            trend['arrow'] = "up"
+                            trend['percent'] = "{0} {1}".format(row['symbol'], as_percent(pst))
+                        else:
+                            trend['arrow'] = "down"
+                            trend['percent'] = "{0} {1}".format(row['symbol'], as_percent(pst))
                     life_trends.append(trend)        
     return allocation, trends, life_trends
 #endregion folder
@@ -1325,8 +1346,10 @@ def to_number(string, verbose):
     string = string.replace("%", "")
     if (verbose):
         print ("to_number(8) remove %: {0}".format(string))
-
-    clean_number = float(string)
+    try:
+        clean_number = float(string)
+    except:
+        clean_number = 0.0
     if (percent):
         clean_number = clean_number / 100.
     if (negative):
