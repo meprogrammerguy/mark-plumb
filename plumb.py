@@ -29,17 +29,18 @@ import http.client
 from dateutil.tz import tzlocal
 from tzlocal import get_localzone
 from io import StringIO
+import itertools
 
 #region stock
-def Quote(ticker, verbose):
+def QuoteAlphaVantage(ticker, verbose):
     result = {}
     defaults, types = GetDefaults(verbose)
     url = "https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={0}&apikey={1}".format(ticker, defaults['alpha vantage key'])
     if (verbose):
         print ("***")
-        print ("Quote(1) ticker: {0}".format(ticker))
-        print ("Quote(2) key: {0}".format(defaults['alpha vantage key']))
-        print ("Quote(3) URL: {0}".format(url))
+        print ("QuoteAlphaVantage(1) ticker: {0}".format(ticker))
+        print ("QuoteAlphaVantage(2) key: {0}".format(defaults['alpha vantage key']))
+        print ("QuoteAlphaVantage(3) URL: {0}".format(url))
     try:
         with contextlib.closing(urllib.request.urlopen(url)) as page:
             soup = BeautifulSoup(page, "html5lib")
@@ -49,12 +50,12 @@ def Quote(ticker, verbose):
         result['url'] = url
         if err.code == 404:
             if (verbose):
-                print ("Quote(4) page not found for {0}".format(ticker))
+                print ("QuoteAlphaVantage(4) page not found for {0}".format(ticker))
                 print ("***\n")
             return result
         elif err.code == 503:
             if (verbose):
-                print ("Quote(5) service unavailable for {0}".format(ticker))
+                print ("QuoteAlphaVantage(5) service unavailable for {0}".format(ticker))
                 print ("***\n")
             return result
         else:
@@ -82,6 +83,40 @@ def Quote(ticker, verbose):
             closing['status'] = False
     closing['url'] = url
     return closing
+
+def QuoteTradier(quotes, verbose):
+    url = "/v1/markets/quotes?symbols={0}".format(quotes)
+    if (verbose):
+        print ("***")
+        print ("QuoteTradier(1) URL: {0}".format(url))
+    defaults, types = GetDefaults(verbose)
+    connection = http.client.HTTPSConnection('sandbox.tradier.com', 443, timeout = 30)
+
+    headers = {}
+    headers["Accept"] = "application/json"
+    headers["Authorization"] = "Bearer {0}".format(defaults["tradier key"])
+    headers["connection"] = "close"
+
+    connection.request('GET', url, None, headers)
+    try:
+        response = connection.getresponse()
+        content = response.read()
+        returnContent = json.loads(content)
+    except http.client.HTTPException as e:
+        print('Exception {0} during request').format(e)
+    if (verbose):
+        print ("***\n")
+    pprint.pprint(returnContent)
+    answer = {}
+    for itm in returnContent['quotes']['quote']:
+        if (type(itm) is dict):
+            row = itm
+            print ("dict")
+        else:
+            row = returnContent['quotes']['quote']
+            print ("list")
+        pdb.set_trace()
+    return answer
 
 def Holiday(verbose):
     url = "/v1/markets/calendar"
@@ -389,7 +424,7 @@ def Add(symbol, verbose):
         c.execute("UPDATE folder SET update_time = (?) WHERE symbol = (?)", (dt.strftime("%m/%d/%y %H:%M"), symbol,))
         conn.commit()
         conn.close()
-        quote = Quote(symbol, verbose)
+        quote = QuoteAlphaVantage(symbol, verbose)
         errors = []
         if ("Error Message" in quote):
             errors.append([symbol, quote['url'], quote["Error Message"]])
@@ -674,7 +709,7 @@ def Update(verbose):
     conn.close()
     errors = []
     for row in rows:
-        quote = Quote(row[0], verbose)
+        quote = QuoteAlphaVantage(row[0], verbose)
         if ("Error Message" in quote):
             errors.append([row[0], quote['url'], quote["Error Message"]])
             continue
@@ -1579,8 +1614,8 @@ def TestDefaults(verbose):
         if (verbose):
             print ("\tfail.")
     if (verbose):
-        print ("Test #{0} - Quote('AAPL', verbose)".format(count + 1))
-    result = Quote("AAPL", verbose)
+        print ("Test #{0} - QuoteAlphaVantage('AAPL', verbose)".format(count + 1))
+    result = QuoteAlphaVantage("AAPL", verbose)
     if (result['status'] and result['symbol'] == "AAPL"):
         if (verbose):
             print ("\tpass.")
