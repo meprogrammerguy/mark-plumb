@@ -807,17 +807,18 @@ def PrintFolder(verbose):
                     col_list.append("")
                 else:
                     if row[i] is None:
-                        col_list.append(round(0, 2))
+                        col_list.append(round(0, 4))
                     else:
-                        col_list.append(round(row[i], 2))
+                        col_list.append(round(row[i], 4))
             else:
-                if (i == 2 or i == 6):
+                if (i == 2 or i == 5):
                     if (i == 2):
                         amount_option = []
                         amount_option.append(row[0])
                         amount_option.append(row[i])
+                        amount_option.append(row[3])
                         amount_options.append(amount_option)
-                    if (i ==6 and row[0] == "$"):
+                    if (i ==5 and row[0] == "$"):
                         col_list.append("")
                     else:
                         col_list.append(as_currency(row[i]))
@@ -1429,6 +1430,7 @@ def GetCurrentStockList(stock_list):
         ds = {}
         ds['symbol'] = item[0]
         ds['balance'] = round(item[1], 2)
+        ds['shares'] = round(item[2], 4)
         dl.append(ds)
     return dl
 
