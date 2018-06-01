@@ -32,65 +32,14 @@ from io import StringIO
 import itertools
 
 #region stock
-def QuoteAlphaVantage(ticker, verbose):
-    result = {}
-    defaults, types = GetDefaults(verbose)
-    url = "https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={0}&apikey={1}".format(ticker, defaults['alpha vantage key'])
-    if (verbose):
-        print ("***")
-        print ("QuoteAlphaVantage(1) ticker: {0}".format(ticker))
-        print ("QuoteAlphaVantage(2) key: {0}".format(defaults['alpha vantage key']))
-        print ("QuoteAlphaVantage(3) URL: {0}".format(url))
-    try:
-        with contextlib.closing(urllib.request.urlopen(url)) as page:
-            soup = BeautifulSoup(page, "html5lib")
-    except urllib.error.HTTPError as err:
-        result['exception'] = err
-        result['status'] = False
-        result['url'] = url
-        if err.code == 404:
-            if (verbose):
-                print ("QuoteAlphaVantage(4) page not found for {0}".format(ticker))
-                print ("***\n")
-            return result
-        elif err.code == 503:
-            if (verbose):
-                print ("QuoteAlphaVantage(5) service unavailable for {0}".format(ticker))
-                print ("***\n")
-            return result
-        else:
-            raise
-    returnQuote = json.loads(str(soup.text))
-    if (verbose):
-        print ("***\n")
-    closing = {}
-    if (returnQuote):
-        for keys, values in returnQuote.items():
-            if (keys == "Error Message"):
-                closing = returnQuote
-                break
-            if (keys != "Meta Data"):
-                for key, value in values.items():
-                    dt = datetime.datetime.strptime(key, '%Y-%m-%d')
-                    closing['price time'] = dt.strftime('%m/%d/%y')
-                    closing['price'] =  value['4. close']
-                    break
-        if "Meta Data" in returnQuote:
-            closing['symbol'] = returnQuote['Meta Data']['2. Symbol']
-            closing['status'] = True
-        else:
-            closing['exception'] = returnQuote
-            closing['status'] = False
-    closing['url'] = url
-    return closing
-
 def QuoteTradier(quotes, verbose):
     answers = []
+    defaults, types = GetDefaults(verbose)
     url = "/v1/markets/quotes?symbols={0}".format(quotes)
     if (verbose):
         print ("***")
         print ("QuoteTradier(1) URL: {0}".format(url))
-    defaults, types = GetDefaults(verbose)
+        print ("QuoteTradier(2) token: {0}".format(defaults["tradier key"]))
     connection = http.client.HTTPSConnection('sandbox.tradier.com', 443, timeout = 30)
 
     headers = {}
@@ -102,6 +51,12 @@ def QuoteTradier(quotes, verbose):
     try:
         response = connection.getresponse()
         content = response.read()
+        if (b"Invalid Access Token" in content):
+            answer = {}
+            answer['url'] = url
+            answer["Error Message"] = "Invalid Access Token"
+            answers.append(answer)
+            return answers
         returnContent = json.loads(content)
     except http.client.HTTPException as e:
         answer = {}
@@ -110,22 +65,26 @@ def QuoteTradier(quotes, verbose):
         answers.append(answer)
         return answers
     if (verbose):
+        pprint.pprint(returnContent)
         print ("***\n")
-    for itm in returnContent['quotes']['quote']:
-        answer = {}
-        if (itm == "symbol"):
-            row = returnContent['quotes']['quote']
-        else:
-            row = itm
-        answer['symbol'] = row['symbol']
-        if row['close'] is None:
-            answer['price'] = row['last']
-        else:
-            answer['price'] = row['close']
-            answer['url'] = url
-        answers.append(answer)
-        if (itm == "symbol"):
-            break
+    if "quote" in returnContent['quotes']:
+        for itm in returnContent['quotes']['quote']:
+            answer = {}
+            if (itm == "symbol"):
+                row = returnContent['quotes']['quote']
+            else:
+                row = itm
+            answer['symbol'] = row['symbol']
+            if row['close'] is None:
+                answer['price'] = row['last']
+            else:
+                answer['price'] = row['close']
+                answer['url'] = url
+            answers.append(answer)
+            if (itm == "symbol"):
+                break
+    else:
+        answers.append(returnContent)
     return answers
 
 def Holiday(verbose):
@@ -260,9 +219,8 @@ def ResetDefaults(verbose):
         closetime = MarketToTime("16:00", "US/Eastern", verbose)
         desktop = "/home/{0}/Desktop".format(getpass.getuser())
         c = conn.cursor()
-        c.execute("UPDATE defaults SET alpha_vantage_key = (?) WHERE username = (?)", ("demo", username,))
         c.execute("UPDATE defaults SET tradier_key = (?) WHERE username = (?)", ("demo", username,))
-        c.execute("UPDATE defaults SET daemon_seconds = ? WHERE username = (?)", (300, username,))
+        c.execute("UPDATE defaults SET poll_minutes = ? WHERE username = (?)", (10, username,))
         c.execute("UPDATE defaults SET open = (?) WHERE username = (?)", (opentime, username,))
         c.execute("UPDATE defaults SET close = (?) WHERE username = (?)", (closetime, username,))
         c.execute("UPDATE defaults SET test_root = (?) WHERE username = (?)", ("test/", username,))
@@ -335,7 +293,7 @@ def CreateDefaults(verbose):
         print("CreateDefaults(3) {0}".format(e))
         return False
     c = conn.cursor()
-    c.execute("CREATE TABLE if not exists 'defaults' ( `username` TEXT NOT NULL UNIQUE, `folder_name` TEXT, `open` TEXT, `close` TEXT, `daemon_seconds` INTEGER, `test_root` TEXT, `export_dir` TEXT, `alpha_vantage_key` TEXT, `tradier_key` TEXT, `market_status` TEXT, PRIMARY KEY(`username`) )")
+    c.execute("CREATE TABLE if not exists 'defaults' ( `username` TEXT NOT NULL UNIQUE, `folder_name` NUMERIC, `open` TEXT, `close` TEXT, `poll_minutes` INTEGER, `test_root` TEXT, `export_dir` TEXT, `tradier_key` TEXT, `market_status` TEXT, PRIMARY KEY(`username`) )")
     c.execute( "INSERT OR IGNORE INTO defaults(username) VALUES((?))", (username,))
     conn.commit()
     conn.close()
@@ -379,12 +337,12 @@ def PrintDefaults(verbose):
     for row in rows:
         col_list = []
         for i in range(len(row)):
-            if (i == 7 or i == 8):
+            if (i == 7):
                 if row[i] == "demo" or row[i] == "":
                     col_list.append(row[i])
                 else:
                     col_list.append("[key]")
-            elif (i == 9):
+            elif (i == 8):
                 js = json.loads(row[i])
                 if js:
                     if "status" in js:
@@ -436,10 +394,10 @@ def Add(symbol, verbose):
         conn.close()
         quote = QuoteTradier(symbol, verbose)
         errors = []
-        if ("Error Message" in quote):
+        if ("Error Message" in quote[0]):
             errors.append([symbol, quote[0]['url'], quote[0]["Error Message"]])
         else:
-            Price(symbol, quote[0]['price'], dt.strftime("%m/%d/%y"), verbose)
+            Price(symbol, quote[0]['price'], verbose)
             Shares(symbol, None, verbose)
     if (verbose):
         if (errors):
@@ -468,26 +426,23 @@ def Remove(symbol, verbose):
         print ("***\n")
     return True
 
-def Price(symbol, price, price_time, verbose):
+def Price(symbol, price, verbose):
     db_file = GetDB(verbose)
     if (verbose):
         print ("***")
         print ("Price(1) symbol: {0}".format(symbol))
         print ("Price(2) price: {0}".format(price))
-        print ("Price(3) price_time: {0}".format(price_time))
-        print ("Price(4) dbase: {0}".format(db_file))
+        print ("Price(3) dbase: {0}".format(db_file))
     result = CreateFolder(symbol, verbose)
     if (result):
         try:
             conn = sqlite3.connect(db_file)
             if (verbose):
-                print("Price(5) sqlite3: {0}".format(sqlite3.version))
+                print("Price(4) sqlite3: {0}".format(sqlite3.version))
         except Error as e:
-            print("Price(6) {0}".format(e))
+            print("Price(5) {0}".format(e))
             return False
         c = conn.cursor()
-        dt = datetime.datetime.strptime(price_time, '%m/%d/%y') 
-        c.execute("UPDATE folder SET price_time = (?) WHERE symbol = (?)", (dt.strftime("%m/%d/%y"), symbol,))
         c.execute("UPDATE folder SET price = ? WHERE symbol = (?)", (price, symbol,))
         conn.commit()
         conn.close()
@@ -519,7 +474,6 @@ def Cash(balance, verbose):
         c.execute("UPDATE folder SET shares = ? WHERE symbol = '$'", (round(float(balance), 4),))
         dt = datetime.datetime.now()
         c.execute("UPDATE folder SET update_time = (?) WHERE symbol = '$'", (dt.strftime("%m/%d/%y %H:%M"),))
-        c.execute("UPDATE folder SET price_time = (?) WHERE symbol = '$'", (dt.strftime("%m/%d/%y"),))
         c.execute("UPDATE folder SET price = 1.00 WHERE symbol = '$'")
         conn.commit()
         conn.close()
@@ -575,7 +529,7 @@ def CreateFolder(key, verbose):
         print("CreateFolder(3) {0}".format(e))
         return False
     c = conn.cursor()
-    c.execute("CREATE TABLE if not exists 'folder' ( `symbol` TEXT NOT NULL UNIQUE, `json_string` TEXT, `balance` REAL, `shares` REAL, `update_time` TEXT, `price_time` TEXT, `price` REAL, PRIMARY KEY(`symbol`) )")
+    c.execute("CREATE TABLE if not exists 'folder' ( `symbol` TEXT NOT NULL UNIQUE, `json_string` TEXT, `balance` REAL, `shares` REAL, `update_time` TEXT, `price` REAL, PRIMARY KEY(`symbol`) )")
     c.execute( "INSERT OR IGNORE INTO folder(symbol) VALUES((?))", (key,))
     conn.commit()
     conn.close()
@@ -717,24 +671,23 @@ def Update(verbose):
     rows = c.fetchall()
     conn.commit()
     conn.close()
-    dt = datetime.datetime.now()
     quote_list = ""
     for row in rows:
         quote_list += row[0] + ","
     quote_list = quote_list[:-1]
     quotes = QuoteTradier(quote_list, verbose)
     errors = []
-    for row in rows:
-        for quote in quotes:
-            if row[0] == quote["symbol"]:
-                if ("Error Message" in quote):
-                    errors.append([row[0], quote['url'], quote["Error Message"]])
-                    continue
-                result = Price(row[0], quote['price'], dt.strftime("%m/%d/%y"), verbose)
-                result = Shares(row[0], str(row[1]), verbose)
-                if (result['status']):
-                    if (verbose):
-                        print ("symbol: {0}, current shares: {1}, previous balance: {2}, current balance: {3}".format(row[0], row[1], row[2], result['balance']))
+    if ("Error Message" in quotes[0]):
+        errors.append(quotes)
+    if errors == []:
+        for row in rows:
+            for quote in quotes:
+                if row[0] == quote["symbol"]:
+                    result = Price(row[0], quote['price'], verbose)
+                    result = Shares(row[0], str(row[1]), verbose)
+                    if (result['status']):
+                        if (verbose):
+                            print ("symbol: {0}, current shares: {1}, previous balance: {2}, current balance: {3}".format(row[0], row[1], row[2], result['balance']))
     if (verbose):
         if (errors):
             pprint.pprint(errors)
@@ -1577,16 +1530,6 @@ def TestDefaults(verbose):
         if (verbose):
             print ("\tfail.")
     if (verbose):
-        print ("Test #{0} - UpdateDefaultItem('alpha vantage key', 'TEST', verbose)".format(count + 1))
-    result = UpdateDefaultItem("alpha vantage key", "TEST", verbose)
-    if (result):
-        if (verbose):
-            print ("\tpass.")
-        count += 1
-    else:
-        if (verbose):
-            print ("\tfail.")
-    if (verbose):
         print ("Test #{0} - UpdateDefaultItem('tradier key', 'TEST', verbose)".format(count + 1))
     result = UpdateDefaultItem("tradier key", "TEST", verbose)
     if (result):
@@ -1597,8 +1540,8 @@ def TestDefaults(verbose):
         if (verbose):
             print ("\tfail.")
     if (verbose):
-        print ("Test #{0} - UpdateDefaultItem('daemon seconds', 600, False)".format(count + 1))
-    result = UpdateDefaultItem('daemon seconds', 600, verbose)
+        print ("Test #{0} - UpdateDefaultItem('poll minutes', 10, False)".format(count + 1))
+    result = UpdateDefaultItem('poll minutes', 10, verbose)
     if (result):
         if (verbose):
             print ("\tpass.")
@@ -1637,9 +1580,9 @@ def TestDefaults(verbose):
         if (verbose):
             print ("\tfail.")
     if (verbose):
-        print ("Test #{0} - QuoteAlphaVantage('AAPL', verbose)".format(count + 1))
-    result = QuoteAlphaVantage("AAPL", verbose)
-    if (result['status'] and result['symbol'] == "AAPL"):
+        print ("Test #{0} - QuoteTradier('AAPL', verbose)".format(count + 1))
+    result = QuoteTradier("AAPL", verbose)
+    if (result[0]['Error Message'] == "Invalid Access Token"):
         if (verbose):
             print ("\tpass.")
         count += 1
@@ -1649,9 +1592,8 @@ def TestDefaults(verbose):
     if (verbose):
         print ("Test #{0} - GetDefaults(False)".format(count + 1))
     result, types = GetDefaults(verbose)
-    if (result['alpha vantage key'] == "TEST"
-        and result['tradier key'] == "TEST"
-        and result['daemon seconds'] == 600
+    if (result['tradier key'] == "TEST"
+        and result['poll minutes'] == 10
         and result['open'] == "8:30AM"
         and result['close'] == "15:00"
         and result['test root'] == "test/"
@@ -1676,11 +1618,11 @@ def TestDefaults(verbose):
                 if (verbose):
                     print ("\tfail.")
     testResults = False
-    if (count == 18):
-        print ("ran 18 tests, all pass")
+    if (count == 16):
+        print ("ran 16 tests, all pass")
         testResults = True
     else:
-        print ("test count expected 18 passes, received {0}".format(count))
+        print ("test count expected 16 passes, received {0}".format(count))
         testResults =  False
     sys.stdout = old_stdout
     result_string = print_out.getvalue()

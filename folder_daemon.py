@@ -26,10 +26,10 @@ def do_something():
     while True:
         defaults, types = plumb.GetDefaults(False)
         ds = 0
-        if (defaults['daemon seconds'] is None):
-            ds = 300        # 5 minutes (300 seconds)
+        if (defaults['poll minutes'] is None):
+            ds = 10
         else:
-            ds = defaults['daemon seconds']
+            ds = defaults['poll minutes']
         df = ""
         if (defaults['folder name'] is None):
             log['status'] = 'error'
@@ -60,7 +60,7 @@ def do_something():
             et = datetime.strptime(end, '%H:%M')
         log['open'] = bt.strftime('%I:%M%p')
         log['close'] = et.strftime('%I:%M%p')
-        et = et + timedelta(minutes = (ds * 2)/60) # a few final polls to get closing prices
+        et = et + timedelta(minutes = (ds * 2)) # a few final polls to get closing prices
         et = et.time()
         log['final poll'] = et.strftime('%I:%M%p')
         if weekno < 5 and ct > bt and ct < et:

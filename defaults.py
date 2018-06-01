@@ -10,8 +10,7 @@ from datetime import datetime
 def main(argv):
     verbose = False
     test = False
-    quote1 = ""
-    quote2 = ""
+    quote = ""
     company = ""
     key = ""
     item = ""
@@ -21,7 +20,7 @@ def main(argv):
     when = False
     get = False
     try:
-        opts, args = getopt.getopt(argv, "gwl:rpi:k:1:hvtc:2:", ["help", "verbose", "test", "quote1=", "quote2=", "key=", "company=", "item=", "print", "reset", "log=", "when", "get"])
+        opts, args = getopt.getopt(argv, "gwl:rpi:k:hvtc:q:", ["help", "verbose", "test", "quote=", "key=", "company=", "item=", "print", "reset", "log=", "when", "get"])
     except getopt.GetoptError as err:
         print(err)
         usage()
@@ -44,10 +43,8 @@ def main(argv):
             exit()
         elif o in ("-i", "--item"):
             item = a
-        elif o in ("-1", "--quote1"):
-            quote1 = a.upper()
-        elif o in ("-2", "--quote2"):
-            quote2 = a.upper()
+        elif o in ("-q", "--quote"):
+            quote = a.upper()
         elif o in ("-c", "--company"):
             company = a.upper()
         elif o in ("-k", "--key"):
@@ -70,12 +67,8 @@ def main(argv):
         else:
             print ("you must use --item switch with the --key switch")
         exit()
-    if (quote1 > ""):
-        quoteResult = plumb.QuoteAlphaVantage(quote1, verbose)
-        pprint.pprint(quoteResult)
-        exit()
-    if (quote2 > ""):
-        quoteResult = plumb.QuoteTradier(quote2, verbose)
+    if (quote > ""):
+        quoteResult = plumb.QuoteTradier(quote, verbose)
         pprint.pprint(quoteResult)
         exit()
     if (company > ""):
@@ -137,7 +130,7 @@ def usage():
     -t  --test          tests the default routines
 
     -c  --company       retrieves company data from ticker symbol
-    -1  --quote1        get stock Alpha Vantage quote from ticker symbol
+    -q  --quote         get stock quote from ticker symbol(s)
     -w  --when          retrieves the stock exchange holiday information
 
     -k  --key           keys in dbase to update (used with --item switch)
