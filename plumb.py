@@ -2153,11 +2153,96 @@ def Export(etype, filename, verbose):
     return log
 
 def Archive(verbose):
+    result = CreateArchive(verbose)
+    if result:
+        snap = GetNextSnap(verbose)
+        print ("snap = {0}".format(snap))
+        BumpSnap(verbose)
     return True
+
+def GetNextSnap(verbose):
+    username = getpass.getuser()
+    db_file = username + "/archive.db"
+    Path(username + "/").mkdir(parents=True, exist_ok=True) 
+    if (verbose):
+        print ("***")
+        print ("GetNextSnap(1) dbase: {0}".format(db_file))
+    if (not os.path.exists(db_file)):
+        if (verbose):
+            print ("GetNextSnap(2) {0} file is missing, cannot return the next snapshot".format(db_file))
+            print ("***\n")
+        return 0
+    try:
+        conn = sqlite3.connect(db_file)
+        if (verbose):
+            print("GetNextSnap(3) sqlite3: {0}".format(sqlite3.version))
+    except Error as e:
+        print("GetNextSnap(4) {0}".format(e))
+        return 0
+    c = conn.cursor()
+    c.execute("SELECT last_snap FROM key where key = ?", (1,))
+    value = c.fetchone()
+    conn.close()
+    if (verbose):
+        print ("***\n")
+    answer = 0
+    return (value[0] + 1)
+
+def BumpSnap(verbose):
+    if (verbose):
+        print ("***")
+    username = getpass.getuser()
+    db_file = username + "/archive.db"
+    if (verbose):
+        print ("BumpSnap(1) dbase: {0}".format(db_file))
+    try:
+        conn = sqlite3.connect(db_file)
+        if (verbose):
+            print("BumpSnap(2) sqlite3: {0}".format(sqlite3.version))
+    except Error as e:
+        print("BumpSnap(3) {0}".format(e))
+        return False
+    snap = GetNextSnap(verbose)
+    c = conn.cursor()
+    if (snap != 0):
+        c.execute("UPDATE key SET last_snap = (?) WHERE key = ?", (snap, 1,))
+    conn.commit()
+    conn.close()
+    if (verbose):
+        print ("***\n")
+    return True
+
+def CreateArchive(verbose):
+    username = getpass.getuser()
+    db_file = username + "/archive.db"
+    Path(username + "/").mkdir(parents=True, exist_ok=True) 
+    if (verbose):
+        print ("***")
+        print ("CreateArchive(1) dbase: {0}".format(db_file))
+    try:
+        conn = sqlite3.connect(db_file)
+        if (verbose):
+            print("CreateArchive(2) sqlite3: {0}".format(sqlite3.version))
+    except Error as e:
+        print("CreateArchive(3) {0}".format(e))
+        return False
+    c = conn.cursor()
+    c.execute("CREATE TABLE if not exists `key` ( `key` INTEGER NOT NULL UNIQUE, `last_snap` INTEGER )")
+    c.execute( "INSERT OR IGNORE INTO key(key, last_snap) VALUES(?, ?)", (1,0,))
+    c.execute("CREATE TABLE if not exists 'summary' ( `snap_date` TEXT NOT NULL UNIQUE, `folder_name` TEXT, `snapshot` INTEGER, `aim_rows` INTEGER, `shares_rows` INTEGER, `initial` REAL, `profit_percent` INTEGER, PRIMARY KEY(`snap_date`) )")
+    dt = datetime.datetime.now()
+    c.execute( "INSERT OR IGNORE INTO summary(snap_date) VALUES((?))", (dt.strftime('%Y/%m/%d'),))
+    c.execute("CREATE TABLE if not exists 'aim' ( `snapshot` INTEGER NOT NULL, `post_date` TEXT NOT NULL, `stock_value` REAL, `cash` REAL, `portfolio_control` REAL, `buy_sell_advice` REAL, `market_order` REAL, `portfolio_value` REAL, PRIMARY KEY(`snapshot`,`post_date`) )")
+    c.execute("CREATE TABLE if not exists 'shares' ( `snapshot` INTEGER NOT NULL, `post_date` TEXT NOT NULL, `symbol` TEXT, `balance` REAL, `shares` REAL, PRIMARY KEY(`snapshot`,`post_date`) )")
+    conn.commit()
+    conn.close()
+    if (verbose):
+        print ("***\n")
+    return True
+
 #endregion history
 #region names
 def GetNames(verbose):
-    defaults, types = GetDefaults(verbose)
     username = getpass.getuser()
     db_file = username + "/names.db"
     Path(username + "/").mkdir(parents=True, exist_ok=True) 
@@ -2229,14 +2314,14 @@ def CreateNames(pretty, verbose):
     if (verbose):
         print ("***")
         print ("CreateNames(1) pretty_name: {0}".format(pretty))
-        print ("CreateNames(1) db_name: {0}".format(db_name))
-        print ("CreateNames(1) dbase: {0}".format(db_file))
+        print ("CreateNames(2) db_name: {0}".format(db_name))
+        print ("CreateNames(3) dbase: {0}".format(db_file))
     try:
         conn = sqlite3.connect(db_file)
         if (verbose):
-            print("CreateNames(2) sqlite3: {0}".format(sqlite3.version))
+            print("CreateNames(4) sqlite3: {0}".format(sqlite3.version))
     except Error as e:
-        print("CreateNames(3) {0}".format(e))
+        print("CreateNames(5) {0}".format(e))
         return False
     c = conn.cursor()
     c.execute("CREATE TABLE if not exists `names` ( `pretty_name` TEXT NOT NULL UNIQUE, `db_name` TEXT, PRIMARY KEY(`pretty_name`) )")
