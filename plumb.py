@@ -2446,9 +2446,9 @@ def PrintSummary(verbose):
             row.append(value)
         col_list = []
         for i in range(len(keys)):
-            if i == 5:
+            if keys[i] == "initial":
                 col_list.append(as_currency(row[i]))
-            elif i == 6:
+            elif keys[i] == "profit percent":
                 col_list.append(as_percent(row[i]))
             else:
                 col_list.append(row[i])
@@ -2457,7 +2457,33 @@ def PrintSummary(verbose):
     table = TableCls(items, html_attrs = {'width':'100%','border-spacing':0})
     if (verbose):
         print ("***\n")
-    return table.__html__()
+    button_detail = AddDetailButtons(table.__html__())
+    return button_detail
+
+def AddDetailButtons(table):
+    table = table.replace("<thead><tr><th>", "<thead><tr><th></th><th>", 1)
+    pattern = "<tr><td>"
+    index = 0
+    done = False
+    row = -1
+    while (not done):
+        start = table.find(pattern, index)
+        if start == -1:
+            done = True
+            continue
+        find = table.find("</td>", start + 8)
+        snap_date = table[start + 8 : find]
+        next_field = find + 9
+        find = table.find("</td>", next_field)
+        folder_name =  table[next_field: find]
+        next_field = find + 9
+        find = table.find("</td>", next_field)
+        snapshot =  table[next_field: find]
+        row += 1
+        r_button = '<tr><td><form action="#" method="post"><input class="submit" type="submit" name="action" value="detail"/><input hidden type="text" name="detail_snapshot" value="{0}"/></form></td><td>'.format(snapshot)
+        table = table[0 : start] + table[start:].replace(pattern, r_button, 1)
+        index = start + 1
+    return table
 #endregion history
 #region names
 def GetNames(verbose):
