@@ -44,14 +44,6 @@
                 <li><a href="https://twitter.com/meprogrammerguy/" target="_blank" >my Twitter</a></li>
                 <li><a href="http://www.wallstreetsurvivor.com/accountoverview/" target="_blank" >Wall Street Survivor</a></li>
             </ul>
-            <h3>Search</h3>
-            <form method="post" action="#">
-                <p>
-                    <input class="search" type="text" onfocus="this.value=''" name="action" value="enter year or all" />
-                    <input name="search" type="image" style="border: 0; margin: 0 0 -9px 5px;" src="{{ url_for('static', filename='search.png') }}" alt="Search" title="Search" />
-                    <p style="color:red;">{{feedback | safe}}</p>
-                </p>
-            </form>
         </div>
         <div id="content">
             <h1 class="center">Activity</h1>

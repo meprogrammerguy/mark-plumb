@@ -2463,10 +2463,10 @@ def PrintSummary(verbose):
     table = TableCls(items, html_attrs = {'width':'100%','border-spacing':0})
     if (verbose):
         print ("***\n")
-    button_detail = AddDetailButtons(table.__html__())
+    button_detail = AddSummaryButton(table.__html__())
     return button_detail
 
-def AddDetailButtons(table):
+def AddSummaryButton(table):
     table = table.replace("<thead><tr><th>", "<thead><tr><th></th><th>", 1)
     pattern = "<tr><td>"
     index = 0
@@ -2486,7 +2486,7 @@ def AddDetailButtons(table):
         find = table.find("</td>", next_field)
         snapshot =  table[next_field: find]
         row += 1
-        r_button = '<tr><td><form action="#" method="post"><input class="submit" type="submit" name="action" value="detail"/><input hidden type="text" name="detail_snapshot" value="{0}"/></form></td><td>'.format(snapshot)
+        r_button = '<tr><td><form action="#" method="post"><input class="submit" type="submit" name="action" value="remove"/><input hidden type="text" name="remove_snapshot" value="{0}"/></form></td><td>'.format(snapshot)
         table = table[0 : start] + table[start:].replace(pattern, r_button, 1)
         index = start + 1
     return table

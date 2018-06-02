@@ -227,8 +227,8 @@ def history():
 
     return(render_history("", ""))
 
-def render_history(feedback, history_year):
-    if (history_year == "" or history_year[0].lower() == 'a'):
+def render_history(feedback, year_string):
+    if (year_string == "" or year_string[0].lower() == 'a'):
         year_input = 1970
     else:
         year_input = int(year_string)
