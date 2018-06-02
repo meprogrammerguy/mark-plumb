@@ -14,8 +14,9 @@ def main(argv):
     export = ""
     save = False
     archive = False
+    delete = ""
     try:
-        opts, args = getopt.getopt(argv, "ase:p:hvt", ["help", "verbose", "test", "notes=", "look", "update", "print=", "initialize", "allocation", "export=", "save", "archive"])
+        opts, args = getopt.getopt(argv, "d:ase:p:hvt", ["help", "verbose", "test", "notes=", "look", "update", "print=", "initialize", "allocation", "export=", "save", "archive", "delete="])
     except getopt.GetoptError as err:
         print(err)
         usage()
@@ -32,6 +33,8 @@ def main(argv):
             exit()
         elif o in ("-e", "--export"):
             export = a
+        elif o in ("-d", "--delete"):
+            delete = a
         elif o in ("-s", "--save"):
             save = True
         elif o in ("-p", "--print"):
@@ -64,6 +67,13 @@ def main(argv):
     if (export > ""):
         exportResult = plumb.Export(export, "", verbose)
         print (exportResult)
+        exit()
+    if (delete > ""):
+        deleteResult = plumb.DeleteSnapshot(delete, verbose)
+        if (deleteResult):
+            print ("deleted.")
+        else:
+            print ("failed.")
         exit()
     if (save):
         saveResult = plumb.Archive(verbose)
@@ -99,7 +109,8 @@ def usage():
                             to a spreadsheet
     -s --save           saves the current AIM activity to an archive dbase
                             (do this to move over your old AIM activity)
-                            (warning, this will clear out the AIM dbase) 
+                            (warning, this will clear out the AIM dbase)
+    -d --delete         delete archive by snapshot number 
     """
     print (usage) 
 

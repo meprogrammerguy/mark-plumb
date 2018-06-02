@@ -2490,6 +2490,35 @@ def AddDetailButtons(table):
         table = table[0 : start] + table[start:].replace(pattern, r_button, 1)
         index = start + 1
     return table
+
+def DeleteSnapshot(snapshot, verbose):
+    username = getpass.getuser()
+    db_file = username + "/archive.db"
+    Path(username + "/").mkdir(parents=True, exist_ok=True) 
+    if (verbose):
+        print ("***")
+        print ("DeleteSnapshot(1) dbase: {0}".format(db_file))
+    if (not os.path.exists(db_file)):
+        if (verbose):
+            print ("DeleteSnapshot(2) {0} file is missing, cannot continue".format(db_file))
+            print ("***\n")
+        return False
+    try:
+        conn = sqlite3.connect(db_file)
+        if (verbose):
+            print("DeleteSnapshot(3) sqlite3: {0}".format(sqlite3.version))
+    except Error as e:
+        print("DeleteSnapshot(4) {0}".format(e))
+        return False
+    c = conn.cursor()
+    c.execute("DELETE FROM summary where snapshot = ?", (int(snapshot),))
+    c.execute("DELETE FROM aim where snapshot = ?", (int(snapshot),))
+    c.execute("DELETE FROM shares where snapshot = ?", (int(snapshot),))
+    conn.commit()
+    conn.close()
+    if (verbose):
+        print ("***\n")
+    return True
 #endregion history
 #region names
 def GetNames(verbose):
