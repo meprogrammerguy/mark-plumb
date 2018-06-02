@@ -13,8 +13,9 @@ def main(argv):
     printyear = ""
     export = ""
     save = False
+    archive = False
     try:
-        opts, args = getopt.getopt(argv, "se:p:hvt", ["help", "verbose", "test", "notes=", "look", "update", "print=", "initialize", "allocation", "export=", "save"])
+        opts, args = getopt.getopt(argv, "ase:p:hvt", ["help", "verbose", "test", "notes=", "look", "update", "print=", "initialize", "allocation", "export=", "save", "archive"])
     except getopt.GetoptError as err:
         print(err)
         usage()
@@ -24,6 +25,8 @@ def main(argv):
             verbose = True
         elif o in ("-t", "--test"):
             test = True
+        elif o in ("-a", "--archive"):
+            archive = True
         elif o in ("-h", "--help"):
             usage()
             exit()
@@ -69,6 +72,13 @@ def main(argv):
         else:
             print ("failed.")
         exit()
+    if (archive):
+        archiveResult = plumb.PrintSummary(verbose)
+        if (archiveResult > ""):
+            pprint.pprint(archiveResult)
+        else:
+            print ("failed.")
+        exit()
     usage()
 
 def usage():
@@ -83,6 +93,7 @@ def usage():
 
     -p --print          print out the AIM actitivy (in HTML table format)
                             (--print=all, --print=2018)
+    -a --archive        prints out the archive (in HTML table format)
 
     -e --export         export "activity", "archive", or "portfolio"
                             to a spreadsheet

@@ -233,7 +233,8 @@ def render_history(feedback, history_year):
         year_input = int(year_string)
     notes, initialize_day = plumb.GetAIMNotes(10, False)
     table = plumb.PrintAIM(str(year_input), False)
-    return render_template('history.html', table = table, notes = notes, feedback = feedback)
+    archive_table = plumb.PrintSummary(False)
+    return render_template('history.html', table = table, notes = notes, feedback = feedback, archive_table = archive_table)
 
 @app.route('/examples/')
 def examples():

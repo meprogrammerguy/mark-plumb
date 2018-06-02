@@ -2385,6 +2385,79 @@ def CreateArchive(verbose):
         print ("***\n")
     return True
 
+def GetSummary(verbose):
+    username = getpass.getuser()
+    db_file = username + "/archive.db"
+    Path(username + "/").mkdir(parents=True, exist_ok=True) 
+    if (verbose):
+        print ("***")
+        print ("GetSummary(1) dbase: {0}".format(db_file))
+    if (not os.path.exists(db_file)):
+        if (verbose):
+            print ("GetSummary(2) {0} file is missing, cannot return the rows".format(db_file))
+            print ("***\n")
+        return []
+    try:
+        conn = sqlite3.connect(db_file)
+        if (verbose):
+            print("GetSummary(3) sqlite3: {0}".format(sqlite3.version))
+    except Error as e:
+        print("GetSummary(4) {0}".format(e))
+        return []
+    c = conn.cursor()
+    c.execute("SELECT * FROM summary order by snap_date")
+    keys = list(map(lambda x: x[0].replace("_"," "), c.description))
+    values = c.fetchall()
+    conn.close()
+    if (verbose):
+        print ("***\n")
+    answer = []
+    for row in values:
+        answer.append(dict(zip(keys, row)))
+    return answer
+
+def PrintSummary(verbose):
+    username = getpass.getuser()
+    db_file = username + "/archive.db"
+    Path(username + "/").mkdir(parents=True, exist_ok=True) 
+    if (verbose):
+        print ("***")
+        print ("PrintSummary(1) dbase: {0}".format(db_file))
+    if (not os.path.exists(db_file)):
+        if (verbose):
+            print ("PrintSummary(2) {0} file is missing, cannot display".format(db_file))
+            print ("***\n")
+        return ""
+    summary = GetSummary(verbose)
+    if (summary == []):
+        return ""
+    keys_dict = summary[0].keys()
+    keys = []
+    for key in keys_dict:
+        keys.append(key)
+    TableCls = create_table('TableCls')
+    for key in keys:
+        TableCls.add_column(key, Col(key))
+    items = []
+    answer = {}
+    for s in summary:
+        row = []
+        for value in s.values():
+            row.append(value)
+        col_list = []
+        for i in range(len(keys)):
+            if i == 5:
+                col_list.append(as_currency(row[i]))
+            elif i == 6:
+                col_list.append(as_percent(row[i]))
+            else:
+                col_list.append(row[i])
+        answer = dict(zip(keys, col_list))
+        items.append(answer)
+    table = TableCls(items, html_attrs = {'width':'100%','border-spacing':0})
+    if (verbose):
+        print ("***\n")
+    return table.__html__()
 #endregion history
 #region names
 def GetNames(verbose):
