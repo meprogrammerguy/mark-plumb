@@ -2253,11 +2253,17 @@ def SnapTables(verbose):
         c.execute( "INSERT OR IGNORE INTO aim VALUES(?, (?), ?, ?, ?, ?, ?, ?)", (snap, i['post date'], i['stock value'], i['cash'], i['portfolio control'], i['buy sell advice'], i['market order'], i['portfolio value'],))
         for j in i['json string']:
             if ("symbol" in j):
-                c.execute( "INSERT OR IGNORE INTO shares VALUES(?, (?), (?), ?, ?)", (snap, i['post date'], j['symbol'], j['balance'], j['shares'],))
+                if ("shares" in j):
+                    c.execute( "INSERT OR IGNORE INTO shares VALUES(?, (?), (?), ?, ?)", (snap, i['post date'], j['symbol'], j['balance'], j['shares'],))
+                else:
+                    c.execute( "INSERT OR IGNORE INTO shares VALUES(?, (?), (?), ?, ?)", (snap, i['post date'], j['symbol'], j['balance'], 0,))
     dt = datetime.datetime.now()
     for f in folder:
         if ("symbol" in f):
-            c.execute( "INSERT OR IGNORE INTO shares VALUES(?, (?), (?), ?, ?)", (snap, dt.strftime('%Y/%m/%d'), f['symbol'], f['balance'], f['shares'],))        
+            if ("shares" in f):
+                c.execute( "INSERT OR IGNORE INTO shares VALUES(?, (?), (?), ?, ?)", (snap, dt.strftime('%Y/%m/%d'), f['symbol'], f['balance'], f['shares'],))
+            else:
+                c.execute( "INSERT OR IGNORE INTO shares VALUES(?, (?), (?), ?, ?)", (snap, dt.strftime('%Y/%m/%d'), f['symbol'], f['balance'], 0,))   
     conn.commit()
     conn.close()
     if (verbose):
@@ -2352,7 +2358,7 @@ def SnapSummary(verbose):
         return False
     dt = datetime.datetime.now()
     c = conn.cursor()
-    c.execute( "INSERT OR IGNORE INTO summary VALUES((?), (?), ?, ?, ?, ?, ?)", (dt.strftime('%Y/%m/%d'), folder_name, snap, aim_count, shares_count, initial, to_number(profit_percent, verbose),))
+    c.execute( "INSERT OR IGNORE INTO summary VALUES((?), (?), ?, ?, ?, ?, ?)", (dt.strftime('%Y/%m/%d'), folder_name, snap, aim_count, shares_count, initial, to_number(profit_percent, verbose) * 100,))
     conn.commit()
     conn.close()
     if (verbose):
@@ -2376,7 +2382,7 @@ def CreateArchive(verbose):
     c = conn.cursor()
     c.execute("CREATE TABLE if not exists `key` ( `key` INTEGER NOT NULL UNIQUE, `last_snap` INTEGER )")
     c.execute( "INSERT OR IGNORE INTO key(key, last_snap) VALUES(?, ?)", (1,0,))
-    c.execute("CREATE TABLE if not exists 'summary' ( `snap_date` TEXT NOT NULL UNIQUE, `folder_name` TEXT, `snapshot` INTEGER, `aim_rows` INTEGER, `shares_rows` INTEGER, `initial` REAL, `profit_percent` INTEGER, PRIMARY KEY(`snap_date`) )")
+    c.execute("CREATE TABLE if not exists 'summary' ( `snap_date` TEXT NOT NULL, `folder_name` TEXT NOT NULL, `snapshot` INTEGER NOT NULL, `aim_rows` INTEGER, `shares_rows` INTEGER, `initial` REAL, `profit_percent` INTEGER, PRIMARY KEY(`snap_date`,`folder_name`,`snapshot`) )")
     c.execute("CREATE TABLE if not exists 'aim' ( `snapshot` INTEGER NOT NULL, `post_date` TEXT NOT NULL, `stock_value` REAL, `cash` REAL, `portfolio_control` REAL, `buy_sell_advice` REAL, `market_order` REAL, `portfolio_value` REAL, PRIMARY KEY(`snapshot`,`post_date`) )")
     c.execute("CREATE TABLE if not exists 'shares' ( `snapshot` INTEGER NOT NULL, `post_date` TEXT NOT NULL, `symbol` TEXT NOT NULL, `balance` REAL, `shares` REAL, PRIMARY KEY(`snapshot`,`post_date`,`symbol`) )")
     conn.commit()
@@ -2405,7 +2411,7 @@ def GetSummary(verbose):
         print("GetSummary(4) {0}".format(e))
         return []
     c = conn.cursor()
-    c.execute("SELECT * FROM summary order by snap_date")
+    c.execute("SELECT * FROM summary order by snap_date,snapshot")
     keys = list(map(lambda x: x[0].replace("_"," "), c.description))
     values = c.fetchall()
     conn.close()

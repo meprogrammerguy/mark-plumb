@@ -210,6 +210,7 @@ def history():
                 log = plumb.Export(request.form['column'], request.form['value'], False)
                 return (render_history(log, ""))
             elif (request.form['action'] == "archive"):
+                plumb.Archive(False)
                 return (render_history("AIM system archived.", ""))
             elif (request.form['action'].isnumeric()):
                 year_input = int(request.form['action'])
