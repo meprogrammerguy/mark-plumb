@@ -1275,7 +1275,7 @@ def to_number(string, verbose):
     if ('(' in string):
         negative = True
     if ('%' in string):
-        percent = true
+        percent = True
     if (verbose):
         print ("***")
         print ("to_number(1) raw: {0}".format(string))
@@ -2153,12 +2153,19 @@ def Export(etype, filename, verbose):
     return log
 
 def Archive(verbose):
+    snap = 0
     result = CreateArchive(verbose)
     if result:
         snap = GetNextSnap(verbose)
-        print ("snap = {0}".format(snap))
-        BumpSnap(verbose)
-    return True
+        resultTables = SnapTables(verbose)
+        if (resultTables):
+            resultSummary = SnapSummary(verbose)
+            if (resultSummary):
+                BumpSnap(verbose)
+    test = GetNextSnap(verbose)
+    if snap > 0 and test == (snap + 1):
+        return True
+    return False
 
 def GetNextSnap(verbose):
     username = getpass.getuser()
@@ -2212,6 +2219,146 @@ def BumpSnap(verbose):
         print ("***\n")
     return True
 
+def SnapTables(verbose):
+    if (verbose):
+        print ("***")
+    aim = GetAIM(verbose)
+    if aim == []:
+        if (verbose):
+            print ("SnapTables(1) error: aim dbase is empty - cannot archive")
+        return False
+    folder = GetFolder(verbose)
+    if folder == []:
+        if (verbose):
+            print ("SnapTables(2) error: folder dbase is empty - cannot archive")
+        return False
+    snap = GetNextSnap(verbose)
+    if (snap == 0):
+        if (verbose):
+            print ("SnapTables(3) error: next snapshot is zero - cannot archive")
+        return False
+    username = getpass.getuser()
+    db_file = username + "/archive.db"
+    if (verbose):
+        print ("SnapTables(4) dbase: {0}".format(db_file))
+    try:
+        conn = sqlite3.connect(db_file)
+        if (verbose):
+            print("SnapTables(5) sqlite3: {0}".format(sqlite3.version))
+    except Error as e:
+        print("SnapTables(6) {0}".format(e))
+        return False
+    c = conn.cursor()
+    for i in aim:
+        c.execute( "INSERT OR IGNORE INTO aim VALUES(?, (?), ?, ?, ?, ?, ?, ?)", (snap, i['post date'], i['stock value'], i['cash'], i['portfolio control'], i['buy sell advice'], i['market order'], i['portfolio value'],))
+        for j in i['json string']:
+            if ("symbol" in j):
+                c.execute( "INSERT OR IGNORE INTO shares VALUES(?, (?), (?), ?, ?)", (snap, i['post date'], j['symbol'], j['balance'], j['shares'],))
+    dt = datetime.datetime.now()
+    for f in folder:
+        if ("symbol" in f):
+            c.execute( "INSERT OR IGNORE INTO shares VALUES(?, (?), (?), ?, ?)", (snap, dt.strftime('%Y/%m/%d'), f['symbol'], f['balance'], f['shares'],))        
+    conn.commit()
+    conn.close()
+    if (verbose):
+        print ("***\n")
+    return True
+
+def SummaryCounts(verbose):
+    username = getpass.getuser()
+    db_file = username + "/archive.db"
+    Path(username + "/").mkdir(parents=True, exist_ok=True) 
+    if (verbose):
+        print ("***")
+    snap = GetNextSnap(verbose)
+    if (snap == 0):
+        if (verbose):
+            print ("SummaryCounts(1) error: next snapshot is zero - cannot archive")
+        return 0, 0
+    if (verbose):
+        print ("SummaryCounts(1) dbase: {0}".format(db_file))
+    if (not os.path.exists(db_file)):
+        if (verbose):
+            print ("SummaryCounts(2) {0} file is missing, cannot return the row counts".format(db_file))
+            print ("***\n")
+        return 0, 0
+    try:
+        conn = sqlite3.connect(db_file)
+        if (verbose):
+            print("SummaryCounts(2) sqlite3: {0}".format(sqlite3.version))
+    except Error as e:
+        print("SummaryCounts(3) {0}".format(e))
+        return 0, 0
+    c = conn.cursor()
+    if (checkTableExists(conn, "aim")):
+        c.execute("select * from aim where snapshot = ?", (snap,))
+        result1 = c.fetchall()
+    else:
+        result1 = ""
+    if (checkTableExists(conn, "shares")):
+        c.execute("select * from shares where snapshot = ?", (snap,))
+        result2 = c.fetchall()
+    else:
+        result2 = ""
+    conn.close()
+    if (verbose):
+        print ("***\n")
+    return len(result1), len(result2)
+
+def SnapSummary(verbose):
+    if (verbose):
+        print ("***")
+    defaults, t = GetDefaults(verbose)
+    folder_name = ""
+    if "folder name" in defaults:
+        folder_name = defaults['folder name']
+    if (folder_name == ""):
+        if (verbose):
+            print ("SnapSummary(1) error: folder name is blank - cannot archive")
+        return False
+    snap = GetNextSnap(verbose)
+    if (snap == 0):
+        if (verbose):
+            print ("SnapSummary(2) error: next snapshot is zero - cannot archive")
+        return False
+    first = GetFirstAIM(verbose)
+    initial = 0
+    if ("portfolio value" not in first):
+        if (verbose):
+            print ("SnapSummary(3) could not get initial balance - strange issue, continuing")
+    else:
+        initial = first['portfolio value']
+    aim_count, shares_count = SummaryCounts(verbose)
+    if (aim_count == 0):
+        if (verbose):
+            print ("SnapSummary(4) warning: aim table has no records - strange issue, continuing")
+    if (shares_count == 0):
+        if (verbose):
+            print ("SnapSummary(5) warning: shares table has no records - strange issue, continuing")
+    look, table, db_values = Look(verbose)
+    profit_percent = "0"
+    if "profit percent" in look:
+        profit_percent = look['profit percent'] 
+    username = getpass.getuser()
+    db_file = username + "/archive.db"
+    if (verbose):
+        print ("SnapSummary(6) dbase: {0}".format(db_file))
+    try:
+        conn = sqlite3.connect(db_file)
+        if (verbose):
+            print("SnapSummary(7) sqlite3: {0}".format(sqlite3.version))
+    except Error as e:
+        print("SnapSummary(8) {0}".format(e))
+        return False
+    dt = datetime.datetime.now()
+    c = conn.cursor()
+    c.execute( "INSERT OR IGNORE INTO summary VALUES((?), (?), ?, ?, ?, ?, ?)", (dt.strftime('%Y/%m/%d'), folder_name, snap, aim_count, shares_count, initial, to_number(profit_percent, verbose),))
+    conn.commit()
+    conn.close()
+    if (verbose):
+        print ("***\n")
+    return True
+
 def CreateArchive(verbose):
     username = getpass.getuser()
     db_file = username + "/archive.db"
@@ -2230,10 +2377,8 @@ def CreateArchive(verbose):
     c.execute("CREATE TABLE if not exists `key` ( `key` INTEGER NOT NULL UNIQUE, `last_snap` INTEGER )")
     c.execute( "INSERT OR IGNORE INTO key(key, last_snap) VALUES(?, ?)", (1,0,))
     c.execute("CREATE TABLE if not exists 'summary' ( `snap_date` TEXT NOT NULL UNIQUE, `folder_name` TEXT, `snapshot` INTEGER, `aim_rows` INTEGER, `shares_rows` INTEGER, `initial` REAL, `profit_percent` INTEGER, PRIMARY KEY(`snap_date`) )")
-    dt = datetime.datetime.now()
-    c.execute( "INSERT OR IGNORE INTO summary(snap_date) VALUES((?))", (dt.strftime('%Y/%m/%d'),))
     c.execute("CREATE TABLE if not exists 'aim' ( `snapshot` INTEGER NOT NULL, `post_date` TEXT NOT NULL, `stock_value` REAL, `cash` REAL, `portfolio_control` REAL, `buy_sell_advice` REAL, `market_order` REAL, `portfolio_value` REAL, PRIMARY KEY(`snapshot`,`post_date`) )")
-    c.execute("CREATE TABLE if not exists 'shares' ( `snapshot` INTEGER NOT NULL, `post_date` TEXT NOT NULL, `symbol` TEXT, `balance` REAL, `shares` REAL, PRIMARY KEY(`snapshot`,`post_date`) )")
+    c.execute("CREATE TABLE if not exists 'shares' ( `snapshot` INTEGER NOT NULL, `post_date` TEXT NOT NULL, `symbol` TEXT NOT NULL, `balance` REAL, `shares` REAL, PRIMARY KEY(`snapshot`,`post_date`,`symbol`) )")
     conn.commit()
     conn.close()
     if (verbose):
