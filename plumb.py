@@ -1326,6 +1326,9 @@ def as_currency(amount):
     else:
         return '(${:,.2f})'.format(-amount)
 
+def as_shares(amount):
+    return '\r{:.4f}'.format(amount)
+
 def as_percent(amount):
     if amount >= 0:
         return "{:.2f}%".format(amount)
@@ -2191,9 +2194,23 @@ def ArchiveSheet(filename, verbose):
         if (verbose):
             print ("ArchiveSheet(2) no snapshots to export".format(db_file))
         return False
+    summary = GetSummary(verbose)
     aim, shares = GetDetail(snap, verbose)
     sheet = open(filename, 'w', newline='')
     csvwriter = csv.writer(sheet)
+    if summary != []:
+        header = True
+        for row in summary:
+            if row['snapshot'] == snap:
+                if (header):
+                    keys = row.keys()
+                    header = False
+                    csvwriter.writerow(keys)
+                row['initial'] = as_currency(row['initial'])
+                row['profit percent'] = as_percent(row['profit percent'])
+                values = row.values()
+                csvwriter.writerow(values)
+    csvwriter.writerow(" ")
     if aim != []:
         header = True
         for row in aim:
@@ -2201,6 +2218,12 @@ def ArchiveSheet(filename, verbose):
                 keys = row.keys()
                 header = False
                 csvwriter.writerow(keys)
+            row['stock value'] = as_currency(row['stock value'])
+            row['cash'] = as_currency(row['cash'])
+            row['portfolio control'] = as_currency(row['portfolio control'])
+            row['buy sell advice'] = as_currency(row['buy sell advice'])
+            row['market order'] = as_currency(row['market order'])
+            row['portfolio value'] = as_currency(row['portfolio value'])
             values = row.values()
             csvwriter.writerow(values)
     csvwriter.writerow(" ")
@@ -2211,6 +2234,8 @@ def ArchiveSheet(filename, verbose):
                 keys = row.keys()
                 header = False
                 csvwriter.writerow(keys)
+            row['balance'] = as_currency(row['balance'])
+            row['shares'] = as_shares(row['shares'])
             values = row.values()
             csvwriter.writerow(values)
     sheet.close()  
