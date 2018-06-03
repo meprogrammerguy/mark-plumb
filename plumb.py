@@ -534,7 +534,7 @@ def CreateFolder(key, verbose):
         print("CreateFolder(3) {0}".format(e))
         return False
     c = conn.cursor()
-    c.execute("CREATE TABLE if not exists 'folder' ( `symbol` TEXT NOT NULL UNIQUE, `json_string` TEXT, `balance` REAL, `shares` REAL, `update_time` TEXT, `price` REAL, PRIMARY KEY(`symbol`) )")
+    c.execute("CREATE TABLE if not exists 'folder' ( `symbol` TEXT NOT NULL UNIQUE, `balance` REAL, `shares` REAL, `price` REAL, `update_time` TEXT, `json_string` TEXT, PRIMARY KEY(`symbol`) )")
     c.execute( "INSERT OR IGNORE INTO folder(symbol) VALUES((?))", (key,))
     conn.commit()
     conn.close()
@@ -779,16 +779,13 @@ def PrintFolder(verbose):
     if (folder == []):
         return "", "", "", ""
     keys_dict = folder[0].keys()
-    keys = []
+    keys_raw = []
     for key in keys_dict:
-        keys.append(key)
+        keys_raw.append(key)
+    keys = keys_raw[:1] + ['company name'] + keys_raw[1:-1]
     TableCls = create_table('TableCls')
     for key in keys:
-        if (key != "json string"):
-            TableCls.add_column(key, Col(key))
-        else:
-            TableCls.add_column('company name', Col('company name'))
-    keys[1] = 'company name'
+        TableCls.add_column(key, Col(key))
     items = []
     answer = {}
     symbol_options = ""
@@ -801,32 +798,35 @@ def PrintFolder(verbose):
         row = []
         for value in f.values():
             row.append(value)
+        row = row[:1] + [''] + row[1:-1]
         json_string = f['json string']
-        symbol_options += '<option value="{0}">{1}</option>'.format(f['symbol'], f['symbol'])
         col_list = []
         for i in range(len(keys)):
-            if (i == 1):
+            symbol_options += '<option value="{0}">{1}</option>'.format(row[0], row[0])
+            if (keys[i] == "company name"):
                 col_list.append(json_string['companyName'])
-            elif (i == 3):
+            elif (keys[i] == "shares"):
                 if (row[0] == "$"):
                     col_list.append("")
                 else:
                     if row[i] is None:
-                        col_list.append(round(0, 4))
+                        col_list.append(as_shares(0))
                     else:
-                        col_list.append(round(row[i], 4))
+                        col_list.append(as_shares(row[i]))
+            elif (keys[i] == "update time"):
+                col_list.append(row[i])
             else:
-                if (i == 2 or i == 5):
-                    if (i == 2):
+                if (keys[i] == "balance" or keys[i] == "price"):
+                    col_list.append(as_currency(row[i]))
+                    if (keys[i] == "balance"):
                         amount_option = []
                         amount_option.append(row[0])
                         amount_option.append(row[i])
                         amount_option.append(row[3])
                         amount_options.append(amount_option)
-                    if (i ==5 and row[0] == "$"):
-                        col_list.append("")
                     else:
-                        col_list.append(as_currency(row[i]))
+                        if row[0] == "$":
+                            col_list.append("")
                 else:
                     col_list.append(row[i])
         answer = dict(zip(keys, col_list))
@@ -1321,6 +1321,9 @@ def to_number(string, verbose):
 def as_currency(amount):
     if (amount is None):
         amount = 0
+    if (type(amount) is str):
+        print (amount)
+        pdb.set_trace()
     if amount >= 0:
         return '${:,.2f}'.format(amount)
     else:
@@ -2160,6 +2163,12 @@ def ActivitySheet(filename, verbose):
             keys = row.keys()
             header = False
             csvwriter.writerow(keys)
+        row['stock value'] = as_currency(row['stock value'])
+        row['cash'] = as_currency(row['cash'])
+        row['portfolio control'] = as_currency(row['portfolio control'])
+        row['buy sell advice'] = as_currency(row['buy sell advice'])
+        row['market order'] = as_currency(row['market order'])
+        row['portfolio value'] = as_currency(row['portfolio value'])
         values = row.values()
         csvwriter.writerow(values)
     sheet.close()  
@@ -2177,6 +2186,9 @@ def FolderSheet(filename, verbose):
             keys = row.keys()
             header = False
             csvwriter.writerow(keys)
+        row['balance'] = as_currency(row['balance'])
+        row['shares'] = as_shares(row['shares'])
+        row['price'] = as_currency(row['price'])
         values = row.values()
         csvwriter.writerow(values)
     sheet.close()  
