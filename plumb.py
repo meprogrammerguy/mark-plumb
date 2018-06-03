@@ -215,6 +215,10 @@ def ResetDefaults(verbose):
         except Error as e:
             print("ResetDefaults(3) {0}".format(e))
             return False
+        snap = GetNextSnap(verbose)
+        snap -= 1
+        if snap < 1:
+            snap = None
         opentime = MarketToTime("09:30", "US/Eastern", verbose)
         closetime = MarketToTime("16:00", "US/Eastern", verbose)
         desktop = "/home/{0}/Desktop".format(getpass.getuser())
@@ -227,6 +231,7 @@ def ResetDefaults(verbose):
         c.execute("UPDATE defaults SET export_dir = (?) WHERE username = (?)", (desktop, username,))
         c.execute("UPDATE defaults SET folder_name = (?) WHERE username = (?)", ("Practice Portfolio", username,))
         c.execute("UPDATE defaults SET market_status = (?) WHERE username = (?)", ("{}", username,))
+        c.execute("UPDATE defaults SET snap_shot = ? WHERE username = (?)", (snap, username,))
         conn.commit()
         conn.close()
         CreateNames("Practice Portfolio", verbose)
@@ -293,7 +298,7 @@ def CreateDefaults(verbose):
         print("CreateDefaults(3) {0}".format(e))
         return False
     c = conn.cursor()
-    c.execute("CREATE TABLE if not exists 'defaults' ( `username` TEXT NOT NULL UNIQUE, `folder_name` NUMERIC, `open` TEXT, `close` TEXT, `poll_minutes` INTEGER, `test_root` TEXT, `export_dir` TEXT, `tradier_key` TEXT, `market_status` TEXT, PRIMARY KEY(`username`) )")
+    c.execute("CREATE TABLE if not exists 'defaults' ( `username` TEXT NOT NULL UNIQUE, `folder_name` NUMERIC, `snap_shot` INTEGER, `open` TEXT, `close` TEXT, `poll_minutes` INTEGER, `test_root` TEXT, `export_dir` TEXT, `tradier_key` TEXT, `market_status` TEXT, PRIMARY KEY(`username`) )")
     c.execute( "INSERT OR IGNORE INTO defaults(username) VALUES((?))", (username,))
     conn.commit()
     conn.close()
@@ -337,12 +342,12 @@ def PrintDefaults(verbose):
     for row in rows:
         col_list = []
         for i in range(len(row)):
-            if (i == 7):
-                if row[i] == "demo" or row[i] == "":
+            if (keys[i] == "tradier key"):
+                if row[i] == "demo" or row[i] == "" or row[i] == "TEST":
                     col_list.append(row[i])
                 else:
                     col_list.append("[key]")
-            elif (i == 8):
+            elif (keys[i] == "market status"):
                 js = json.loads(row[i])
                 if js:
                     if "status" in js:
@@ -2175,6 +2180,40 @@ def FolderSheet(filename, verbose):
     return True
 
 def ArchiveSheet(filename, verbose):
+    d, t = GetDefaults(verbose)
+    if (verbose):
+        print ("***")
+        print ("ArchiveSheet(2) filename: {0}".format(filename))
+    snap = 0
+    if ("snap shot" in d):
+        snap = d['snap shot']
+    if (snap < 1):
+        if (verbose):
+            print ("ArchiveSheet(2) no snapshots to export".format(db_file))
+        return False
+    aim, shares = GetDetail(snap, verbose)
+    sheet = open(filename, 'w', newline='')
+    csvwriter = csv.writer(sheet)
+    if aim != []:
+        header = True
+        for row in aim:
+            if (header):
+                keys = row.keys()
+                header = False
+                csvwriter.writerow(keys)
+            values = row.values()
+            csvwriter.writerow(values)
+    csvwriter.writerow(" ")
+    if shares != []:
+        header = True
+        for row in shares:
+            if (header):
+                keys = row.keys()
+                header = False
+                csvwriter.writerow(keys)
+            values = row.values()
+            csvwriter.writerow(values)
+    sheet.close()  
     return True
 
 def Export(etype, filename, verbose):
@@ -2451,6 +2490,43 @@ def CreateArchive(verbose):
     if (verbose):
         print ("***\n")
     return True
+
+def GetDetail(snapshot, verbose):
+    username = getpass.getuser()
+    db_file = username + "/archive.db"
+    Path(username + "/").mkdir(parents=True, exist_ok=True) 
+    if (verbose):
+        print ("***")
+        print ("GetDetail(1) dbase: {0}".format(db_file))
+    if (not os.path.exists(db_file)):
+        if (verbose):
+            print ("GetDetail(2) {0} file is missing, cannot return the rows".format(db_file))
+            print ("***\n")
+        return []
+    try:
+        conn = sqlite3.connect(db_file)
+        if (verbose):
+            print("GetDetail(3) sqlite3: {0}".format(sqlite3.version))
+    except Error as e:
+        print("GetDetail(4) {0}".format(e))
+        return [], []
+    c = conn.cursor()
+    c.execute("SELECT * FROM aim where snapshot = ? order by post_date", (snapshot,))
+    keys_aim = list(map(lambda x: x[0].replace("_"," "), c.description))
+    values_aim = c.fetchall()
+    c.execute("SELECT * FROM shares where snapshot = ? order by post_date", (snapshot,))
+    keys_share = list(map(lambda x: x[0].replace("_"," "), c.description))
+    values_share = c.fetchall()
+    conn.close()
+    if (verbose):
+        print ("***\n")
+    answer_aim = []
+    for row in values_aim:
+        answer_aim.append(dict(zip(keys_aim, row)))
+    answer_share = []
+    for row in values_share:
+        answer_share.append(dict(zip(keys_share, row)))
+    return answer_aim, answer_share
 
 def GetSummary(verbose):
     username = getpass.getuser()
