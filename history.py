@@ -54,8 +54,8 @@ def main(argv):
         print ("\tWarning, the test root path is not set, please correct")
         exit()
     if (test):
-        testResult, testPrint = plumb.TestHistory(verbose)
-        print (testPrint)
+        testResult = plumb.TestHistory(verbose)
+        print (testResult['output'])
         exit()
     if (printyear > ""):
         printResult = plumb.PrintAIM(printyear, verbose)

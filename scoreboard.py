@@ -234,11 +234,39 @@ def tests():
     return(render_tests())
 
 def render_tests():
-    resultFlag, test_stock = plumb.TestDefaults(True)
-    resultFlag, test_folder = plumb.TestFolder(True)
-    resultFlag, test_history = plumb.TestHistory(True)
-    resultFlag, test_aim = plumb.TestAIM("aim", True)
-    return render_template('tests.html', test_stock = test_stock, test_folder = test_folder, test_history = test_history, test_aim = test_aim)
+    count_pass = 0
+    count_failures = 0
+    count_total = 0
+
+    testDefaults = plumb.TestDefaults(True)
+    count_pass += testDefaults['pass']
+    count_failures += testDefaults['fails']
+    count_total += testDefaults['total']
+    test_defaults = testDefaults['output']
+
+    testFolder = plumb.TestFolder(True)
+    count_pass += testFolder['pass']
+    count_failures += testFolder['fails']
+    count_total += testFolder['total']
+    test_folder = testFolder['output']
+
+    testHistory = plumb.TestHistory(True)
+    count_pass += testHistory['pass']
+    count_failures += testHistory['fails']
+    count_total += testHistory['total']
+    test_history = testHistory['output']
+
+    testAIM = plumb.TestAIM("aim", True)
+    count_pass += testAIM['pass']
+    count_failures += testAIM['fails']
+    count_total += testAIM['total']
+    test_aim = testAIM['output']
+
+    test_results = "{0} passes, {1} failures out of {2} total tests run.".format(count_pass, count_failures, count_total)
+    test_color = "green;"
+    if (count_failures > 0):
+        test_color = "red;"
+    return render_template('tests.html', test_defaults = test_defaults, test_folder = test_folder, test_history = test_history, test_aim = test_aim, test_results = test_results, test_color = test_color)
 
 @app.errorhandler(404)
 def page_not_found(e):

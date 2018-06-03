@@ -56,8 +56,8 @@ def main(argv):
         print ("\tWarning, the test root path is not set, please correct")
         exit()
     if (test > ""):
-        testResult, testPrint = plumb.TestAIM(test, verbose)
-        print (testPrint)
+        testResult = plumb.TestAIM(test, verbose)
+        print (testResult['output'])
         exit()
     if (notes > ""):
         notesResult, initialize_day = plumb.GetAIMNotes(int(notes), verbose)

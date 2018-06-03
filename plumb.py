@@ -1517,6 +1517,8 @@ def TestDefaults(verbose):
     print_out = StringIO()
     sys.stdout = print_out
     count = 0
+    fails = 0
+    total_tests = 16
     defaults, types =  GetDefaults(False)
     if (verbose):
         print ("***")
@@ -1531,6 +1533,7 @@ def TestDefaults(verbose):
     else:
         if (verbose):
             print ("\tfail.")
+        fails += 1
     if (verbose):
         print ("Test #{0} - UpdateDefaultItem('tradier key', 'TEST', verbose)".format(count + 1))
     result = UpdateDefaultItem("tradier key", "TEST", verbose)
@@ -1541,6 +1544,7 @@ def TestDefaults(verbose):
     else:
         if (verbose):
             print ("\tfail.")
+        fails += 1
     if (verbose):
         print ("Test #{0} - UpdateDefaultItem('poll minutes', 10, False)".format(count + 1))
     result = UpdateDefaultItem('poll minutes', 10, verbose)
@@ -1551,6 +1555,7 @@ def TestDefaults(verbose):
     else:
         if (verbose):
             print ("\tfail.")
+        fails += 1
     if (verbose):
         print ("Test #{0} - UpdateDefaultItem('test root', 'test/', False)".format(count + 1))
     result = UpdateDefaultItem("test root", "test/", verbose)
@@ -1561,6 +1566,7 @@ def TestDefaults(verbose):
     else:
         if (verbose):
             print ("\tfail.")
+        fails += 1
     if (verbose):
         print ("Test #{0} - UpdateDefaultItem('open', '8:30AM', False)".format(count + 1))
     result = UpdateDefaultItem("open", "8:30AM", verbose)
@@ -1571,6 +1577,7 @@ def TestDefaults(verbose):
     else:
         if (verbose):
             print ("\tfail.")
+        fails += 1
     if (verbose):
         print ("Test #{0} - UpdateDefaultItem('close', '15:00', False)".format(count + 1))
     result = UpdateDefaultItem("close", "15:00", verbose)
@@ -1581,6 +1588,7 @@ def TestDefaults(verbose):
     else:
         if (verbose):
             print ("\tfail.")
+        fails += 1
     if (verbose):
         print ("Test #{0} - QuoteTradier('AAPL', verbose)".format(count + 1))
     result = QuoteTradier("AAPL", verbose)
@@ -1591,6 +1599,7 @@ def TestDefaults(verbose):
     else:
         if (verbose):
             print ("\tfail.")
+        fails += 1
     if (verbose):
         print ("Test #{0} - GetDefaults(False)".format(count + 1))
     result, types = GetDefaults(verbose)
@@ -1606,6 +1615,7 @@ def TestDefaults(verbose):
     else:
         if (verbose):
             print ("\tfail.")
+        fails += 1
     reset = defaults
     for k,v in reset.items():
         if (k != "username"):
@@ -1619,22 +1629,31 @@ def TestDefaults(verbose):
             else:
                 if (verbose):
                     print ("\tfail.")
+                fails += 1
     testResults = False
-    if (count == 16):
-        print ("ran 16 tests, all pass")
+    if (count == total_tests):
+        print ("ran {0} tests, all pass".format(total_tests))
         testResults = True
     else:
-        print ("test count expected 16 passes, received {0}".format(count))
+        print ("test count expected {0} passes, received {1}".format(total_tests, count))
         testResults =  False
     sys.stdout = old_stdout
     result_string = print_out.getvalue()
-    return testResults, result_string
+    results = {}
+    results['status'] = testResults
+    results['total'] = total_tests
+    results['pass'] = count
+    results['fails'] = fails
+    results['output'] = result_string
+    return results
 
 def TestFolder(verbose):
     old_stdout = sys.stdout
     print_out = StringIO()
     sys.stdout = print_out
     count = 0
+    fails = 0
+    total_tests = 9
     defaults, types = GetDefaults(verbose)
     if (verbose):
         print ("Test #{0} - UpdateDefaultItem('folder name', 'Test Folder', verbose)".format(count + 1))
@@ -1646,6 +1665,7 @@ def TestFolder(verbose):
     else:
         if (verbose):
             print ("\tfail.")
+        fails += 1
     if (verbose):
         print ("Test #{0} - Add('AAPL', verbose)".format(count + 1))
     result = Add( "AAPL", verbose)
@@ -1656,6 +1676,7 @@ def TestFolder(verbose):
     else:
         if (verbose):
             print ("\tfail.")
+        fails += 1
     if (verbose):
         print ("Test #{0} - Balance('$', '5000', verbose)".format(count + 1))
     result = Balance( "$", "5000", verbose)
@@ -1666,6 +1687,7 @@ def TestFolder(verbose):
     else:
         if (verbose):
             print ("\tfail.")
+        fails += 1
     if (verbose):
         print ("Test #{0} - Balance('AAPL', '5000', verbose)".format(count + 1))
     result = Balance("AAPL", "5000", verbose)
@@ -1676,6 +1698,7 @@ def TestFolder(verbose):
     else:
         if (verbose):
             print ("\tfail.")
+        fails += 1
     if (verbose):
         print ("Test #{0} - Shares('AAPL', '50', verbose)".format(count + 1))
     result = Shares("AAPL", "50", verbose)
@@ -1686,6 +1709,7 @@ def TestFolder(verbose):
     else:
         if (verbose):
             print ("\tfail.")
+        fails += 1
     if (verbose):
         print ("Test #{0} - Update(verbose)".format(count + 1))
     result = Update(verbose)
@@ -1696,6 +1720,7 @@ def TestFolder(verbose):
     else:
         if (verbose):
             print ("\tfail.")
+        fails += 1
     if (verbose):
         print ("Test #{0} - Remove('AAPL', verbose)".format(count + 1))
     result = Remove("AAPL", verbose)
@@ -1706,6 +1731,7 @@ def TestFolder(verbose):
     else:
         if (verbose):
             print ("\tfail.")
+        fails += 1
     username = getpass.getuser()
     if (verbose):
         print ("Test #{0} - UpdateDefaultItem('folder name', 'Test Folder', verbose)".format(count + 1))
@@ -1717,6 +1743,7 @@ def TestFolder(verbose):
     else:
         if (verbose):
             print ("\tfail.")
+        fails += 1
     if (verbose):
         print ("Test #{0} - DeleteName('Test Folder', verbose)".format(count + 1))
     result = DeleteName("Test Folder", verbose)
@@ -1727,21 +1754,31 @@ def TestFolder(verbose):
     else:
         if (verbose):
             print ("\tfail.")
+        fails += 1
     testResults = False
-    if (count == 9):
-        print ("ran 9 tests, all pass")
+    if (count == total_tests):
+        print ("ran {0} tests, all pass".format(total_tests))
         testResults = True
     else:
-        print ("test count expected 9 passes, received {0}".format(count))
+        print ("test count expected {0} passes, received {1}".format(total_tests, count))
+        testResults =  False
     sys.stdout = old_stdout
     result_string = print_out.getvalue()
-    return testResults, result_string
+    results = {}
+    results['status'] = testResults
+    results['total'] = total_tests
+    results['pass'] = count
+    results['fails'] = fails
+    results['output'] = result_string
+    return results
 
 def TestAIM(location, verbose):
     old_stdout = sys.stdout
     print_out = StringIO()
     sys.stdout = print_out
     count = 0
+    fails = 0
+    total_tests = 453
     defaults, types = GetDefaults(False)
     status, keys, rows = LoadTest(location, verbose)
     if (status and (defaults is not None)):
@@ -1755,6 +1792,7 @@ def TestAIM(location, verbose):
         else:
             if (verbose):
                 print ("\tfail.")
+            fails += 1
         if (verbose):
             print ("testing {0} spreadsheet rows".format(len(rows)))
         for item in rows.items():
@@ -1773,6 +1811,7 @@ def TestAIM(location, verbose):
             else:
                 if (verbose):
                     print ("\tSafe({0}) - expected: {1}, calculated: {2}, fail.".format(index, curr['Safe'], result))
+                fails += 1
             if (verbose):
                 print ("Test #{0} - PortfolioControl(<Market Order>, <Prev Portfolio Control>, verbose)".format(count + 1))
             result = PortfolioControl(myFloat(curr['Market Order']), myFloat(prev['Portfolio Control']), verbose)
@@ -1783,6 +1822,7 @@ def TestAIM(location, verbose):
             else:
                 if (verbose):
                     print ("\tPortfolioControl({0}) - expected: {1}, calculated: {2}, fail.".format(index, curr['Portfolio Control'], result))
+                fails += 1
             if (verbose):
                 print ("Test #{0} - BuySellAdvice(<Portfolio Control>, <Stock Value>, verbose)".format(count + 1))
             result = BuySellAdvice(myFloat(prev['Portfolio Control']), myFloat(curr['Stock Value']), verbose)
@@ -1793,6 +1833,7 @@ def TestAIM(location, verbose):
             else:
                 if (verbose):
                     print ("\tBuySellAdvice({0}) - expected: {1}, calculated: {2}, fail.".format(index, curr['Buy (Sell) Advice'], result))
+                fails += 1
             if (verbose):
                 print ("Test #{0} - MarketOrder(<Buy (Sell) Advice>, <Safe>, verbose)".format(count + 1))
             result = MarketOrder(myFloat(curr['Buy (Sell) Advice']), myFloat(curr['Safe']), verbose)
@@ -1803,6 +1844,7 @@ def TestAIM(location, verbose):
             else:
                 if (verbose):
                     print ("\tMarketOrder({0}) - expected: {1}, calculated: {2}, fail.".format(index, curr['Market Order'], result))
+                fails += 1
             if (verbose):
                 print ("Test #{0} - PortfolioValue(<Cash>, <Stock Value>, verbose)".format(count + 1))
             result = PortfolioValue(myFloat(curr['Cash']), myFloat(curr['Stock Value']), verbose)
@@ -1813,6 +1855,7 @@ def TestAIM(location, verbose):
             else:
                 if (verbose):
                     print ("\tPortfolioValue({0}) - expected: {1}, calculated: {2}, fail.".format(index, curr['Portfolio Value'], result))
+                fails += 1
         username = getpass.getuser()
         if (verbose):
             print ("Test #{0} - UpdateDefaultItem('folder name', '<reset back to what it was>', verbose)".format(count + 1))
@@ -1824,6 +1867,7 @@ def TestAIM(location, verbose):
         else:
             if (verbose):
                 print ("\tfail.")
+            fails += 1
         if (verbose):
             print ("Test #{0} - DeleteName('Test Aim', verbose)".format(count + 1))
         result = DeleteName("Test Aim", verbose)
@@ -1834,21 +1878,31 @@ def TestAIM(location, verbose):
         else:
             if (verbose):
                 print ("\tfail.")
-        testResults = False
-        if (count == 453):
-            print ("ran 453 tests, all pass")
-            testResults = True
-        else:
-            print ("test count expected 453 passes, received {0}".format(count))
+            fails += 1
+    testResults = False
+    if (count == total_tests):
+        print ("ran {0} tests, all pass".format(total_tests))
+        testResults = True
+    else:
+        print ("test count expected {0} passes, received {1}".format(total_tests, count))
+        testResults =  False
     sys.stdout = old_stdout
     result_string = print_out.getvalue()
-    return testResults, result_string
+    results = {}
+    results['status'] = testResults
+    results['total'] = total_tests
+    results['pass'] = count
+    results['fails'] = fails
+    results['output'] = result_string
+    return results
 
 def TestHistory(verbose):
     old_stdout = sys.stdout
     print_out = StringIO()
     sys.stdout = print_out
     count = 0
+    fails = 0
+    total_tests = 4
     defaults, types = GetDefaults(verbose)
     if (verbose):
         print ("Test #{0} - PrintAIM('all', verbose)".format(count + 1))
@@ -1894,14 +1948,21 @@ def TestHistory(verbose):
         if (verbose):
             print ("\tfail.")
     testResults = False
-    if (count == 4):
-        print ("ran 4 tests, all pass")
+    if (count == total_tests):
+        print ("ran {0} tests, all pass".format(total_tests))
         testResults = True
     else:
-        print ("test count expected 4 passes, received {0}".format(count))
+        print ("test count expected {0} passes, received {1}".format(total_tests, count))
+        testResults =  False
     sys.stdout = old_stdout
     result_string = print_out.getvalue()
-    return testResults, result_string
+    results = {}
+    results['status'] = testResults
+    results['total'] = total_tests
+    results['pass'] = count
+    results['fails'] = fails
+    results['output'] = result_string
+    return results
 
 def myFloat(value):
     try:
