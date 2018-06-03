@@ -162,10 +162,6 @@ def defaults():
 
 def render_defaults(feedback):
     defaults, types = plumb.GetDefaults(False)
-    alpha_vantage_key_warning = ""
-    if ("alpha vantage key" in defaults):
-        if (defaults['alpha vantage key'] == "" or defaults['alpha vantage key'] == "demo"):
-            alpha_vantage_key_warning = "Remember to obtain your lifetime API key from Alpha Vantage, this is needed for polling the market prices"
     tradier_key_warning = ""
     if ("tradier key" in defaults):
         if (defaults['tradier key'] == "" or defaults['tradier key'] == "demo"):
@@ -194,7 +190,7 @@ def render_defaults(feedback):
             daemon_info = checkOpen['description']
         else:
             daemon_info = "{0}, Last active status: {1}".format(checkOpen['description'], status)
-    return (render_template('defaults.html', table = table, feedback = feedback, column_options = column_options, notes = notes, alpha_vantage_key_warning = alpha_vantage_key_warning,
+    return (render_template('defaults.html', table = table, feedback = feedback, column_options = column_options, notes = notes,
         daemon_table = daemon_table, daemon_check = daemon_check, daemon_color = daemon_color, daemon_info = daemon_info, daemon_action = daemon_action,
         name_options = name_options, folder_options = folder_options, hide_folder = hide_folder, tradier_key_warning = tradier_key_warning))
 
@@ -202,38 +198,27 @@ def render_defaults(feedback):
 def history():
     try:
         if request.method == "POST":
-            if (request.form['action'] == "all"):
-                year_input = 1970
-                year_string = "all"
-                return (render_history("", year_string))
-            elif (request.form['action'] == "export"):
+            if (request.form['action'] == "export"):
                 log = plumb.Export(request.form['column'], request.form['value'], False)
-                return (render_history(log, ""))
+                return (render_history(log))
             elif (request.form['action'] == "archive"):
                 plumb.Archive(False)
-                return (render_history("AIM system archived.", ""))
-            elif (request.form['action'].isnumeric()):
-                year_input = int(request.form['action'])
-                if year_input < 100:
-                    year_input += 2000
-                year_string = str(year_input)
-                return (render_history("", year_string))
+                return (render_history("AIM system archived."))
+            elif (request.form['action'] == "remove"):
+                plumb.DeleteSnapshot(request.form['remove_snapshot'], False)
+                log =  "snapshot {0} has been removed from archive.".format(request.form['remove_snapshot'])
+                return(render_history(log))
             else:
-                feedback = "input is not a year or the word all"
-                return (render_history(feedback, ""))
+                return (render_history(""))
 
     except Exception as e:
-        return (render_history(e, ""))
+        return (render_history(e))
 
-    return(render_history("", ""))
+    return(render_history(""))
 
-def render_history(feedback, year_string):
-    if (year_string == "" or year_string[0].lower() == 'a'):
-        year_input = 1970
-    else:
-        year_input = int(year_string)
+def render_history(feedback):
     notes, initialize_day = plumb.GetAIMNotes(10, False)
-    table = plumb.PrintAIM(str(year_input), False)
+    table = plumb.PrintAIM("all", False)
     archive_table = plumb.PrintSummary(False)
     return render_template('history.html', table = table, notes = notes, feedback = feedback, archive_table = archive_table)
 

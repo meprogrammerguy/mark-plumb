@@ -37,6 +37,7 @@
                 <h5>{{ note.date }}</h5>
                 <p>{{ note.content }}</p>
             {% endfor %}
+            <p style="color:red;">{{feedback | safe}}</p>
             <ul>
                 <li><a href="https://amazon.com/author/smithja" target="_blank" >my Amazon Bookshelf</a></li>
                 <li><a href="https://github.com/meprogrammerguy" target="_blank" >my GitHub page</a></li>
