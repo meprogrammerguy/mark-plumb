@@ -1459,7 +1459,7 @@ def PrintAIM(printyear, verbose):
     if db_file == "":
         if (verbose):
             print ("PrintAIM(1) could not get dbase name, make sure that the defaults dbase is set up")
-        return ""
+        return "", ""
     if (verbose):
         print ("PrintAIM(2) dbase: {0}".format(db_file))
         print ("PrintAIM(3) year: {0}".format(printyear))
@@ -1467,14 +1467,14 @@ def PrintAIM(printyear, verbose):
         if (verbose):
             print ("PrintAIM(4) {0} file is missing, cannot print".format(db_file))
             print ("***\n")
-        return ""
+        return "", ""
     try:
         conn = sqlite3.connect(db_file)
         if (verbose):
             print("PrintAIM(5) sqlite3: {0}".format(sqlite3.version))
     except Error as e:
         print("PrintAIM(6) {0}".format(e))
-        return ""
+        return "", ""
     keys_db = []
     rows = []
     if (checkTableExists(conn, "aim")):
@@ -1519,7 +1519,13 @@ def PrintAIM(printyear, verbose):
     table = TableCls(items, html_attrs = {'width':'100%','border-spacing':0})
     if (verbose):
         print ("***\n")
-    return table.__html__()
+    defaults, types =  GetDefaults(False)
+    export_options = ""
+    if "snap shot" in defaults:
+        export_options += '<option value="AIM activity">AIM activity</option>'
+        export_options += '<option value="Archive snapshot {0}">Archive snapshot {0}</option>'.format(defaults['snap shot'], defaults['snap shot'])
+        export_options += '<option value="Current Portfolio">Current Portfolio</option>'
+    return table.__html__(), export_options
 #endregion aim
 
 #region tests
@@ -1917,7 +1923,7 @@ def TestHistory(verbose):
     defaults, types = GetDefaults(verbose)
     if (verbose):
         print ("Test #{0} - PrintAIM('all', verbose)".format(count + 1))
-    result = PrintAIM("all", verbose)
+    result, export_options = PrintAIM("all", verbose)
     if (result > ""):
         if (verbose):
             print ("\tpass.")
@@ -2204,7 +2210,7 @@ def ArchiveSheet(filename, verbose):
         snap = d['snap shot']
     if (snap < 1):
         if (verbose):
-            print ("ArchiveSheet(2) no snapshots to export".format(db_file))
+            print ("ArchiveSheet(2) no snapshots to export")
         return False
     summary = GetSummary(verbose)
     aim, shares = GetDetail(snap, verbose)
@@ -2280,11 +2286,13 @@ def Export(etype, filename, verbose):
             result = FolderSheet(filename, verbose)
         else:
             result = ArchiveSheet(filename, verbose)
-        if (verbose):
-            if (result):
-                print ("file saved.")
+        if (result):
+            log = "file saved."
+        else:
+            if (etype == "archive"):
+                log = "file not saved, please set snap shot in defaults correctly and try again."
             else:
-                print ("failed.")
+                log = "file not saved, do you have your {0} set up?".format(etype)
     else:
         log = "save was cancelled."
     return log
@@ -2403,6 +2411,7 @@ def SnapTables(verbose):
                 c.execute( "INSERT OR IGNORE INTO shares VALUES(?, (?), (?), ?, ?)", (snap, dt.strftime('%Y/%m/%d'), f['symbol'], f['balance'], 0,))   
     conn.commit()
     conn.close()
+    UpdateDefaultItem("snap shot", snap, verbose)
     if (verbose):
         print ("***\n")
     return True

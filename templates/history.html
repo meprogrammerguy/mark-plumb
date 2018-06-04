@@ -54,7 +54,7 @@
             <p class="center">creates a spreadsheet</p>
             <form action="#" method="post">
             <div class="center">
-                <p><select id="id" name="column"><option value="activity">activity</option><option value="archive">archive</option><option value="portfolio">portfolio</option></select>
+                <p><select id="id" name="column">{{export_options | safe}}</select>
                 <input type="text" name="value" onfocus="this.value=''" value="enter filename"/></p>
             </div>
             <div class="form_settings">

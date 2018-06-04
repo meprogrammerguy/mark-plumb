@@ -218,9 +218,9 @@ def history():
 
 def render_history(feedback):
     notes, initialize_day = plumb.GetAIMNotes(10, False)
-    table = plumb.PrintAIM("all", False)
+    table, export_options = plumb.PrintAIM("all", False)
     archive_table = plumb.PrintSummary(False)
-    return render_template('history.html', table = table, notes = notes, feedback = feedback, archive_table = archive_table)
+    return render_template('history.html', table = table, notes = notes, feedback = feedback, archive_table = archive_table, export_options = export_options)
 
 @app.route('/examples/')
 def examples():
