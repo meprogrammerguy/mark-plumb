@@ -813,10 +813,13 @@ def PrintFolder(verbose):
                         col_list.append(as_shares(0))
                     else:
                         col_list.append(as_shares(row[i]))
-            elif (keys[i] == "update time"):
-                col_list.append(row[i])
+            elif (keys[i] == "price"):
+                if row[0] == "$":
+                    col_list.append("")
+                else:
+                    col_list.append(as_currency(row[i]))
             else:
-                if (keys[i] == "balance" or keys[i] == "price"):
+                if (keys[i] == "balance"):
                     col_list.append(as_currency(row[i]))
                     if (keys[i] == "balance"):
                         amount_option = []
@@ -824,9 +827,6 @@ def PrintFolder(verbose):
                         amount_option.append(row[i])
                         amount_option.append(row[keys.index("shares")])
                         amount_options.append(amount_option)
-                    else:
-                        if row[0] == "$":
-                            col_list.append("")
                 else:
                     col_list.append(row[i])
         answer = dict(zip(keys, col_list))
@@ -1981,6 +1981,11 @@ def TestHistory(verbose):
     results['output'] = result_string
     return results
 
+def TestShortcuts(verbose):
+    results = {}
+    results['output'] = "Hello World!"
+    return results
+
 def myFloat(value):
     try:
         answer = float(value)
@@ -2814,3 +2819,10 @@ def GetDB(verbose):
             break
     return db_file
 #endregion names
+#region shortcuts
+def CreateShortcuts(what, verbose):
+    return True
+
+def RemoveShortcuts(verbose):
+    return True
+#endregion shortcuts
