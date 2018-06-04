@@ -799,10 +799,10 @@ def PrintFolder(verbose):
         for value in f.values():
             row.append(value)
         row = row[:1] + [''] + row[1:-1]
+        symbol_options += '<option value="{0}">{1}</option>'.format(row[keys.index("symbol")], row[keys.index("symbol")])
         json_string = f['json string']
         col_list = []
         for i in range(len(keys)):
-            symbol_options += '<option value="{0}">{1}</option>'.format(row[0], row[0])
             if (keys[i] == "company name"):
                 col_list.append(json_string['companyName'])
             elif (keys[i] == "shares"):
@@ -820,9 +820,9 @@ def PrintFolder(verbose):
                     col_list.append(as_currency(row[i]))
                     if (keys[i] == "balance"):
                         amount_option = []
-                        amount_option.append(row[0])
+                        amount_option.append(row[keys.index("symbol")])
                         amount_option.append(row[i])
-                        amount_option.append(row[3])
+                        amount_option.append(row[keys.index("shares")])
                         amount_options.append(amount_option)
                     else:
                         if row[0] == "$":
