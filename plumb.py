@@ -373,7 +373,6 @@ def PrintDefaults(verbose):
         print ("***\n")
     return table.__html__(), column_options, name_options, folder_options
 #endregion stock
-
 #region folder
 def Add(symbol, verbose):
     db_file = GetDB(verbose)
@@ -737,8 +736,10 @@ def GetFolder(verbose):
         answer.append(dict(zip(keys, row)))
     answers = []
     for js in answer:
-        js['json string'] = json.loads(js['json string'])
-        answers.append(js)
+        if 'json string' in js:
+            if js['json string'] != None:
+                js['json string'] = json.loads(js['json string'])
+                answers.append(js)
     return answers
 
 def GetFolderValue(symbol, key, folder_dict):
@@ -952,7 +953,6 @@ def AllocationTrends(verbose):      # use GetFolder()
                     life_trends.append(trend)        
     return allocation, trends, life_trends
 #endregion folder
-
 #region aim
 def GetAIM(verbose):
     db_file = GetDB(verbose)
@@ -1120,16 +1120,6 @@ def GetAIMCount(verbose):
         print ("***\n")
     return len(results)
 
-def checkTableExists(dbcon, tablename):
-    dbcur = dbcon.cursor()
-    dbcur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=(?);", (tablename,))
-    test = dbcur.fetchone()
-    if test is None:
-        dbcur.close()
-        return False
-    dbcur.close()
-    return True
-
 def GetLastAIM(verbose):
     db_file = GetDB(verbose)
     if (verbose):
@@ -1229,18 +1219,6 @@ def GetAIMNotes(count, verbose):
         print ("***\n")
     return notes, initialize_day
 
-def noteDate(value):
-    if (value == ""):
-        return ""
-    dt = datetime.datetime.strptime(value, '%Y/%m/%d') 
-    return custom_strftime('%B {S}, %Y', dt)
-
-def suffix(d):
-    return 'th' if 11<=d<=13 else {1:'st',2:'nd',3:'rd'}.get(d%10, 'th')
-
-def custom_strftime(format, t):
-    return t.strftime(format).replace('{S}', str(t.day) + suffix(t.day))
-
 def GetFirstAIM(verbose):
     db_file = GetDB(verbose)
     if (verbose):
@@ -1274,67 +1252,6 @@ def GetFirstAIM(verbose):
     if (verbose):
         print ("***\n")
     return answer
-
-def to_number(string, verbose):
-    negative = False
-    percent = False
-    if ('(' in string):
-        negative = True
-    if ('%' in string):
-        percent = True
-    if (verbose):
-        print ("***")
-        print ("to_number(1) raw: {0}".format(string))
-        print ("to_number(2) negative: {0}".format(negative))
-        print ("to_number(3) percent: {0}".format(percent))
-
-    string = string.replace("$", "")
-    if (verbose):
-        print ("to_number(4) remove $: {0}".format(string))
-
-    string = string.replace(",", "")
-    if (verbose):
-        print ("to_number(5) remove ,: {0}".format(string))
-
-    string = string.replace("(", "")
-    if (verbose):
-        print ("to_number(6) remove (: {0}".format(string))
-    string = string.replace(")", "")
-    if (verbose):
-        print ("to_number(7) remove ): {0}".format(string))
-
-    string = string.replace("%", "")
-    if (verbose):
-        print ("to_number(8) remove %: {0}".format(string))
-    try:
-        clean_number = float(string)
-    except:
-        clean_number = 0.0
-    if (percent):
-        clean_number = clean_number / 100.
-    if (negative):
-        clean_number = - clean_number
-    if (verbose):
-        print ("to_number(9) clean_number: {0}".format(clean_number))
-        print ("***\n")
-    return clean_number
-
-def as_currency(amount):
-    if (amount is None):
-        amount = 0
-    if amount >= 0:
-        return '${:,.2f}'.format(amount)
-    else:
-        return '(${:,.2f})'.format(-amount)
-
-def as_shares(amount):
-    return '\r{:.4f}'.format(amount)
-
-def as_percent(amount):
-    if amount >= 0:
-        return "{:.2f}%".format(amount)
-    else:
-        return '({:.2f}%)'.format(-amount)
 
 def Look(verbose):
     first = GetFirstAIM(verbose)
@@ -1525,7 +1442,6 @@ def PrintAIM(printyear, verbose):
         export_options += '<option value="Current Portfolio">Current Portfolio</option>'
     return table.__html__(), export_options
 #endregion aim
-
 #region tests
 def TestDefaults(verbose):
     old_stdout = sys.stdout
@@ -1533,7 +1449,7 @@ def TestDefaults(verbose):
     sys.stdout = print_out
     count = 0
     fails = 0
-    total_tests = 16
+    total_tests = 17
     defaults, types =  GetDefaults(False)
     if (verbose):
         print ("***")
@@ -1979,44 +1895,6 @@ def TestHistory(verbose):
     results['output'] = result_string
     return results
 
-def myFloat(value):
-    try:
-        answer = float(value)
-    except ValueError:
-        return 0
-    return answer
-
-def GetPrevious(index, keys, rows):
-    count = index - 1
-    values = []
-    for i in keys:
-        values.append('')
-    if (count < 0):
-        return  dict(zip(keys, values))
-    value = rows[count]
-    answer = dict(zip(keys, value))
-    return answer
-
-def GetIndex(item):
-    filename = os.path.basename(str(item))
-    idx = re.findall(r'\d+', str(filename))
-    if (len(idx) == 0):
-        idx.append("0")
-    return int(idx[0])
-
-def GetFiles(path, templatename):
-    A = []
-    for p in Path(path).glob(templatename):
-        A.append(str(p))
-    file_list = []
-    for item in range(0, 17):
-        file_list.append("?")
-    for item in A:
-        idx = GetIndex(item)
-        file_list[idx] = item
-    file_list = [x for x in file_list if x != "?"]
-    return file_list
-
 def LoadTest(location, verbose):
     defaults, types = GetDefaults(False)
     test_dir = defaults['test root'] + location
@@ -2139,24 +2017,6 @@ def PrintDaemon(status, verbose):
     if (verbose):
         print ("***\n")
     return table.__html__(), status
-
-def get_pid(name):
-    child = subprocess.Popen(['pgrep', '-f', name], stdout=subprocess.PIPE, shell=False)
-    response = child.communicate()[0]
-    return [int(pid) for pid in response.split()]
-
-def kill_pid(pid):
-    return(os.kill(pid, signal.SIGTERM))
-
-def run_script(name):
-    pid = get_pid(name)
-    if pid != []:
-        log = {}
-        log['status'] = "stop"
-        log['pid'] = pid[0]
-        LogDaemon(log, False)
-        kill_pid(pid[0])
-    os.system(name)
 #endregion daemon
 #region history
 def ActivitySheet(filename, verbose):
@@ -2817,12 +2677,6 @@ def CreateNames(pretty, verbose):
         print ("***\n")
     return True
 
-def CheckPretty(ex):
-    ex = ex.rstrip()
-    if re.match(r'^[a-zA-Z0-9][ A-Za-z0-9_-]*$', ex):
-        return True
-    return False
-
 def GetDB(verbose):
     db_file = ""
     defaults, types = GetDefaults(verbose)
@@ -2836,4 +2690,145 @@ def GetDB(verbose):
             break
     return db_file
 #endregion names
+#region utils
+def noteDate(value):
+    if (value == ""):
+        return ""
+    dt = datetime.datetime.strptime(value, '%Y/%m/%d') 
+    return custom_strftime('%B {S}, %Y', dt)
 
+def suffix(d):
+    return 'th' if 11<=d<=13 else {1:'st',2:'nd',3:'rd'}.get(d%10, 'th')
+
+def custom_strftime(format, t):
+    return t.strftime(format).replace('{S}', str(t.day) + suffix(t.day))
+def to_number(string, verbose):
+    negative = False
+    percent = False
+    if ('(' in string):
+        negative = True
+    if ('%' in string):
+        percent = True
+    if (verbose):
+        print ("***")
+        print ("to_number(1) raw: {0}".format(string))
+        print ("to_number(2) negative: {0}".format(negative))
+        print ("to_number(3) percent: {0}".format(percent))
+
+    string = string.replace("$", "")
+    if (verbose):
+        print ("to_number(4) remove $: {0}".format(string))
+
+    string = string.replace(",", "")
+    if (verbose):
+        print ("to_number(5) remove ,: {0}".format(string))
+
+    string = string.replace("(", "")
+    if (verbose):
+        print ("to_number(6) remove (: {0}".format(string))
+    string = string.replace(")", "")
+    if (verbose):
+        print ("to_number(7) remove ): {0}".format(string))
+
+    string = string.replace("%", "")
+    if (verbose):
+        print ("to_number(8) remove %: {0}".format(string))
+    try:
+        clean_number = float(string)
+    except:
+        clean_number = 0.0
+    if (percent):
+        clean_number = clean_number / 100.
+    if (negative):
+        clean_number = - clean_number
+    if (verbose):
+        print ("to_number(9) clean_number: {0}".format(clean_number))
+        print ("***\n")
+    return clean_number
+
+def as_currency(amount):
+    if (amount is None):
+        amount = 0
+    if amount >= 0:
+        return '${:,.2f}'.format(amount)
+    else:
+        return '(${:,.2f})'.format(-amount)
+
+def as_shares(amount):
+    return '\r{:.4f}'.format(amount)
+
+def as_percent(amount):
+    if amount >= 0:
+        return "{:.2f}%".format(amount)
+    else:
+        return '({:.2f}%)'.format(-amount)
+
+def checkTableExists(dbcon, tablename):
+    dbcur = dbcon.cursor()
+    dbcur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=(?);", (tablename,))
+    test = dbcur.fetchone()
+    if test is None:
+        dbcur.close()
+        return False
+    dbcur.close()
+    return True
+def CheckPretty(ex):
+    ex = ex.rstrip()
+    if re.match(r'^[a-zA-Z0-9][ A-Za-z0-9_-]*$', ex):
+        return True
+    return False
+def get_pid(name):
+    child = subprocess.Popen(['pgrep', '-f', name], stdout=subprocess.PIPE, shell=False)
+    response = child.communicate()[0]
+    return [int(pid) for pid in response.split()]
+
+def kill_pid(pid):
+    return(os.kill(pid, signal.SIGTERM))
+
+def run_script(name):
+    pid = get_pid(name)
+    if pid != []:
+        log = {}
+        log['status'] = "stop"
+        log['pid'] = pid[0]
+        LogDaemon(log, False)
+        kill_pid(pid[0])
+    os.system(name)
+def myFloat(value):
+    try:
+        answer = float(value)
+    except ValueError:
+        return 0
+    return answer
+
+def GetPrevious(index, keys, rows):
+    count = index - 1
+    values = []
+    for i in keys:
+        values.append('')
+    if (count < 0):
+        return  dict(zip(keys, values))
+    value = rows[count]
+    answer = dict(zip(keys, value))
+    return answer
+
+def GetIndex(item):
+    filename = os.path.basename(str(item))
+    idx = re.findall(r'\d+', str(filename))
+    if (len(idx) == 0):
+        idx.append("0")
+    return int(idx[0])
+
+def GetFiles(path, templatename):
+    A = []
+    for p in Path(path).glob(templatename):
+        A.append(str(p))
+    file_list = []
+    for item in range(0, 17):
+        file_list.append("?")
+    for item in A:
+        idx = GetIndex(item)
+        file_list[idx] = item
+    file_list = [x for x in file_list if x != "?"]
+    return file_list
+#endregion utils
