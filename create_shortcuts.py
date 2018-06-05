@@ -90,7 +90,6 @@ def CreateShortcuts(what, verbose):
             print ("CreateShortcuts(2) - unknown shortcut option - exiting.")
         return False
     current_dir = os.getcwd()
-    filename = "PlumbMark.desktop"
     heading = "[Desktop Entry]\n"
     shortcut_dict = {}
     shortcut_dict['Version'] = 1.0
@@ -102,7 +101,7 @@ def CreateShortcuts(what, verbose):
     shortcut_dict['Icon'] = "{0}/static/Shortcut.png".format(current_dir)
     shortcut_dict['GenericName[en_US.UTF-8]'] = "Server for Plumb the Market Page"
     for path in paths:
-        full_filename = "{0}{1}".format(path, filename)
+        full_filename = "{0}PlumbMark.desktop".format(path)
         fh = open(full_filename, 'w', newline='')
         fh.write(heading)
         for k,v in shortcut_dict.items():
@@ -110,8 +109,8 @@ def CreateShortcuts(what, verbose):
             fh.write(item)
         fh.close()
     if f_apps != []:
-        if (filename not in f_apps):
-            f_apps.append(filename)
+        if ("PlumbMark.desktop" not in f_apps):
+            f_apps.append("PlumbMark.desktop")
             f_apps_set = 'gsettings set org.gnome.shell favorite-apps "{0}"'.format(f_apps)
             os.system(f_apps_set)
     if (verbose):
