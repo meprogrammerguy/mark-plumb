@@ -101,7 +101,7 @@ def Holiday(verbose):
     if ("market status" in defaults):
         js = defaults['market status']
         if "date" in js:
-            if js['date'] == today
+            if js['date'] == today:
                 return js
 
     connection = http.client.HTTPSConnection('sandbox.tradier.com', 443, timeout = 30)
