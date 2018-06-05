@@ -3,12 +3,10 @@
 import sys, getopt
 import pdb
 import os
-import pprint
-import datetime
 import subprocess
 from pathlib import Path
 import ast
-from shutil import copyfile
+import stat
 
 def main(argv):
     verbose = False
@@ -101,8 +99,8 @@ def CreateShortcuts(what, verbose):
     shortcut_dict['Icon'] = "{0}/static/Shortcut.png".format(current_dir)
     shortcut_dict['GenericName[en_US.UTF-8]'] = "Server for Plumb the Market Page"
     for path in paths:
-        full_filename = "{0}PlumbMark.desktop".format(path)
-        fh = open(full_filename, 'w', newline='')
+        filename = "{0}PlumbMark.desktop".format(path)
+        fh = open(filename, 'w', newline='')
         fh.write(heading)
         for k,v in shortcut_dict.items():
             item = "{0} = {1}\n".format(k, v)
@@ -113,6 +111,10 @@ def CreateShortcuts(what, verbose):
             f_apps.append("PlumbMark.desktop")
             f_apps_set = 'gsettings set org.gnome.shell favorite-apps "{0}"'.format(f_apps)
             os.system(f_apps_set)
+    if (what == "both" or what == "desktop"):
+        filename = "{0}PlumbMark.desktop".format(desktop_path)
+        st = os.stat(filename)
+        os.chmod(filename, st.st_mode | stat.S_IEXEC)
     if (verbose):
         print ("***\n")
     return True
