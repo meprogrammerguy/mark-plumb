@@ -150,8 +150,8 @@ def usage():
     -v --verbose        increases the information level
 
     -d --desktop        creates a desktop shortcut
-    -b --both           creates a desktop and a favorites shortcut
     -f --favorites      creates a shortcut in your favorites
+    -b --both           creates both shortcuts
 
     -r --remove         removes the shortcuts
     """
