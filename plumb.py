@@ -1982,11 +1982,6 @@ def TestHistory(verbose):
     results['output'] = result_string
     return results
 
-def TestShortcuts(verbose):
-    results = {}
-    results['output'] = "Hello World!"
-    return results
-
 def myFloat(value):
     try:
         answer = float(value)
@@ -2820,63 +2815,4 @@ def GetDB(verbose):
             break
     return db_file
 #endregion names
-#region shortcuts
-def CreateShortcuts(what, verbose):
-    if (verbose):
-        print ("***")
-        print ("CreateShortcuts(1) where: {0}".format(what))
-    home = str(Path.home())
-    desktop_path = "/usr/share/applications/"
-    favorites_path = "{0}/.local/share/applications/".format(home)
-    paths = []
-    f_apps = []
-    if (what == "both"):
-        paths.append(favorites_path)
-        paths.append(desktop_path)
-        f_apps =  get_favorites()
-    elif (what == "favorites"):
-        paths.append(favorites_path)
-        f_apps = get_favorites()
-    elif (what == "desktop"):
-        paths.append(desktop_path)
-    else:
-        if (verbose):
-            print ("CreateShortcuts(2) - unknown shortcut option - exiting.")
-        return False
-    current_dir = os.getcwd()
-    filename = "PlumbMark.desktop"
-    heading = "[Desktop Entry]\n"
-    shortcut_dict = {}
-    shortcut_dict['Version'] = 1.0
-    shortcut_dict['Type'] = "Application"
-    shortcut_dict['Terminal'] = "true"
-    shortcut_dict['Exec'] = "{0}/start_server.sh".format(current_dir)
-    shortcut_dict['Name'] = "PlumbMark"
-    shortcut_dict['Comment'] = "Plumb the Market Server"
-    shortcut_dict['Icon'] = "{0}/static/Shortcut.png".format(current_dir)
-    shortcut_dict['GenericName[en_US.UTF-8]'] = "Server for Plumb the Market Page"
-    for path in paths:
-        full_filename = "{0}{1}".format(path, filename)
-        fh = open(full_filename, 'w', newline='')
-        fh.write(heading)
-        for k,v in shortcut_dict.items():
-            item = "{0} = {1}\n".format(k, v)
-            fh.write(item)
-        fh.close()
-    if f_apps != []:
-        if (filename not in f_apps):
-            f_apps.append(filename)
-            f_apps_set = 'gsettings set org.gnome.shell favorite-apps "{0}"'.format(f_apps)
-            os.system(f_apps_set)
-    if (verbose):
-        print ("***\n")
-    return True
 
-def RemoveShortcuts(verbose):
-    return True
-
-def get_favorites():
-    child = subprocess.Popen(['gsettings', 'get', 'org.gnome.shell', 'favorite-apps'], stdout=subprocess.PIPE, shell=False)
-    response = child.communicate()[0].decode("utf-8")
-    return ast.literal_eval(response)
-#endregion shortcuts

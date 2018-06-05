@@ -278,4 +278,4 @@ def CurrentBalance(symbol, string):
     return result[0]
 
 if __name__ == "__main__":
-	app.run()
+    app.run()
