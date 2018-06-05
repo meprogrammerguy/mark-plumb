@@ -32,7 +32,7 @@ from io import StringIO
 import itertools
 import ast
 
-#region stock
+#region defaults
 def QuoteTradier(quotes, verbose):
     answers = []
     defaults, types = GetDefaults(verbose)
@@ -101,7 +101,7 @@ def Holiday(verbose):
     if ("market status" in defaults):
         js = defaults['market status']
         if "date" in js:
-            if js['date'] == today:
+            if js['date'] == today
                 return js
 
     connection = http.client.HTTPSConnection('sandbox.tradier.com', 443, timeout = 30)
@@ -372,7 +372,7 @@ def PrintDefaults(verbose):
     if (verbose):
         print ("***\n")
     return table.__html__(), column_options, name_options, folder_options
-#endregion stock
+#endregion defaults
 #region folder
 def Add(symbol, verbose):
     db_file = GetDB(verbose)
@@ -860,7 +860,7 @@ def AddRemoveButtons(table):
         index = start + 1
     return table
 
-def AllocationTrends(verbose):      # use GetFolder() 
+def AllocationTrends(verbose): 
     db_file = GetDB(verbose)
     if (verbose):
         print ("***")
@@ -2702,6 +2702,7 @@ def suffix(d):
 
 def custom_strftime(format, t):
     return t.strftime(format).replace('{S}', str(t.day) + suffix(t.day))
+
 def to_number(string, verbose):
     negative = False
     percent = False
@@ -2772,11 +2773,13 @@ def checkTableExists(dbcon, tablename):
         return False
     dbcur.close()
     return True
+
 def CheckPretty(ex):
     ex = ex.rstrip()
     if re.match(r'^[a-zA-Z0-9][ A-Za-z0-9_-]*$', ex):
         return True
     return False
+
 def get_pid(name):
     child = subprocess.Popen(['pgrep', '-f', name], stdout=subprocess.PIPE, shell=False)
     response = child.communicate()[0]
@@ -2794,6 +2797,7 @@ def run_script(name):
         LogDaemon(log, False)
         kill_pid(pid[0])
     os.system(name)
+
 def myFloat(value):
     try:
         answer = float(value)
