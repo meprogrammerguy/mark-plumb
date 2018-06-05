@@ -1204,7 +1204,7 @@ def GetAIMNotes(count, verbose):
     for row in rows:
         note = {}
         answer = dict(zip(keys, row))
-        js = json.loads(row[7])
+        js = json.loads(answer['json string'])
         dt = datetime.datetime.now()
         if (answer['post date'] == "1970/01/01"):
             if (count < 2):
@@ -1322,9 +1322,6 @@ def to_number(string, verbose):
 def as_currency(amount):
     if (amount is None):
         amount = 0
-    if (type(amount) is str):
-        print (amount)
-        pdb.set_trace()
     if amount >= 0:
         return '${:,.2f}'.format(amount)
     else:
@@ -1497,24 +1494,24 @@ def PrintAIM(printyear, verbose):
     items = []
     answer = {}
     for row in rows:
-        js = json.loads(row[7])
-        dt = datetime.datetime.strptime(row[0], '%Y/%m/%d')
+        js = json.loads(row[keys_db.index("json string")])
+        dt = datetime.datetime.strptime(row[keys_db.index("post date")], '%Y/%m/%d')
         if (intyear == 1970 or dt.year == intyear):
             if (js is not {}):
                 if ("start date" in js[0]):
                     dt = datetime.datetime.strptime(js[0]['start date'], '%Y/%m/%d')
             col_list = []
             for i in range(len(keys)):
-                if (i == 0):
+                if (keys[i] == "post date"):
                     col_list.append(dt.strftime("%b, %d"))
-                elif (i == 1):
+                elif (keys[i] == "stock value"):
                     col_list.append(as_currency(row[i]))
-                elif (i == 2):
-                    stock = math.ceil(row[1] -.4)
+                    stock = math.ceil(row[keys.index("stock value")] -.4)
                     safe = Safe(stock, verbose)
                     col_list.append(safe)
                 else:
-                    col_list.append(as_currency(row[i - 1]))
+                    if (keys_db.index("json string") != i):
+                        col_list.append(as_currency(row[i]))
             answer = dict(zip(keys, col_list))
             items.append(answer)
     table = TableCls(items, html_attrs = {'width':'100%','border-spacing':0})
@@ -2110,26 +2107,30 @@ def PrintDaemon(status, verbose):
     conn.commit()
     conn.close()
     TableCls = create_table('TableCls')
+    index = 0
+    loop = -1
     for key in keys:
+        loop += 1
         if (key != "json string"):
             TableCls.add_column(key, Col(key))
         else:
             TableCls.add_column('pid', Col('pid'))
-    keys[2] = 'pid'
+            index = loop
+    keys[index] = 'pid'
     items = []
     answer = {}
     status = ""
     for row in rows:
         if row[0] != "sleep" and status == "":
             status = row[0]
-        json_string = json.loads(row[2])
         col_list = []
         for i in range(len(keys)):
-            if (i == 1):
+            if (keys[i] == "timestamp"):
                 dt = datetime.datetime.strptime(row[i], '%Y/%m/%d %H:%M:%S.%f')
                 col_list.append(dt.strftime("%b %d %I:%M %p"))
-            elif (i == 2):
-                col_list.append(json_string['pid'])
+            elif (keys[i] == "pid"):
+                js = json.loads(row[i])
+                col_list.append(js['pid'])
             else:
                 col_list.append(row[i])
         answer = dict(zip(keys, col_list))
@@ -2299,6 +2300,13 @@ def Export(etype, filename, verbose):
     return log
 
 def Archive(verbose):
+    db_file = GetDB(verbose)
+    if (verbose):
+        print ("***")
+    if db_file == "":
+        if (verbose):
+            print ("Archive(1) could not get dbase name, make sure that the defaults folder name is set up")
+        return False
     snap = 0
     result = CreateArchive(verbose)
     if result:
@@ -2309,7 +2317,20 @@ def Archive(verbose):
             if (resultSummary):
                 BumpSnap(verbose)
     test = GetNextSnap(verbose)
+    if (verbose):
+        print ("***\n")
     if snap > 0 and test == (snap + 1):
+        try:
+            conn = sqlite3.connect(db_file)
+            if (verbose):
+                print("Archive(2) sqlite3: {0}".format(sqlite3.version))
+        except Error as e:
+            print("Archive(3) {0}".format(e))
+            return False
+        c = conn.cursor()
+        c.execute("DELETE FROM aim where post_date != '1970/01/01'")
+        conn.commit()
+        conn.close()
         return True
     return False
 
@@ -2647,8 +2668,8 @@ def PrintSummary(verbose):
     table = TableCls(items, html_attrs = {'width':'100%','border-spacing':0})
     if (verbose):
         print ("***\n")
-    button_detail = AddSummaryButton(table.__html__())
-    return button_detail
+    button_table = AddSummaryButton(table.__html__())
+    return button_table
 
 def AddSummaryButton(table):
     table = table.replace("<thead><tr><th>", "<thead><tr><th></th><th>", 1)
