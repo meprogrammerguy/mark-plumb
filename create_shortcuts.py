@@ -119,6 +119,19 @@ def CreateShortcuts(what, verbose):
     return True
 
 def RemoveShortcuts(verbose):
+    home = str(Path.home())
+    desktop = "{0}/Desktop/PlumbMark.desktop".format(home)
+    favorites = "{0}/.local/share/applications/PlumbMark.desktop".format(home)
+    f_apps = get_favorites()
+    if (os.path.exists(desktop)):
+        os.unlink(desktop)
+    if (os.path.exists(favorites)):
+        os.unlink(favorites)
+    if f_apps != []:
+        if ("PlumbMark.desktop" in f_apps):
+            f_apps.remove("PlumbMark.desktop")
+            f_apps_set = 'gsettings set org.gnome.shell favorite-apps "{0}"'.format(f_apps)
+            os.system(f_apps_set)
     return True
 
 def get_favorites():
