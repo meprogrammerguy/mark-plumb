@@ -67,6 +67,7 @@ def render_index(feedback):
 def folder():
     try:
         if request.method == "POST":
+            print (request.form['action'])
             if (request.form['action'] == "adjust"):
                 if (request.form['options'] == "balance"):
                     if (request.form['balance'] == ""):
@@ -122,9 +123,13 @@ def render_folder(ticker_style, feedback, symbol):
         if not co:
             feedback = "symbol not found."
             ticker_style = "display: none;"
+    worksheet_table = plumb.PrintWorksheet(False)
+    worksheet_style = "display: none;"
+    if worksheet_table > "":
+        worksheet_style = "display: block;"
 
     return(render_template('folder.html', table = table,  ticker_style = ticker_style, symbol_options = symbol_options, balance_options = balance_options, notes = notes, ticker = co,
-        feedback = feedback, amount_options = amount_options, folder_name = folder_name))
+        feedback = feedback, amount_options = amount_options, folder_name = folder_name, worksheet_table = worksheet_table, worksheet_style = worksheet_style))
  
 @app.route('/defaults/', methods=["GET","POST"])
 def defaults():

@@ -244,12 +244,12 @@ def MarketToTime(theTime, theZone, verbose):
     dt = datetime.datetime.now()
     today = dt.strftime('%m/%d/%Y')
     datestring = "{0} {1}:00".format(today, theTime)
-    date=dt.strptime(datestring,"%m/%d/%Y %H:%M:%S")
-    utc=pytz.utc
-    zone=pytz.timezone(theZone)
+    date = datetime.datetime.strptime(datestring,"%m/%d/%Y %H:%M:%S")
+    utc = pytz.utc
+    zone = pytz.timezone(theZone)
     local_tz = get_localzone() 
-    date_est=zone.localize(date,is_dst=None)
-    date_utc=date_est.astimezone(utc)
+    date_est = zone.localize(date,is_dst=None)
+    date_utc = date_est.astimezone(utc)
     date_local = date_utc.astimezone(local_tz)
     return date_local.strftime("%I:%M%p")
 
@@ -1143,7 +1143,7 @@ def GetLastAIM(verbose):
         print("GetLastAIM(5) {0}".format(e))
         return {}
     dt = datetime.datetime.now()
-    today = dt.strftime('%Y-%m-%d')
+    today = dt.strftime('%Y/%m/%d')
     answer = {}
     if (checkTableExists(conn, "aim")):
         c = conn.cursor()
@@ -1341,6 +1341,7 @@ def Post(verbose):
     conn.commit()
     conn.close()
     if (db_values['market order'] != 0):
+        BeginWorksheet(db_values['market order'], verbose)
         pyperclip.copy(str(db_values['market order']))
         #
         # you must install this for pyperclip in ubuntu
@@ -2836,3 +2837,181 @@ def GetFiles(path, templatename):
     file_list = [x for x in file_list if x != "?"]
     return file_list
 #endregion utils
+#region worksheet
+def CreateWorksheet(verbose):
+    db_file = GetDB(verbose)
+    username = getpass.getuser()
+    Path(username + "/").mkdir(parents=True, exist_ok=True) 
+    if (verbose):
+        print ("***")
+        print ("CreateWorksheet(1) dbase: {0}".format(db_file))
+    try:
+        conn = sqlite3.connect(db_file)
+        if (verbose):
+            print("CreateWorksheet(2) sqlite3: {0}".format(sqlite3.version))
+    except Error as e:
+        print("CreateWorksheet(3) {0}".format(e))
+        return False
+    c = conn.cursor()
+    c.execute("CREATE TABLE if not exists 'market' ( `key` INTEGER NOT NULL UNIQUE, `market_order` REAL, `post_date` TEXT, `actual_amount` REAL, PRIMARY KEY(`key`) )")
+    c.execute("CREATE TABLE if not exists `worksheet` ( `plan_date` TEXT NOT NULL, `symbol` TEXT NOT NULL, `shares` REAL, `adjust_amount` REAL, PRIMARY KEY(`plan_date`,`symbol`) )")
+    c.execute( "INSERT OR IGNORE INTO market(key) VALUES(?)", (1,))
+    conn.commit()
+    conn.close()
+    if (verbose):
+        print ("***\n")
+    return True
+
+def BeginWorksheet(market_order, verbose):
+    db_file = GetDB(verbose)
+    username = getpass.getuser()
+    Path(username + "/").mkdir(parents=True, exist_ok=True) 
+    if (verbose):
+        print ("***")
+        print ("BeginWorksheet(1) dbase: {0}".format(db_file))
+        print ("BeginWorksheet(2) market order: {0}".format(market_order))
+    try:
+        conn = sqlite3.connect(db_file)
+        if (verbose):
+            print("BeginWorksheet(3) sqlite3: {0}".format(sqlite3.version))
+    except Error as e:
+        print("BeginWorksheet(4) {0}".format(e))
+        return False
+    folder = GetFolder(verbose)
+    if (folder == []):
+        if (verbose):
+            print("BeginWorksheet(5) no portfolio is entered, cannot begin a worksheet")
+        return False
+    status = CreateWorksheet(verbose)
+    if (status):
+        dt = datetime.datetime.now()
+        today = dt.strftime('%Y/%m/%d')
+        c = conn.cursor()
+        c.execute("UPDATE market SET market_order = ? WHERE key = ?", (market_order, 1,))
+        c.execute("UPDATE market SET actual_amount = ? WHERE key = ?", (0, 1,))
+        c.execute("UPDATE market SET post_date = ? WHERE key = ?", (today, 1,))
+        for f in folder:
+            c.execute( "INSERT OR IGNORE INTO worksheet VALUES((?),(?),?,?)", (today, f['symbol'], 0, 0,))
+        conn.commit()
+        conn.close()
+    else:
+        if (verbose):
+            print("BeginWorksheet(6) could not create a worksheet table")
+    if (verbose):
+        print ("***\n")
+    return True
+
+def GetWorksheet(plan_date, verbose):
+    db_file = GetDB(verbose)
+    if (verbose):
+        print ("***")
+        print ("GetWorksheet(1) dbase: {0}".format(db_file))
+    if (not os.path.exists(db_file)):
+        if (verbose):
+            print ("GetWorksheet(2) {0} file is missing, cannot return the worksheet".format(db_file))
+            print ("***\n")
+        return {}, []
+    try:
+        conn = sqlite3.connect(db_file)
+        if (verbose):
+            print("GetWorksheet(3) sqlite3: {0}".format(sqlite3.version))
+    except Error as e:
+        print("GetWorksheet(4) {0}".format(e))
+        return {}, []
+    if (plan_date == ""):
+        dt = datetime.datetime.now()
+    else:
+        dt = datetime.datetime.strptime(plan_date, "%Y/%m/%d")
+    theDate = dt.strftime('%Y/%m/%d')
+    c = conn.cursor()
+    c.execute("SELECT * FROM market where key = 1")
+    keys = list(map(lambda x: x[0].replace("_"," "), c.description))
+    values = c.fetchone()
+    if values is None:
+        market = {}
+    else:
+        market = dict(zip(keys, values))
+    c.execute("SELECT * FROM worksheet where plan_date = (?) order by symbol", (theDate,))
+    keys = list(map(lambda x: x[0].replace("_"," "), c.description))
+    values = c.fetchall()
+    conn.close()
+    worksheet = []
+    for row in values:
+        worksheet.append(dict(zip(keys, row)))
+    if (verbose):
+        print ("***\n")
+    return market, worksheet
+
+def PrintWorksheet(verbose):
+    db_file = GetDB(verbose)
+    if (verbose):
+        print ("***")
+        print ("PrintWorksheet(1) dbase: {0}".format(db_file))
+    if (not os.path.exists(db_file)):
+        if (verbose):
+            print ("PrintWorksheet(2) {0} file is missing, cannot display".format(db_file))
+            print ("***\n")
+        return ""
+    market, worksheet = GetWorksheet("", verbose)
+    if (market == {} or worksheet == []):
+        return ""
+    keys_dict = worksheet[0].keys()
+    keys = []
+    for key in keys_dict:
+        if (key != "plan date"):
+            keys.append(key)
+    TableCls = create_table('TableCls')
+    for key in keys:
+        TableCls.add_column(key, Col(key))
+    items = []
+    answer = {}
+    for w in worksheet:
+        row = []
+        for value in w.values():
+            row.append(value)
+        col_list = []
+        index = -1
+        symbol = ""
+        for key in keys_dict:
+            index += 1
+            if (key == "symbol"):
+                symbol = row[index]
+            if key != "plan date":
+                if key == "shares":
+                    if (symbol == "$"):
+                        col_list.append("")
+                    else:
+                        col_list.append(as_shares(row[index]))
+                elif key == "adjust amount":
+                    col_list.append(as_currency(row[index]))
+                else:
+                    col_list.append(row[index])
+        answer = dict(zip(keys, col_list))
+        items.append(answer)
+    table = TableCls(items, html_attrs = {'width':'100%','border-spacing':0})
+    input_box_table = AddInputBox(table.__html__())
+    if (verbose):
+        print ("***\n")
+    return input_box_table
+
+def AddInputBox(table):
+    table = table.replace("</tr></thead>", "<th></th></tr></thead>", 1)
+    pattern = "<tr><td>"
+    index = 0
+    done = False
+    while (not done):
+        start = table.find(pattern, index)
+        if start == -1:
+            done = True
+            continue
+        symbol = table[start + 8 :table.find("</td>", start + 8)]
+        if (symbol == "$"):
+            table = table[0 : start] + table[start:].replace("</td></tr>", "<td></td></td></tr>", 1)
+        else:
+            r_box = '<td><form action="#" method="post"><input class="submit" type="text" name="action" value=""/><input hidden type="text" name="remove_symbol" value="{0}"/></form></td></tr>'.format(symbol)
+            table = table[0 : start] + table[start:].replace("</td></tr>", r_box, 1)
+        #else:
+        #table = table.replace("</td></tr>", "<td></td></td></tr>", 1)
+        index = start + 1
+    return table
+#endregion worksheet
