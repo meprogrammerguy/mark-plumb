@@ -67,18 +67,23 @@ def render_index(feedback):
 def folder():
     try:
         if request.method == "POST":
-            if (request.form['calculate'] == "calculate"):
-                folder = plumb.GetFolder(False)
-                values = []
-                for f in folder:
-                    value = {}
-                    if (f['symbol'] != "$"):
-                        theText = 'action_{0}'.format(f['symbol'])
-                        value['symbol'] = f['symbol']
-                        value['adjust'] = request.form[theText]
-                        values.append(value)
-                plumb.CalculateWorksheet(values, False)
-                return(render_folder("display: none;", "Worksheet recalculated", ""))
+            if "calculate" in request.form:
+                if (request.form['calculate'] == "calculate"):
+                    folder = plumb.GetFolder(False)
+                    log = "Worksheet recalculated"
+                    if folder != []:
+                        values = []
+                        for f in folder:
+                            value = {}
+                            if (f['symbol'] != "$"):
+                                theText = 'box_{0}'.format(f['symbol'])
+                                value['symbol'] = f['symbol']
+                                value['adjust'] = request.form[theText]
+                                values.append(value)
+                        plumb.CalculateWorksheet(values, False)
+                    else:
+                        log = "Warning: Portfolio not found, cannot recalculate"
+                return(render_folder("display: none;", log, ""))
             if (request.form['action'] == "adjust"):
                 if (request.form['options'] == "balance"):
                     if (request.form['balance'] == ""):
@@ -134,13 +139,13 @@ def render_folder(ticker_style, feedback, symbol):
         if not co:
             feedback = "symbol not found."
             ticker_style = "display: none;"
-    worksheet_table = plumb.PrintWorksheet(False)
+    worksheet_table, worksheet_warning = plumb.PrintWorksheet(False)
     worksheet_style = "display: none;"
     if worksheet_table > "":
         worksheet_style = "display: block;"
 
     return(render_template('folder.html', table = table,  ticker_style = ticker_style, symbol_options = symbol_options, balance_options = balance_options, notes = notes, ticker = co,
-        feedback = feedback, amount_options = amount_options, folder_name = folder_name, worksheet_table = worksheet_table, worksheet_style = worksheet_style))
+        feedback = feedback, amount_options = amount_options, folder_name = folder_name, worksheet_table = worksheet_table, worksheet_style = worksheet_style, worksheet_warning = worksheet_warning))
  
 @app.route('/defaults/', methods=["GET","POST"])
 def defaults():

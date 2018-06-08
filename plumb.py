@@ -2731,10 +2731,7 @@ def to_number(string, verbose):
     string = string.replace("%", "")
     if (verbose):
         print ("to_number(8) remove %: {0}".format(string))
-    try:
-        clean_number = float(string)
-    except:
-        clean_number = 0.0
+    clean_number = myFloat(string)
     if (percent):
         clean_number = clean_number / 100.
     if (negative):
@@ -2947,10 +2944,10 @@ def PrintWorksheet(verbose):
         if (verbose):
             print ("PrintWorksheet(2) {0} file is missing, cannot display".format(db_file))
             print ("***\n")
-        return ""
+        return "", ""
     market, worksheet = GetWorksheet("", verbose)
     if (market == {} or worksheet == []):
-        return ""
+        return "", ""
     keys_dict = worksheet[0].keys()
     keys = []
     for key in keys_dict:
@@ -2979,16 +2976,27 @@ def PrintWorksheet(verbose):
                     else:
                         col_list.append(as_shares(row[index]))
                 elif key == "adjust amount":
-                    col_list.append(as_currency(row[index]))
+                    if (symbol == "$"):
+                        col_list.append(as_currency(row[index]))
+                    else:
+                        col_list.append(as_currency(abs(row[index])))
                 else:
                     col_list.append(row[index])
         answer = dict(zip(keys, col_list))
         items.append(answer)
     table = TableCls(items, html_attrs = {'width':'100%','border-spacing':0})
     input_box_table = AddInputBox(table.__html__(), market)
+    worksheet_warning = ""
+    allocate = abs(market['market order']) - abs(market['actual amount'])
+    if (allocate == 0):
+        worksheet_warning = "You are good to go"
+    elif (allocate > 0):
+        worksheet_warning = "You still have {0} yet to allocate".format(as_currency(abs(allocate)))
+    else:
+        worksheet_warning = "You have allocated {0} more than {1}".format(as_currency(abs(allocate)), as_currency(abs(market['market order'])))
     if (verbose):
         print ("***\n")
-    return input_box_table
+    return input_box_table, worksheet_warning
 
 def AddInputBox(table, market):
     if (market['market order'] < 0):
@@ -3007,13 +3015,68 @@ def AddInputBox(table, market):
         if (symbol == "$"):
             table = table[0 : start] + table[start:].replace("</td></tr>", "<td></td></td></tr>", 1)
         else:
-            r_box = '<td><input class="submit" type="text" name="action_{0}" value=""/></td></tr>'.format(symbol)
+            r_box = '<td><input class="submit" type="text" name="box_{0}" value=""/></td></tr>'.format(symbol)
             table = table[0 : start] + table[start:].replace("</td></tr>", r_box, 1)
         index = start + 1
     return table
 
 def CalculateWorksheet(adjust, verbose):
-    for item in adjust:
-        print (item['symbol'], item['adjust'])
+    db_file = GetDB(verbose)
+    username = getpass.getuser()
+    Path(username + "/").mkdir(parents=True, exist_ok=True) 
+    if (verbose):
+        print ("***")
+        print ("CalculateWorksheet(1) dbase: {0}".format(db_file))
+    try:
+        conn = sqlite3.connect(db_file)
+        if (verbose):
+            print("CalculateWorksheet(2) sqlite3: {0}".format(sqlite3.version))
+    except Error as e:
+        print("CalculateWorksheet(3) {0}".format(e))
+        return False
+    folder = GetFolder(verbose)
+    if (folder == []):
+        if (verbose):
+            print("CalculateWorksheet(4) no portfolio is entered, cannot begin a worksheet")
+        return False
+    market, worksheet = GetWorksheet("", verbose)
+    if (market == {} or worksheet == []):
+        return False
+    negative = False
+    if (market['market order'] < 0):
+        negative = True
+    dt = datetime.datetime.now()
+    today = dt.strftime('%Y/%m/%d')
+    c = conn.cursor()
+    for a in adjust:
+        for w in worksheet:
+            if (w['symbol'] != "$"):
+                if (w['symbol'] == a['symbol']):
+                    a['amount'] = abs(w['adjust amount']) + to_number(a['adjust'], verbose)
+                    if (a['amount'] < 0):
+                        a['amount'] = 0
+                    if (negative):
+                        a['amount'] = -a['amount']
+                    c.execute("UPDATE worksheet SET adjust_amount = ? WHERE plan_date = (?) and symbol = (?)", (a['amount'], today, a['symbol'],))
+    cash = 0
+    total = 0
+    for a in adjust:
+        cash = cash + a['amount']
+        total = total + a['amount']
+    cash = -cash
+    c.execute("UPDATE worksheet SET adjust_amount = ? WHERE plan_date = (?) and symbol = (?)", (cash, today, "$",))
+    c.execute("UPDATE market SET actual_amount = ? WHERE key = ?", (total, 1,))
+    for a in adjust:
+        for f in folder:
+            if (f['symbol'] != "$"):
+                if (f['symbol'] == a['symbol']):
+                    shares = 0.0
+                    if (f['price'] > 0):
+                        shares = abs(a['amount']) / f['price']
+                        c.execute("UPDATE worksheet SET shares = ? WHERE plan_date = (?) and symbol = (?)", (shares, today, a['symbol'],))
+    conn.commit()
+    conn.close()
+    if (verbose):
+        print ("***\n")
     return True
 #endregion worksheet
