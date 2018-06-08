@@ -110,10 +110,11 @@
             <br class="clear"/>
             <div class ="left" style="{{worksheet_style}}">
                 <h1>Market Order Worksheet</h1>
-                {{worksheet_table | safe}}
-                <div class="form_settings">
-                    <p><span>&nbsp;</span><input class="submit" type="submit" name="action" value="calculate" style="float: right;"/></p>
-                </div>
+                <form action="#" method="post">
+                        {{worksheet_table | safe}}
+                    <div class="form_settings">
+                        <p><span>&nbsp;</span><input class="submit" type="submit" name="calculate" value="calculate" style="float: right;"/></p>
+                    </div>
                 </form>
             </div>
             <br class="clear"/>

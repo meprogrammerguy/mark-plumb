@@ -67,7 +67,18 @@ def render_index(feedback):
 def folder():
     try:
         if request.method == "POST":
-            print (request.form['action'])
+            if (request.form['calculate'] == "calculate"):
+                folder = plumb.GetFolder(False)
+                values = []
+                for f in folder:
+                    value = {}
+                    if (f['symbol'] != "$"):
+                        theText = 'action_{0}'.format(f['symbol'])
+                        value['symbol'] = f['symbol']
+                        value['adjust'] = request.form[theText]
+                        values.append(value)
+                plumb.CalculateWorksheet(values, False)
+                return(render_folder("display: none;", "Worksheet recalculated", ""))
             if (request.form['action'] == "adjust"):
                 if (request.form['options'] == "balance"):
                     if (request.form['balance'] == ""):

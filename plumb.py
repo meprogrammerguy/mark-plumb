@@ -1340,13 +1340,9 @@ def Post(verbose):
     c.execute("UPDATE aim SET json_string = (?) WHERE post_date = (?)", (json_string, db_values['post date'],))
     conn.commit()
     conn.close()
+    BeginWorksheet(500, verbose)
     if (db_values['market order'] != 0):
         BeginWorksheet(db_values['market order'], verbose)
-        pyperclip.copy(str(db_values['market order']))
-        #
-        # you must install this for pyperclip in ubuntu
-        # sudo apt install xclip
-        #
     if (verbose):
         print ("***\n")
     return True
@@ -2989,13 +2985,16 @@ def PrintWorksheet(verbose):
         answer = dict(zip(keys, col_list))
         items.append(answer)
     table = TableCls(items, html_attrs = {'width':'100%','border-spacing':0})
-    input_box_table = AddInputBox(table.__html__())
+    input_box_table = AddInputBox(table.__html__(), market)
     if (verbose):
         print ("***\n")
     return input_box_table
 
-def AddInputBox(table):
-    table = table.replace("</tr></thead>", "<th></th></tr></thead>", 1)
+def AddInputBox(table, market):
+    if (market['market order'] < 0):
+        table = table.replace("</tr></thead>", "<th>Signal to Sell {0} at Market</th></tr></thead>".format(as_currency(-market['market order'])), 1)
+    else:
+        table = table.replace("</tr></thead>", "<th>Signal to Buy {0} at Market</th></tr></thead>".format(as_currency(market['market order'])), 1)
     pattern = "<tr><td>"
     index = 0
     done = False
@@ -3008,10 +3007,13 @@ def AddInputBox(table):
         if (symbol == "$"):
             table = table[0 : start] + table[start:].replace("</td></tr>", "<td></td></td></tr>", 1)
         else:
-            r_box = '<td><form action="#" method="post"><input class="submit" type="text" name="action" value=""/><input hidden type="text" name="remove_symbol" value="{0}"/></form></td></tr>'.format(symbol)
+            r_box = '<td><input class="submit" type="text" name="action_{0}" value=""/></td></tr>'.format(symbol)
             table = table[0 : start] + table[start:].replace("</td></tr>", r_box, 1)
-        #else:
-        #table = table.replace("</td></tr>", "<td></td></td></tr>", 1)
         index = start + 1
     return table
+
+def CalculateWorksheet(adjust, verbose):
+    for item in adjust:
+        print (item['symbol'], item['adjust'])
+    return True
 #endregion worksheet
