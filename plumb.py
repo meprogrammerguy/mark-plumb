@@ -2846,7 +2846,7 @@ def CreateWorksheet(verbose):
         print("CreateWorksheet(3) {0}".format(e))
         return False
     c = conn.cursor()
-    c.execute("CREATE TABLE if not exists 'market' ( `key` INTEGER NOT NULL UNIQUE, `market_order` REAL, `post_date` TEXT, `actual_amount` REAL, PRIMARY KEY(`key`) )")
+    c.execute("CREATE TABLE if not exists 'market' ( `key` INTEGER NOT NULL UNIQUE, `market_order` REAL, `post_date` TEXT, `actual_amount` REAL, `posted` TEXT, PRIMARY KEY(`key`) )")
     c.execute("CREATE TABLE if not exists `worksheet` ( `plan_date` TEXT NOT NULL, `symbol` TEXT NOT NULL, `shares` REAL, `adjust_amount` REAL, PRIMARY KEY(`plan_date`,`symbol`) )")
     c.execute( "INSERT OR IGNORE INTO market(key) VALUES(?)", (1,))
     conn.commit()
@@ -3076,6 +3076,40 @@ def CalculateWorksheet(adjust, verbose):
                         c.execute("UPDATE worksheet SET shares = ? WHERE plan_date = (?) and symbol = (?)", (shares, today, a['symbol'],))
     conn.commit()
     conn.close()
+    if (verbose):
+        print ("***\n")
+    return True
+
+def PostWorksheet(verbose):
+    db_file = GetDB(verbose)
+    if (verbose):
+        print ("***")
+        print ("PostWorksheet(1) dbase: {0}".format(db_file))
+    result = CreateFolder("$", verbose)
+    if (result):
+        try:
+            conn = sqlite3.connect(db_file)
+            if (verbose):
+                print("PostWorksheet(2) sqlite3: {0}".format(sqlite3.version))
+        except Error as e:
+            print("PostWorksheet(3) {0}".format(e))
+            return False
+        market, worksheet = GetWorksheet("", verbose)
+        if (market == {} or worksheet == []):
+            return False
+        if (market['posted') == "yes"):
+            if (verbose):
+                print("PostWorksheet(4) Already posted, quiting"
+            return False
+        c = conn.cursor()
+        for w in worksheet:
+            if (w['symbol'] == "$"):
+                c.execute("UPDATE folder SET balance = ? WHERE symbol = '$'", (w['adjust amount'],))
+            else:
+                c.execute("UPDATE folder SET shares = ? WHERE symbol = (?)", (w['shares'], w['symbol'],))
+        c.execute("UPDATE market SET posted = (?) WHERE key = 1", ("yes",))
+        conn.commit()
+        conn.close()
     if (verbose):
         print ("***\n")
     return True
