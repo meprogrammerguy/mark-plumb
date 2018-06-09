@@ -1474,7 +1474,7 @@ def TestDefaults(verbose):
     sys.stdout = print_out
     count = 0
     fails = 0
-    total_tests = 17
+    total_tests = 18
     defaults, types =  GetDefaults(False)
     if (verbose):
         print ("***")
@@ -1526,6 +1526,17 @@ def TestDefaults(verbose):
     if (verbose):
         print ("Test #{0} - UpdateDefaultItem('open', '8:30AM', False)".format(count + 1))
     result = UpdateDefaultItem("open", "8:30AM", verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+    if (verbose):
+        print ("Test #{0} - UpdateDefaultItem('folder name', 'Practice Portfolio', False)".format(count + 1))
+    result = UpdateDefaultItem("folder name", "Practice Portfolio", verbose)
     if (result):
         if (verbose):
             print ("\tpass.")
