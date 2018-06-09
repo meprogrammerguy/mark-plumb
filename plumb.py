@@ -1436,7 +1436,8 @@ def PrintAIM(printyear, verbose):
     if "snap shot" in defaults:
         export_options += '<option value="AIM activity">AIM activity</option>'
         export_options += '<option value="Archive snapshot {0}">Archive snapshot {0}</option>'.format(defaults['snap shot'], defaults['snap shot'])
-        export_options += '<option value="Current Portfolio">Current Portfolio</option>'
+        export_options += '<option value="Current portfolio">Current portfolio</option>'
+        export_options += '<option value="Latest worksheet">Latest worksheet</option>'
     return table.__html__(), export_options
 #endregion aim
 #region tests
@@ -2059,6 +2060,28 @@ def FolderSheet(filename, verbose):
     sheet.close()  
     return True
 
+def WorkSheet(filename, verbose):
+    market, worksheet = GetWorksheet("latest", verbose)
+    if (market == {} or worksheet == []):
+        return False
+    header = True
+    sheet = open(filename, 'w', newline='')
+    csvwriter = csv.writer(sheet)
+    for row in worksheet:
+        if (header):
+            keys = row.keys()
+            header = False
+            csvwriter.writerow(keys)
+        row['adjust amount'] = as_currency(row['adjust amount'])
+        if (row['symbol'] == "$"):
+            row['shares'] = ""
+        else:
+            row['shares'] = as_shares(row['shares'])
+        values = row.values()
+        csvwriter.writerow(values)
+    sheet.close()  
+    return True
+
 def ArchiveSheet(filename, verbose):
     d, t = GetDefaults(verbose)
     if (verbose):
@@ -2072,7 +2095,7 @@ def ArchiveSheet(filename, verbose):
             print ("ArchiveSheet(2) no snapshots to export")
         return False
     summary = GetSummary(verbose)
-    aim, shares = GetDetail(snap, verbose)
+    aim, shares, worksheet = GetDetail(snap, verbose)
     sheet = open(filename, 'w', newline='')
     csvwriter = csv.writer(sheet)
     if summary != []:
@@ -2115,6 +2138,21 @@ def ArchiveSheet(filename, verbose):
             row['shares'] = as_shares(row['shares'])
             values = row.values()
             csvwriter.writerow(values)
+    csvwriter.writerow(" ")
+    if worksheet != []:
+        header = True
+        for row in worksheet:
+            if (header):
+                keys = row.keys()
+                header = False
+                csvwriter.writerow(keys)
+            row['adjust amount'] = as_currency(row['adjust amount'])
+            if row['symbol'] == "$":
+                row['shares'] = ""
+            else:
+                row['shares'] = as_shares(row['shares'])
+            values = row.values()
+            csvwriter.writerow(values)
     sheet.close()  
     return True
 
@@ -2138,17 +2176,20 @@ def Export(etype, filename, verbose):
     root.destroy()
     log = ""
     if len(filename ) > 0:
+        etype = etype.lower()
         log = "Now saving under {0}".format(filename)
-        if (etype == "activity"):
+        if (etype == "activity" or etype == "aim activity"):
             result = ActivitySheet(filename, verbose)
-        elif (etype == "portfolio"):
+        elif (etype == "portfolio" or etype == "current portfolio"):
             result = FolderSheet(filename, verbose)
+        elif (etype == "worksheet" or etype == "latest worksheet"):
+            result = WorkSheet(filename, verbose)
         else:
             result = ArchiveSheet(filename, verbose)
         if (result):
             log = "file saved."
         else:
-            if (etype == "archive"):
+            if ("archive" in etype):
                 log = "file not saved, please set snap shot in defaults correctly and try again."
             else:
                 log = "file not saved, do you have your {0} set up?".format(etype)
@@ -2256,6 +2297,10 @@ def SnapTables(verbose):
         if (verbose):
             print ("SnapTables(2) error: folder dbase is empty - cannot archive")
         return False
+    market, worksheet = GetWorksheet("", verbose)
+    if worksheet == []:
+        if (verbose):
+            print ("SnapTables(3) error: worksheet dbase is empty - continuing")
     snap = GetNextSnap(verbose)
     if (snap == 0):
         if (verbose):
@@ -2287,7 +2332,10 @@ def SnapTables(verbose):
             if ("shares" in f):
                 c.execute( "INSERT OR IGNORE INTO shares VALUES(?, (?), (?), ?, ?)", (snap, dt.strftime('%Y/%m/%d'), f['symbol'], f['balance'], f['shares'],))
             else:
-                c.execute( "INSERT OR IGNORE INTO shares VALUES(?, (?), (?), ?, ?)", (snap, dt.strftime('%Y/%m/%d'), f['symbol'], f['balance'], 0,))   
+                c.execute( "INSERT OR IGNORE INTO shares VALUES(?, (?), (?), ?, ?)", (snap, dt.strftime('%Y/%m/%d'), f['symbol'], f['balance'], 0,))
+    if worksheet != []:
+        for w in worksheet:
+            c.execute( "INSERT OR IGNORE INTO worksheet VALUES(?, (?), (?), ?, ?)", (snap, w['plan date'], w['symbol'], w['shares'], w['adjust amount'],))
     conn.commit()
     conn.close()
     UpdateDefaultItem("snap shot", snap, verbose)
@@ -2305,14 +2353,14 @@ def SummaryCounts(verbose):
     if (snap == 0):
         if (verbose):
             print ("SummaryCounts(1) error: next snapshot is zero - cannot archive")
-        return 0, 0
+        return 0, 0, 0
     if (verbose):
         print ("SummaryCounts(1) dbase: {0}".format(db_file))
     if (not os.path.exists(db_file)):
         if (verbose):
             print ("SummaryCounts(2) {0} file is missing, cannot return the row counts".format(db_file))
             print ("***\n")
-        return 0, 0
+        return 0, 0, 0
     try:
         conn = sqlite3.connect(db_file)
         if (verbose):
@@ -2331,10 +2379,15 @@ def SummaryCounts(verbose):
         result2 = c.fetchall()
     else:
         result2 = ""
+    if (checkTableExists(conn, "worksheet")):
+        c.execute("select * from worksheet where snapshot = ?", (snap,))
+        result3 = c.fetchall()
+    else:
+        result3 = ""
     conn.close()
     if (verbose):
         print ("***\n")
-    return len(result1), len(result2)
+    return len(result1), len(result2), len(result3)
 
 def SnapSummary(verbose):
     if (verbose):
@@ -2359,13 +2412,16 @@ def SnapSummary(verbose):
             print ("SnapSummary(3) could not get initial balance - strange issue, continuing")
     else:
         initial = first['portfolio value']
-    aim_count, shares_count = SummaryCounts(verbose)
+    aim_count, shares_count, worksheet_count = SummaryCounts(verbose)
     if (aim_count == 0):
         if (verbose):
             print ("SnapSummary(4) warning: aim table has no records - strange issue, continuing")
     if (shares_count == 0):
         if (verbose):
             print ("SnapSummary(5) warning: shares table has no records - strange issue, continuing")
+    if (worksheet_count == 0):
+        if (verbose):
+            print ("SnapSummary(5) warning: worksheet table has no records, continuing")
     look, table, db_values = Look(verbose)
     profit_percent = "0"
     if "profit percent" in look:
@@ -2383,7 +2439,8 @@ def SnapSummary(verbose):
         return False
     dt = datetime.datetime.now()
     c = conn.cursor()
-    c.execute( "INSERT OR IGNORE INTO summary VALUES((?), (?), ?, ?, ?, ?, ?)", (dt.strftime('%Y/%m/%d'), folder_name, snap, aim_count, shares_count, initial, to_number(profit_percent, verbose) * 100,))
+    c.execute( "INSERT OR IGNORE INTO summary VALUES((?), (?), ?, ?, ?, ?, ?, ?)", (dt.strftime('%Y/%m/%d'), folder_name, snap, aim_count, shares_count, worksheet_count, initial,
+        to_number(profit_percent, verbose) * 100,))
     conn.commit()
     conn.close()
     if (verbose):
@@ -2407,9 +2464,10 @@ def CreateArchive(verbose):
     c = conn.cursor()
     c.execute("CREATE TABLE if not exists `key` ( `key` INTEGER NOT NULL UNIQUE, `last_snap` INTEGER )")
     c.execute( "INSERT OR IGNORE INTO key(key, last_snap) VALUES(?, ?)", (1,0,))
-    c.execute("CREATE TABLE if not exists 'summary' ( `snap_date` TEXT NOT NULL, `folder_name` TEXT NOT NULL, `snapshot` INTEGER NOT NULL, `aim_rows` INTEGER, `shares_rows` INTEGER, `initial` REAL, `profit_percent` INTEGER, PRIMARY KEY(`snap_date`,`folder_name`,`snapshot`) )")
+    c.execute("CREATE TABLE if not exists 'summary' ( `snap_date` TEXT NOT NULL, `folder_name` TEXT NOT NULL, `snapshot` INTEGER NOT NULL, `aim_rows` INTEGER, `shares_rows` INTEGER, `worksheet_rows` INTEGER, `initial` REAL, `profit_percent` INTEGER, PRIMARY KEY(`snap_date`,`folder_name`,`snapshot`) )")
     c.execute("CREATE TABLE if not exists 'aim' ( `snapshot` INTEGER NOT NULL, `post_date` TEXT NOT NULL, `stock_value` REAL, `cash` REAL, `portfolio_control` REAL, `buy_sell_advice` REAL, `market_order` REAL, `portfolio_value` REAL, PRIMARY KEY(`snapshot`,`post_date`) )")
     c.execute("CREATE TABLE if not exists 'shares' ( `snapshot` INTEGER NOT NULL, `post_date` TEXT NOT NULL, `symbol` TEXT NOT NULL, `balance` REAL, `shares` REAL, PRIMARY KEY(`snapshot`,`post_date`,`symbol`) )")
+    c.execute("CREATE TABLE if not exists `worksheet` ( `snapshot` INTEGER NOT NULL, `plan_date` TEXT NOT NULL, `symbol` TEXT NOT NULL, `shares` REAL, `adjust_amount` REAL, PRIMARY KEY(`snapshot`,`plan_date`,`symbol`) )")
     conn.commit()
     conn.close()
     if (verbose):
@@ -2427,14 +2485,14 @@ def GetDetail(snapshot, verbose):
         if (verbose):
             print ("GetDetail(2) {0} file is missing, cannot return the rows".format(db_file))
             print ("***\n")
-        return []
+        return [], [], []
     try:
         conn = sqlite3.connect(db_file)
         if (verbose):
             print("GetDetail(3) sqlite3: {0}".format(sqlite3.version))
     except Error as e:
         print("GetDetail(4) {0}".format(e))
-        return [], []
+        return [], [], []
     c = conn.cursor()
     c.execute("SELECT * FROM aim where snapshot = ? order by post_date", (snapshot,))
     keys_aim = list(map(lambda x: x[0].replace("_"," "), c.description))
@@ -2442,6 +2500,9 @@ def GetDetail(snapshot, verbose):
     c.execute("SELECT * FROM shares where snapshot = ? order by post_date", (snapshot,))
     keys_share = list(map(lambda x: x[0].replace("_"," "), c.description))
     values_share = c.fetchall()
+    c.execute("SELECT * FROM worksheet where snapshot = ? order by plan_date", (snapshot,))
+    keys_worksheet = list(map(lambda x: x[0].replace("_"," "), c.description))
+    values_worksheet = c.fetchall()
     conn.close()
     if (verbose):
         print ("***\n")
@@ -2451,7 +2512,10 @@ def GetDetail(snapshot, verbose):
     answer_share = []
     for row in values_share:
         answer_share.append(dict(zip(keys_share, row)))
-    return answer_aim, answer_share
+    answer_worksheet = []
+    for row in values_worksheet:
+        answer_worksheet.append(dict(zip(keys_worksheet, row)))
+    return answer_aim, answer_share, answer_worksheet
 
 def GetSummary(verbose):
     username = getpass.getuser()
@@ -2576,6 +2640,7 @@ def DeleteSnapshot(snapshot, verbose):
     c.execute("DELETE FROM summary where snapshot = ?", (int(snapshot),))
     c.execute("DELETE FROM aim where snapshot = ?", (int(snapshot),))
     c.execute("DELETE FROM shares where snapshot = ?", (int(snapshot),))
+    c.execute("DELETE FROM worksheet where snapshot = ?", (int(snapshot),))
     conn.commit()
     conn.close()
     if (verbose):
@@ -2894,7 +2959,7 @@ def BeginWorksheet(market_order, verbose):
         print ("***\n")
     return True
 
-def GetWorksheet(plan_date, verbose):
+def GetWorksheet(what, verbose):
     db_file = GetDB(verbose)
     if (verbose):
         print ("***")
@@ -2911,11 +2976,6 @@ def GetWorksheet(plan_date, verbose):
     except Error as e:
         print("GetWorksheet(4) {0}".format(e))
         return {}, []
-    if (plan_date == ""):
-        dt = datetime.datetime.now()
-    else:
-        dt = datetime.datetime.strptime(plan_date, "%Y/%m/%d")
-    theDate = dt.strftime('%Y/%m/%d')
     c = conn.cursor()
     c.execute("SELECT * FROM market where key = 1")
     keys = list(map(lambda x: x[0].replace("_"," "), c.description))
@@ -2924,7 +2984,12 @@ def GetWorksheet(plan_date, verbose):
         market = {}
     else:
         market = dict(zip(keys, values))
-    c.execute("SELECT * FROM worksheet where plan_date = (?) order by symbol", (theDate,))
+    if (what == "latest"):
+        dt = datetime.datetime.strptime(market['post date'], "%Y/%m/%d")
+        theDate = dt.strftime('%Y/%m/%d')
+        c.execute("SELECT * FROM worksheet where plan_date = (?) order by symbol", (theDate,))
+    else:
+        c.execute("SELECT * FROM worksheet order by plan_date, symbol")
     keys = list(map(lambda x: x[0].replace("_"," "), c.description))
     values = c.fetchall()
     conn.close()
@@ -2945,8 +3010,12 @@ def PrintWorksheet(verbose):
             print ("PrintWorksheet(2) {0} file is missing, cannot display".format(db_file))
             print ("***\n")
         return "", ""
-    market, worksheet = GetWorksheet("", verbose)
+    market, worksheet = GetWorksheet("latest", verbose)
     if (market == {} or worksheet == []):
+        return "", ""
+    dt = datetime.datetime.now()
+    today = dt.strftime('%Y/%m/%d')
+    if (market["post date"] != today):
         return "", ""
     keys_dict = worksheet[0].keys()
     keys = []
@@ -3039,7 +3108,7 @@ def CalculateWorksheet(adjust, verbose):
         if (verbose):
             print("CalculateWorksheet(4) no portfolio is entered, cannot begin a worksheet")
         return False
-    market, worksheet = GetWorksheet("", verbose)
+    market, worksheet = GetWorksheet("latest", verbose)
     if (market == {} or worksheet == []):
         return False
     negative = False
@@ -3094,19 +3163,26 @@ def PostWorksheet(verbose):
         except Error as e:
             print("PostWorksheet(3) {0}".format(e))
             return False
-        market, worksheet = GetWorksheet("", verbose)
+        market, worksheet = GetWorksheet("latest", verbose)
         if (market == {} or worksheet == []):
             return False
-        if (market['posted') == "yes"):
+        folder = GetFolder(verbose)
+        if folder == []:
+            return False
+        if (market['posted'] == "yes"):
             if (verbose):
-                print("PostWorksheet(4) Already posted, quiting"
+                print("PostWorksheet(4) Already posted, quiting")
             return False
         c = conn.cursor()
         for w in worksheet:
-            if (w['symbol'] == "$"):
-                c.execute("UPDATE folder SET balance = ? WHERE symbol = '$'", (w['adjust amount'],))
-            else:
-                c.execute("UPDATE folder SET shares = ? WHERE symbol = (?)", (w['shares'], w['symbol'],))
+            for f in folder:
+                if (w['symbol'] == f['symbol']):
+                    if (w['symbol'] == "$"):
+                        amount = f['balance'] - w['adjust amount']
+                        c.execute("UPDATE folder SET balance = ? WHERE symbol = '$'", (amount,))
+                    else:
+                        amount = f['shares'] - w['shares']
+                        c.execute("UPDATE folder SET shares = ? WHERE symbol = (?)", (amount, w['symbol'],))
         c.execute("UPDATE market SET posted = (?) WHERE key = 1", ("yes",))
         conn.commit()
         conn.close()

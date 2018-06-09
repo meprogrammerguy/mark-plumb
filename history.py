@@ -101,12 +101,12 @@ def usage():
     -v --verbose        increases the information level
     -t --test           runs test routine to check calculations
 
-    -p --print          print out the AIM actitivy (in HTML table format)
+    -p --print          print out the AIM activity (in HTML table format)
                             (--print=all, --print=2018)
     -a --archive        prints out the archive (in HTML table format)
 
-    -e --export         export "activity", "archive", or "portfolio"
-                            to a spreadsheet
+    -e --export         export "activity", "archive", "portfolio",
+                            or "worksheet" to a spreadsheet
     -s --save           saves the current AIM activity to an archive dbase
                             (do this to move over your old AIM activity)
                             (warning, this will clear out the AIM dbase)
