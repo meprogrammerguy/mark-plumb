@@ -43,50 +43,19 @@ def do_something():
         log['poll seconds'] = ds
         log['dbase name'] = df
         begin = defaults['open']
-        if (begin is None):
-            begin = plumb.MarketToTime("09:30", "US/Eastern", False)
-        end = defaults['close']
-        if (end is None):
-            end = plumb.MarketToTime("16:00", "US/Eastern", False)
         weekno = datetime.today().weekday()
         ct = datetime.now().time()
-        if "AM" in begin or "PM" in begin:
-            bt = datetime.strptime(begin, '%I:%M%p').time()
-        else:
-            bt = datetime.strptime(begin, '%H:%M').time()
-        if "AM" in end or "PM" in end:
-            et = datetime.strptime(end, '%I:%M%p')
-        else:
-            et = datetime.strptime(end, '%H:%M')
-        log['open'] = bt.strftime('%I:%M%p')
-        log['close'] = et.strftime('%I:%M%p')
-        et = et + timedelta(minutes = (ds * 2)) # a few final polls to get closing prices
-        et = et.time()
-        log['final poll'] = et.strftime('%I:%M%p')
-        if weekno < 5 and ct > bt and ct < et:
-            log['status'] = 'wake'
-            plumb.LogDaemon(log, False)
-            result, resultError, exceptionError = price_poll()
-            if not result:
-                if resultError > "":
-                    log['status'] = 'error'
-                    log['content'] = resultError
-                    plumb.LogDaemon(log, False)
-                    with open(filename, "a") as f:
-                        f.write("pid: {0}, error: {1}, continuing".format(log['pid'], resultError))
-                if exceptionError > "":
-                    log['status'] = 'exception'
-                    log['content'] = exceptionError
-                    plumb.LogDaemon(log, False)
-                    with open(filename, "a") as f:
-                        f.write("pid: {0}, exception: {1}, continuing".format(log['pid'], exceptionError))
+        bt = ct
+        if (begin is not None):
+            if "AM" in begin or "PM" in begin:
+                bt = datetime.strptime(begin, '%I:%M%p').time()
             else:
-                log['status'] = 'success'
+                bt = datetime.strptime(begin, '%H:%M').time()
+            log['open'] = bt.strftime('%I:%M%p')
+            if weekno < 5 and ct > bt and (not plumb.DayisClosed(False)):
+                log['final poll'] = time.ctime()
+                log['status'] = 'wake'
                 plumb.LogDaemon(log, False)
-                with open(filename, "w") as f:
-                    f.write("pid: {0}, {1} updated on: {2}. (sleeping for {3} seconds)".format(log['pid'], df, time.ctime(), ds))
-        else:
-            if start:
                 result, resultError, exceptionError = price_poll()
                 if not result:
                     if resultError > "":
@@ -101,11 +70,21 @@ def do_something():
                         plumb.LogDaemon(log, False)
                         with open(filename, "a") as f:
                             f.write("pid: {0}, exception: {1}, continuing".format(log['pid'], exceptionError))
-                start = False
+                else:
+                    log['status'] = 'success'
+                    plumb.LogDaemon(log, False)
+                    with open(filename, "w") as f:
+                        f.write("pid: {0}, {1} updated on: {2}. (sleeping for {3} seconds)".format(log['pid'], df, time.ctime(), ds))
+            else:
+                log['status'] = 'closed'
+                plumb.LogDaemon(log, False)
+                with open(filename, "w") as f:
+                    f.write("pid: {0}, now: {1}, open: {2}".format(log['pid'], time.ctime(), bt))
+        else:
             log['status'] = 'closed'
             plumb.LogDaemon(log, False)
             with open(filename, "w") as f:
-                f.write("pid: {0}, now: {1}, open: {2}, close: {3}".format(log['pid'], time.ctime(), bt, et))
+                f.write("pid: {0}, now: {1}, open: {2}".format(log['pid'], time.ctime(), bt))
         log['status'] = 'sleep'
         plumb.LogDaemon(log, False)
         time.sleep(ds)

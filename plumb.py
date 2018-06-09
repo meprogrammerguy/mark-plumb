@@ -701,6 +701,18 @@ def Update(verbose):
         print ("***\n")
     return True, ""
 
+def DayisClosed(verbose):
+    answer = False
+    folder = GetFolder(verbose)
+    if folder != []:
+        answer = True
+        for item in folder:
+            if item['symbol'] != "$":
+                if (item['quote'] != "close"):
+                    answer = False
+                    break
+    return answer
+
 def GetFolderCash(verbose):
     folder = GetFolder(verbose)
     answer = 0
