@@ -453,6 +453,8 @@ def Price(symbol, quote, verbose):
         c = conn.cursor()
         c.execute("UPDATE folder SET price = ? WHERE symbol = (?)", (quote['price'], symbol,))
         c.execute("UPDATE folder SET quote = ? WHERE symbol = (?)", (quote['quote'], symbol,))
+        dt = datetime.datetime.now()
+        c.execute("UPDATE folder SET update_time = (?) WHERE symbol = (?)", (dt.strftime("%m/%d/%y %H:%M"), symbol,))
         conn.commit()
         conn.close()
     if (verbose):
@@ -592,8 +594,6 @@ def Shares(symbol, shares, verbose):
     c.execute("UPDATE folder SET shares = ? WHERE symbol = (?)", (shares, symbol,))
     balance = shares * price
     c.execute("UPDATE folder SET balance = ? WHERE symbol = (?)", (balance, symbol,))
-    dt = datetime.datetime.now()
-    c.execute("UPDATE folder SET update_time = (?) WHERE symbol = (?)", (dt.strftime("%m/%d/%y %H:%M"), symbol,))
     conn.commit()
     conn.close()
     if (verbose):
@@ -647,8 +647,6 @@ def Balance(symbol, balance, verbose):
         shares = balance / price
     c.execute("UPDATE folder SET shares = ? WHERE symbol = (?)", (shares, symbol,))
     c.execute("UPDATE folder SET balance = ? WHERE symbol = (?)", (balance, symbol,))
-    dt = datetime.datetime.now()
-    c.execute("UPDATE folder SET update_time = (?) WHERE symbol = (?)", (dt.strftime("%m/%d/%y %H:%M"), symbol,))
     conn.commit()
     conn.close()
     if (verbose):
