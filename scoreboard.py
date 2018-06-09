@@ -85,7 +85,11 @@ def folder():
                         log = "Warning: Portfolio not found, cannot recalculate"
                 return(render_folder("display: none;", log, ""))
             if (request.form['action'] == "adjust"):
-                if (request.form['options'] == "balance"):
+                if (request.form['options'] == "calculations"):
+                    plumb.PostWorksheet(False)
+                    log =  "adjusted portfolio based on worksheet calculations"
+                    return(render_folder("display: none;", log, ""))
+                elif (request.form['options'] == "balance"):
                     if (request.form['balance'] == ""):
                         return(render_folder("display: none;", "balance is blank, cannot adjust.", ""))
                     else:

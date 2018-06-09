@@ -788,10 +788,23 @@ def PrintFolder(verbose):
     TableCls = create_table('TableCls')
     for key in keys:
         TableCls.add_column(key, Col(key))
+    market, worksheet = GetWorksheet("latest", verbose)
+    post_worksheet = False
+    if market != {}:
+        dt = datetime.datetime.now()
+        today = dt.strftime('%Y/%m/%d')
+        if (market['post date'] == today):
+            if (market['posted'] != "yes"):
+                post_worksheet = True
+
     items = []
     answer = {}
     symbol_options = ""
     balance_options = ""
+    if (post_worksheet):
+        symbol_options += '<option value="worksheet">worksheet</option>'
+        balance_options += '<option value="calculations">calculations</option>'
+
     balance_options += '<option value="balance">balance</option>'
     balance_options += '<option value="shares">shares</option>'
     balance_options += '<option value="amount">amount</option>'
@@ -910,7 +923,6 @@ def AllocationTrends(verbose):
             if (row['balance'] is not None):
                 pst = row['balance'] / total * 100.
             allocation = allocation + "<li>{0} {1}</li>".format(row['symbol'], as_percent(pst))
-
     trends = []
     for row in rows:
         for col in last_list:
@@ -1150,7 +1162,8 @@ def GetLastAIM(verbose):
         c.execute("SELECT * FROM aim WHERE post_date != (?) ORDER BY post_date DESC LIMIT 1", (today,))
         keys = list(map(lambda x: x[0].replace("_"," "), c.description))
         values = c.fetchone()
-        answer = dict(zip(keys, values))
+        if values is not None:
+            answer = dict(zip(keys, values))
         conn.close()
     if (verbose):
         print ("***\n")
@@ -1247,7 +1260,8 @@ def GetFirstAIM(verbose):
         c.execute("SELECT * FROM aim where post_date = '1970/01/01'")
         keys = list(map(lambda x: x[0].replace("_"," "), c.description))
         values = c.fetchone()
-        answer = dict(zip(keys, values))
+        if (values is not None):
+            answer = dict(zip(keys, values))
         conn.close()
     if (verbose):
         print ("***\n")
@@ -1340,7 +1354,6 @@ def Post(verbose):
     c.execute("UPDATE aim SET json_string = (?) WHERE post_date = (?)", (json_string, db_values['post date'],))
     conn.commit()
     conn.close()
-    BeginWorksheet(500, verbose)
     if (db_values['market order'] != 0):
         BeginWorksheet(db_values['market order'], verbose)
     if (verbose):
@@ -2976,6 +2989,8 @@ def GetWorksheet(what, verbose):
     except Error as e:
         print("GetWorksheet(4) {0}".format(e))
         return {}, []
+    market = {}
+    worksheet = []
     c = conn.cursor()
     c.execute("SELECT * FROM market where key = 1")
     keys = list(map(lambda x: x[0].replace("_"," "), c.description))
@@ -2984,7 +2999,7 @@ def GetWorksheet(what, verbose):
         market = {}
     else:
         market = dict(zip(keys, values))
-    if (what == "latest"):
+    if (what == "latest" and market['post date'] is not None):
         dt = datetime.datetime.strptime(market['post date'], "%Y/%m/%d")
         theDate = dt.strftime('%Y/%m/%d')
         c.execute("SELECT * FROM worksheet where plan_date = (?) order by symbol", (theDate,))
@@ -2993,7 +3008,6 @@ def GetWorksheet(what, verbose):
     keys = list(map(lambda x: x[0].replace("_"," "), c.description))
     values = c.fetchall()
     conn.close()
-    worksheet = []
     for row in values:
         worksheet.append(dict(zip(keys, row)))
     if (verbose):
@@ -3015,7 +3029,7 @@ def PrintWorksheet(verbose):
         return "", ""
     dt = datetime.datetime.now()
     today = dt.strftime('%Y/%m/%d')
-    if (market["post date"] != today):
+    if (market['posted'] == "yes" or market["post date"] != today):
         return "", ""
     keys_dict = worksheet[0].keys()
     keys = []
@@ -3141,7 +3155,7 @@ def CalculateWorksheet(adjust, verbose):
                 if (f['symbol'] == a['symbol']):
                     shares = 0.0
                     if (f['price'] > 0):
-                        shares = abs(a['amount']) / f['price']
+                        shares = a['amount'] / f['price']
                         c.execute("UPDATE worksheet SET shares = ? WHERE plan_date = (?) and symbol = (?)", (shares, today, a['symbol'],))
     conn.commit()
     conn.close()
@@ -3178,10 +3192,10 @@ def PostWorksheet(verbose):
             for f in folder:
                 if (w['symbol'] == f['symbol']):
                     if (w['symbol'] == "$"):
-                        amount = f['balance'] - w['adjust amount']
+                        amount = f['balance'] + w['adjust amount']
                         c.execute("UPDATE folder SET balance = ? WHERE symbol = '$'", (amount,))
                     else:
-                        amount = f['shares'] - w['shares']
+                        amount = f['shares'] + w['shares']
                         c.execute("UPDATE folder SET shares = ? WHERE symbol = (?)", (amount, w['symbol'],))
         c.execute("UPDATE market SET posted = (?) WHERE key = 1", ("yes",))
         conn.commit()
