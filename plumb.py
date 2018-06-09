@@ -77,8 +77,10 @@ def QuoteTradier(quotes, verbose):
                 row = itm
             answer['symbol'] = row['symbol']
             if row['close'] is None:
+                answer['quote'] = "last"
                 answer['price'] = row['last']
             else:
+                answer['quote'] = "close"
                 answer['price'] = row['close']
                 answer['url'] = url
             answers.append(answer)
@@ -402,7 +404,7 @@ def Add(symbol, verbose):
         if ("Error Message" in quote[0]):
             errors.append([symbol, quote[0]['url'], quote[0]["Error Message"]])
         else:
-            Price(symbol, quote[0]['price'], verbose)
+            Price(symbol, quote[0], verbose)
             Shares(symbol, None, verbose)
     if (verbose):
         if (errors):
@@ -431,24 +433,26 @@ def Remove(symbol, verbose):
         print ("***\n")
     return True
 
-def Price(symbol, price, verbose):
+def Price(symbol, quote, verbose):
     db_file = GetDB(verbose)
     if (verbose):
         print ("***")
         print ("Price(1) symbol: {0}".format(symbol))
-        print ("Price(2) price: {0}".format(price))
-        print ("Price(3) dbase: {0}".format(db_file))
+        print ("Price(2) price: {0}".format(quote['price']))
+        print ("Price(3) quote: {0}".format(quote['quote']))
+        print ("Price(4) dbase: {0}".format(db_file))
     result = CreateFolder(symbol, verbose)
     if (result):
         try:
             conn = sqlite3.connect(db_file)
             if (verbose):
-                print("Price(4) sqlite3: {0}".format(sqlite3.version))
+                print("Price(5) sqlite3: {0}".format(sqlite3.version))
         except Error as e:
-            print("Price(5) {0}".format(e))
+            print("Price(6) {0}".format(e))
             return False
         c = conn.cursor()
-        c.execute("UPDATE folder SET price = ? WHERE symbol = (?)", (price, symbol,))
+        c.execute("UPDATE folder SET price = ? WHERE symbol = (?)", (quote['price'], symbol,))
+        c.execute("UPDATE folder SET quote = ? WHERE symbol = (?)", (quote['quote'], symbol,))
         conn.commit()
         conn.close()
     if (verbose):
@@ -534,7 +538,7 @@ def CreateFolder(key, verbose):
         print("CreateFolder(3) {0}".format(e))
         return False
     c = conn.cursor()
-    c.execute("CREATE TABLE if not exists 'folder' ( `symbol` TEXT NOT NULL UNIQUE, `balance` REAL, `shares` REAL, `price` REAL, `update_time` TEXT, `json_string` TEXT, PRIMARY KEY(`symbol`) )")
+    c.execute("CREATE TABLE if not exists 'folder' ( `symbol` TEXT NOT NULL UNIQUE, `balance` REAL, `shares` REAL, `price` NUMERIC, `quote` TEXT, `update_time` TEXT, `json_string` TEXT, PRIMARY KEY(`symbol`) )")
     c.execute( "INSERT OR IGNORE INTO folder(symbol) VALUES((?))", (key,))
     conn.commit()
     conn.close()
@@ -688,7 +692,7 @@ def Update(verbose):
         for row in rows:
             for quote in quotes:
                 if row[0] == quote["symbol"]:
-                    result = Price(row[0], quote['price'], verbose)
+                    result = Price(row[0], quote, verbose)
                     result = Shares(row[0], str(row[1]), verbose)
                     if (result['status']):
                         if (verbose):
@@ -2240,6 +2244,7 @@ def Archive(verbose):
             return False
         c = conn.cursor()
         c.execute("DELETE FROM aim where post_date != '1970/01/01'")
+        c.execute("DELETE FROM worksheet")
         conn.commit()
         conn.close()
         return True
@@ -2991,25 +2996,26 @@ def GetWorksheet(what, verbose):
         return {}, []
     market = {}
     worksheet = []
-    c = conn.cursor()
-    c.execute("SELECT * FROM market where key = 1")
-    keys = list(map(lambda x: x[0].replace("_"," "), c.description))
-    values = c.fetchone()
-    if values is None:
-        market = {}
-    else:
-        market = dict(zip(keys, values))
-    if (what == "latest" and market['post date'] is not None):
-        dt = datetime.datetime.strptime(market['post date'], "%Y/%m/%d")
-        theDate = dt.strftime('%Y/%m/%d')
-        c.execute("SELECT * FROM worksheet where plan_date = (?) order by symbol", (theDate,))
-    else:
-        c.execute("SELECT * FROM worksheet order by plan_date, symbol")
-    keys = list(map(lambda x: x[0].replace("_"," "), c.description))
-    values = c.fetchall()
-    conn.close()
-    for row in values:
-        worksheet.append(dict(zip(keys, row)))
+    if (checkTableExists(conn, "worksheet")):
+        c = conn.cursor()
+        c.execute("SELECT * FROM market where key = 1")
+        keys = list(map(lambda x: x[0].replace("_"," "), c.description))
+        values = c.fetchone()
+        if values is None:
+            market = {}
+        else:
+            market = dict(zip(keys, values))
+        if (what == "latest" and market['post date'] is not None):
+            dt = datetime.datetime.strptime(market['post date'], "%Y/%m/%d")
+            theDate = dt.strftime('%Y/%m/%d')
+            c.execute("SELECT * FROM worksheet where plan_date = (?) order by symbol", (theDate,))
+        else:
+            c.execute("SELECT * FROM worksheet order by plan_date, symbol")
+        keys = list(map(lambda x: x[0].replace("_"," "), c.description))
+        values = c.fetchall()
+        conn.close()
+        for row in values:
+            worksheet.append(dict(zip(keys, row)))
     if (verbose):
         print ("***\n")
     return market, worksheet
