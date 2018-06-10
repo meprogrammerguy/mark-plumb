@@ -74,7 +74,7 @@ def do_something():
                     log['status'] = 'success'
                     plumb.LogDaemon(log, False)
                     with open(filename, "w") as f:
-                        f.write("pid: {0}, {1} updated on: {2}. (sleeping for {3} seconds)".format(log['pid'], df, time.ctime(), ds))
+                        f.write("pid: {0}, {1} updated on: {2}. (sleeping for {3} minutes)".format(log['pid'], df, time.ctime(), ds))
             else:
                 log['status'] = 'closed'
                 plumb.LogDaemon(log, False)

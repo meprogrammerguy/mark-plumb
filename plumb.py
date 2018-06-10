@@ -1931,6 +1931,123 @@ def TestHistory(verbose):
     results['output'] = result_string
     return results
 
+def TestLow(verbose):
+    results = {}
+    old_stdout = sys.stdout
+    print_out = StringIO()
+    sys.stdout = print_out
+    db_file = GetDB(verbose)
+    username = getpass.getuser()
+    Path(username + "/").mkdir(parents=True, exist_ok=True) 
+    try:
+        conn = sqlite3.connect(db_file)
+        if (verbose):
+            print("TestLow(1) sqlite3: {0}".format(sqlite3.version))
+    except Error as e:
+        print("TestLow(2) {0}".format(e))
+        sys.stdout = old_stdout
+        result_string = print_out.getvalue()
+        results['output'] = result_string
+        return results
+    count = 0
+    fails = 0
+    total_tests = 8
+    if (verbose):
+        print ("Test #{0} - noteDate('2017/09/29')".format(count + 1))
+    result  = noteDate('2017/09/29')
+    if (result == "September 29th, 2017"):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (verbose):
+        print ("Test #{0} - to_number('(24.45%)', verbose)".format(count + 1))
+    result  = to_number('(24.45%)', verbose)
+    if (result == -.2445):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (verbose):
+        print ("Test #{0} - as_currency(-80000.5)".format(count + 1))
+    result  = as_currency(-80000.5)
+    if (result == "($80,000.50)"):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (verbose):
+        print ("Test #{0} - as_shares(23.4)".format(count + 1))
+    result  = as_shares(23.4)
+    if (result == "\r23.4000"):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (verbose):
+        print ("Test #{0} - as_percent(-23.4)".format(count + 1))
+    result  = as_percent(-23.4)
+    if (result == "(23.40%)"):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (verbose):
+        print ("Test #{0} - checkTableExists(conn, 'aim')".format(count + 1))
+    result  = checkTableExists(conn, "aim")
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (verbose):
+        print ("Test #{0} - CheckPretty('fred%&*')".format(count + 1))
+    result  = CheckPretty("fred%&*")
+    if (not result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (verbose):
+        print ("Test #{0} - myFloat('fred%&*')".format(count + 1))
+    result  = myFloat("fred%&*")
+    if (result == 0):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    testResults = False
+    if (count == total_tests):
+        print ("ran {0} tests, all pass".format(total_tests))
+        testResults = True
+    else:
+        print ("test count expected {0} passes, received {1}".format(total_tests, count))
+        testResults =  False
+    sys.stdout = old_stdout
+    result_string = print_out.getvalue()
+    results['status'] = testResults
+    results['total'] = total_tests
+    results['pass'] = count
+    results['fails'] = fails
+    results['output'] = result_string
+    return results
+
 def LoadTest(location, verbose):
     defaults, types = GetDefaults(False)
     test_dir = defaults['test root'] + location
@@ -3084,7 +3201,7 @@ def PrintWorksheet(verbose):
                     if (symbol == "$"):
                         col_list.append("")
                     else:
-                        col_list.append(as_shares(row[index]))
+                        col_list.append(as_shares(abs(row[index])))
                 elif key == "adjust amount":
                     if (symbol == "$"):
                         col_list.append(as_currency(row[index]))
@@ -3225,6 +3342,7 @@ def PostWorksheet(verbose):
                         amount = f['shares'] + w['shares']
                         c.execute("UPDATE folder SET shares = ? WHERE symbol = (?)", (amount, w['symbol'],))
         c.execute("UPDATE market SET posted = (?) WHERE key = 1", ("yes",))
+        c.execute("DELETE from worksheet WHERE adjust_amount = 0")
         conn.commit()
         conn.close()
     if (verbose):

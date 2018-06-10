@@ -60,7 +60,7 @@ def main(argv):
         print (testResult['output'])
         exit()
     if (notes > ""):
-        notesResult, initialize_day = plumb.GetAIMNotes(int(notes), verbose)
+        notesResult, initialize_day = plumb.GetAIMNotes(notes, verbose)
         print (notesResult)
         if initialize_day:
             print("AIM system was initialized today")
@@ -120,8 +120,8 @@ def usage():
     -n --notes          show the last <count> of notes
     -a --allocation     show allocation and trends in your portfolio
  
-    -e --export         export "activity", "archive", or "portfolio"
-                            to a spreadsheet
+    -e --export         export "activity", "archive", "portfolio"
+                            or "worksheet" to a spreadsheet
     -s --save           saves the current AIM activity to an archive dbase
                             (do this to move over your old AIM activity)
                             (warning, this will clear out the AIM dbase) 
