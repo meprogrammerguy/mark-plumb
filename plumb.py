@@ -1598,11 +1598,11 @@ def TestDefaults(verbose):
                     print ("\tfail.")
                 fails += 1
     testResults = False
-    if (count == total_tests):
+    if (fails == 0 and count == total_tests):
         print ("ran {0} tests, all pass".format(total_tests))
         testResults = True
     else:
-        print ("test count expected {0} passes, received {1}".format(total_tests, count))
+        print ("test count expected {0} passes, received {1}, failures {2}".format(total_tests, count, fails))
         testResults =  False
     sys.stdout = old_stdout
     result_string = print_out.getvalue()
@@ -1723,11 +1723,11 @@ def TestFolder(verbose):
             print ("\tfail.")
         fails += 1
     testResults = False
-    if (count == total_tests):
+    if (fails == 0 and count == total_tests):
         print ("ran {0} tests, all pass".format(total_tests))
         testResults = True
     else:
-        print ("test count expected {0} passes, received {1}".format(total_tests, count))
+        print ("test count expected {0} passes, received {1}, failures {2}".format(total_tests, count, fails))
         testResults =  False
     sys.stdout = old_stdout
     result_string = print_out.getvalue()
@@ -1847,11 +1847,11 @@ def TestAIM(location, verbose):
                 print ("\tfail.")
             fails += 1
     testResults = False
-    if (count == total_tests):
+    if (fails == 0 and count == total_tests):
         print ("ran {0} tests, all pass".format(total_tests))
         testResults = True
     else:
-        print ("test count expected {0} passes, received {1}".format(total_tests, count))
+        print ("test count expected {0} passes, received {1}, failures {2}".format(total_tests, count, fails))
         testResults =  False
     sys.stdout = old_stdout
     result_string = print_out.getvalue()
@@ -1869,7 +1869,7 @@ def TestHistory(verbose):
     sys.stdout = print_out
     count = 0
     fails = 0
-    total_tests = 4
+    total_tests = 6
     defaults, types = GetDefaults(verbose)
     if (verbose):
         print ("Test #{0} - PrintAIM('all', verbose)".format(count + 1))
@@ -1904,6 +1904,28 @@ def TestHistory(verbose):
         if (verbose):
             print ("\tfail.")
     if (verbose):
+        print ("Test #{0} - BeginWorksheet(-500, verbose)".format(count + 1))
+    filename = "{0}worksheet_test.csv".format(defaults['test root'])
+    result = BeginWorksheet(-500, verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (verbose):
+        print ("Test #{0} - WorkSheet('test/worksheet_test.csv', verbose)".format(count + 1))
+    filename = "{0}worksheet_test.csv".format(defaults['test root'])
+    result = WorkSheet(filename, verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+    if (verbose):
         print ("Test #{0} - ArchiveSheet('test/activity_test.csv', verbose)".format(count + 1))
     filename = "{0}archive_test.csv".format(defaults['test root'])
     result = ArchiveSheet(filename, verbose)
@@ -1915,11 +1937,11 @@ def TestHistory(verbose):
         if (verbose):
             print ("\tfail.")
     testResults = False
-    if (count == total_tests):
+    if (fails == 0 and count == total_tests):
         print ("ran {0} tests, all pass".format(total_tests))
         testResults = True
     else:
-        print ("test count expected {0} passes, received {1}".format(total_tests, count))
+        print ("test count expected {0} passes, received {1}, failures {2}".format(total_tests, count, fails))
         testResults =  False
     sys.stdout = old_stdout
     result_string = print_out.getvalue()
@@ -2033,11 +2055,11 @@ def TestLow(verbose):
         if (verbose):
             print ("\tfail.")
     testResults = False
-    if (count == total_tests):
+    if (fails == 0 and count == total_tests):
         print ("ran {0} tests, all pass".format(total_tests))
         testResults = True
     else:
-        print ("test count expected {0} passes, received {1}".format(total_tests, count))
+        print ("test count expected {0} passes, received {1}, failures {2}".format(total_tests, count, fails))
         testResults =  False
     sys.stdout = old_stdout
     result_string = print_out.getvalue()
