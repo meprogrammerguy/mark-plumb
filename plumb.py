@@ -95,8 +95,6 @@ def Holiday(verbose):
     if (verbose):
         print ("***")
         print ("Holiday(1) URL: {0}".format(url))
-    opentime = MarketToTime("09:30", "US/Eastern", verbose)
-    closetime = MarketToTime("16:00", "US/Eastern", verbose)
     dt = datetime.datetime.now()
     today = dt.strftime('%Y-%m-%d')
     defaults, types = GetDefaults(verbose)
@@ -117,9 +115,17 @@ def Holiday(verbose):
     try:
         response = connection.getresponse()
         content = response.read()
+        if (b"Invalid Access Token" in content):
+            answer = {}
+            answer['url'] = url
+            answer["Error Message"] = "Invalid Access Token"
+            return answer
         returnContent = json.loads(content)
     except http.client.HTTPException as e:
-        print('Exception {0} during request').format(e)
+        answer = {}
+        answer['url'] = url
+        answer["Error Message"] = e
+        return answer
     if (verbose):
         print ("***\n")
     answer = {}
@@ -319,14 +325,14 @@ def PrintDefaults(verbose):
         if (verbose):
             print ("PrintDefaults(2) {0} file is missing, cannot print".format(db_file))
             print ("***\n")
-        return "", "", ""
+        return "", "", "", ""
     try:
         conn = sqlite3.connect(db_file)
         if (verbose):
             print("PrintDefaults(3) sqlite3: {0}".format(sqlite3.version))
     except Error as e:
         print("PrintDefaults(4) {0}".format(e))
-        return "", "", ""
+        return "", "", "", ""
     c = conn.cursor()
     c.execute("SELECT * FROM defaults order by username")
     keys = list(map(lambda x: x[0].replace("_"," "), c.description))
@@ -1485,15 +1491,38 @@ def TestDefaults(verbose):
     sys.stdout = print_out
     count = 0
     fails = 0
-    total_tests = 18
+    total_tests = 23
     defaults, types =  GetDefaults(False)
     if (verbose):
         print ("***")
         print ("\tRunning tests will preserve your original defaults")
         print ("***\n")
+    if (verbose):
+        print ("Test #{0} - ResetDefaults(verbose)".format(count + 1))
+    result = ResetDefaults(verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+    if (verbose):
         print ("Test #{0} - Company('AAPL', verbose)".format(count + 1))
     result = Company("AAPL", verbose)
     if (result['companyName'] == "Apple Inc."):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+    if (verbose):
+        print ("Test #{0} - MarketToTime('06:15', verbose)".format(count + 1))
+    result = MarketToTime("06:15", "US/Eastern", verbose)
+    if (result == "05:15AM"):
         if (verbose):
             print ("\tpass.")
         count += 1
@@ -1579,12 +1608,52 @@ def TestDefaults(verbose):
             print ("\tfail.")
         fails += 1
     if (verbose):
+        print ("Test #{0} - Price('AAPL', quote, verbose)".format(count + 1))
+    quote = {}
+    quote['price'] = 50.55
+    quote['quote'] = "test"
+    result = Price("AAPL", quote, verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+    if (verbose):
+        print ("Test #{0} - GetFolder(verbose)".format(count + 1))
+    result = GetFolder(verbose)
+    for item in result:
+        if item['symbol'] == "AAPL":
+            if item['price'] == 50.55 and item['quote'] == "test":
+                if (verbose):
+                    print ("\tpass.")
+                count += 1
+                break
+            else:
+                if (verbose):
+                    print ("\tfail.")
+                fails += 1
+                break
+    if (verbose):
+        print ("Test #{0} - Holiday(verbose)".format(count + 1))
+    result = Holiday(verbose)
+    if ("Error Message" in result or "open" in result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+    if (verbose):
         print ("Test #{0} - GetDefaults(False)".format(count + 1))
     result, types = GetDefaults(verbose)
     if (result['tradier key'] == "TEST"
         and result['poll minutes'] == 10
-        and result['open'] == "8:30AM"
-        and result['close'] == "15:00"
+        and result['open'] == "08:30AM"
+        and result['close'] == "03:00PM"
         and result['test root'] == "test/"
         and result['folder name'] == "Practice Portfolio"):
         if (verbose):
@@ -1631,7 +1700,7 @@ def TestFolder(verbose):
     sys.stdout = print_out
     count = 0
     fails = 0
-    total_tests = 9
+    total_tests = 13
     defaults, types = GetDefaults(verbose)
     if (verbose):
         print ("Test #{0} - UpdateDefaultItem('folder name', 'Test Folder', verbose)".format(count + 1))
@@ -1667,6 +1736,28 @@ def TestFolder(verbose):
             print ("\tfail.")
         fails += 1
     if (verbose):
+        print ("Test #{0} - GetFolderCount(verbose)".format(count + 1))
+    result = GetFolderCount(verbose)
+    if (result > 0):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+    if (verbose):
+        print ("Test #{0} - GetFolderCash(verbose)".format(count + 1))
+    result = GetFolderCash(verbose)
+    if (result == 5000):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+    if (verbose):
         print ("Test #{0} - Balance('AAPL', '5000', verbose)".format(count + 1))
     result = Balance("AAPL", "5000", verbose)
     if (result['status']):
@@ -1681,6 +1772,29 @@ def TestFolder(verbose):
         print ("Test #{0} - Shares('AAPL', '50', verbose)".format(count + 1))
     result = Shares("AAPL", "50", verbose)
     if (result['status']):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+    folder = GetFolder(verbose)
+    if (verbose):
+        print ("Test #{0} - GetFolderValue('AAPL', 'price', folder)".format(count + 1))
+    result = GetFolderValue("AAPL", "price", folder)
+    if (result > 0):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+    if (verbose):
+        print ("Test #{0} - GetFolderStockValue(verbose)".format(count + 1))
+    result = GetFolderStockValue(verbose)
+    if (result > 0):
         if (verbose):
             print ("\tpass.")
         count += 1
@@ -1756,7 +1870,7 @@ def TestAIM(location, verbose):
     sys.stdout = print_out
     count = 0
     fails = 0
-    total_tests = 453
+    total_tests = 454
     defaults, types = GetDefaults(False)
     status, keys, rows = LoadTest(location, verbose)
     if (status and (defaults is not None)):
@@ -1764,6 +1878,17 @@ def TestAIM(location, verbose):
             print ("Test #{0} - UpdateDefaultItem('folder name', 'Test Aim', verbose)".format(count + 1))
         result = UpdateDefaultItem("folder name", "Test Aim", verbose)
         if (result):
+            if (verbose):
+                print ("\tpass.")
+            count += 1
+        else:
+            if (verbose):
+                print ("\tfail.")
+            fails += 1
+        if (verbose):
+            print ("Test #{0} - PrintDefaults(verbose)".format(count + 1))
+        r1, r2, r3, r4 = PrintDefaults(verbose)
+        if (r1 > "" and r2 > "" and r3 > "" and r4 > ""):
             if (verbose):
                 print ("\tpass.")
             count += 1
