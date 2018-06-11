@@ -703,14 +703,25 @@ def Update(verbose):
 
 def DayisClosed(verbose):
     answer = False
-    folder = GetFolder(verbose)
-    if folder != []:
-        answer = True
-        for item in folder:
-            if item['symbol'] != "$":
-                if (item['quote'] != "close"):
-                    answer = False
-                    break
+    d, t = GetDefaults(verbose)
+    ct = datetime.datetime.now().time()
+    if "close" in d:
+        end = d['close']
+    et = ct
+    if (end is not None):
+        if "AM" in end or "PM" in end:
+            et = datetime.datetime.strptime(end, '%I:%M%p').time()
+        else:
+            et = datetime.datetime.strptime(end, '%H:%M').time()
+    if ct > et:
+        folder = GetFolder(verbose)
+        if folder != []:
+            answer = True
+            for item in folder:
+                if item['symbol'] != "$":
+                    if (item['quote'] != "close"):
+                        answer = False
+                        break
     return answer
 
 def GetFolderCash(verbose):
@@ -2441,6 +2452,7 @@ def GetNextSnap(verbose):
 def BumpSnap(verbose):
     if (verbose):
         print ("***")
+    d, t = GetDefaults(verbose)
     username = getpass.getuser()
     db_file = username + "/archive.db"
     if (verbose):
@@ -2456,6 +2468,8 @@ def BumpSnap(verbose):
     c = conn.cursor()
     if (snap != 0):
         c.execute("UPDATE key SET last_snap = (?) WHERE key = ?", (snap, 1,))
+        if ("tradier key" in d):
+            c.execute("UPDATE key SET tradier_key = (?) WHERE key = ?", (d['tradier key'], 1,))
     conn.commit()
     conn.close()
     if (verbose):
@@ -2547,25 +2561,22 @@ def SummaryCounts(verbose):
         print("SummaryCounts(3) {0}".format(e))
         return 0, 0
     c = conn.cursor()
+    aim_count = ""
     if (checkTableExists(conn, "aim")):
         c.execute("select * from aim where snapshot = ?", (snap,))
-        result1 = c.fetchall()
-    else:
-        result1 = ""
+        aim_count = c.fetchall()
+    shares_count = ""
     if (checkTableExists(conn, "shares")):
         c.execute("select * from shares where snapshot = ?", (snap,))
-        result2 = c.fetchall()
-    else:
-        result2 = ""
+        shares_count = c.fetchall()
+    worksheet_count = ""
     if (checkTableExists(conn, "worksheet")):
         c.execute("select * from worksheet where snapshot = ?", (snap,))
-        result3 = c.fetchall()
-    else:
-        result3 = ""
+        worksheet_count = c.fetchall()
     conn.close()
     if (verbose):
         print ("***\n")
-    return len(result1), len(result2), len(result3)
+    return len(aim_count), len(shares_count), len(worksheet_count)
 
 def SnapSummary(verbose):
     if (verbose):
@@ -2640,8 +2651,8 @@ def CreateArchive(verbose):
         print("CreateArchive(3) {0}".format(e))
         return False
     c = conn.cursor()
-    c.execute("CREATE TABLE if not exists `key` ( `key` INTEGER NOT NULL UNIQUE, `last_snap` INTEGER )")
-    c.execute( "INSERT OR IGNORE INTO key(key, last_snap) VALUES(?, ?)", (1,0,))
+    c.execute("CREATE TABLE if not exists `key` ( `key` INTEGER NOT NULL UNIQUE, `last_snap` INTEGER, `tradier_key` TEXT )")
+    c.execute( "INSERT OR IGNORE INTO key(key, last_snap, tradier_key) VALUES(?, ?, ?)", (1,0,"",))
     c.execute("CREATE TABLE if not exists 'summary' ( `snap_date` TEXT NOT NULL, `folder_name` TEXT NOT NULL, `snapshot` INTEGER NOT NULL, `aim_rows` INTEGER, `shares_rows` INTEGER, `worksheet_rows` INTEGER, `initial` REAL, `profit_percent` INTEGER, PRIMARY KEY(`snap_date`,`folder_name`,`snapshot`) )")
     c.execute("CREATE TABLE if not exists 'aim' ( `snapshot` INTEGER NOT NULL, `post_date` TEXT NOT NULL, `stock_value` REAL, `cash` REAL, `portfolio_control` REAL, `buy_sell_advice` REAL, `market_order` REAL, `portfolio_value` REAL, PRIMARY KEY(`snapshot`,`post_date`) )")
     c.execute("CREATE TABLE if not exists 'shares' ( `snapshot` INTEGER NOT NULL, `post_date` TEXT NOT NULL, `symbol` TEXT NOT NULL, `balance` REAL, `shares` REAL, PRIMARY KEY(`snapshot`,`post_date`,`symbol`) )")
