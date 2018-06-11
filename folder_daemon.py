@@ -25,11 +25,11 @@ def do_something():
     plumb.Holiday(False)
     while True:
         defaults, types = plumb.GetDefaults(False)
-        ds = 0
+        dm = 0
         if (defaults['poll minutes'] is None):
-            ds = 10
+            dm = 10
         else:
-            ds = defaults['poll minutes']
+            dm = defaults['poll minutes']
         df = ""
         if (defaults['folder name'] is None):
             log['status'] = 'error'
@@ -40,7 +40,7 @@ def do_something():
             break
         else:
             df = plumb.GetDB(False)
-        log['poll seconds'] = ds
+        log['poll minutes'] = dm
         log['dbase name'] = df
         begin = defaults['open']
         weekno = datetime.today().weekday()
@@ -74,7 +74,7 @@ def do_something():
                     log['status'] = 'success'
                     plumb.LogDaemon(log, False)
                     with open(filename, "w") as f:
-                        f.write("pid: {0}, {1} updated on: {2}. (sleeping for {3} minutes)".format(log['pid'], df, time.ctime(), ds))
+                        f.write("pid: {0}, {1} updated on: {2}. (sleeping for {3} minutes)".format(log['pid'], df, time.ctime(), dm))
             else:
                 log['status'] = 'closed'
                 plumb.LogDaemon(log, False)
@@ -87,7 +87,7 @@ def do_something():
                 f.write("pid: {0}, now: {1}, open: {2}".format(log['pid'], time.ctime(), bt))
         log['status'] = 'sleep'
         plumb.LogDaemon(log, False)
-        time.sleep(ds)
+        time.sleep(dm * 60)
 
 def run():
     with daemon.DaemonContext(working_directory=os.getcwd()):
