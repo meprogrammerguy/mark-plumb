@@ -755,10 +755,13 @@ def GetFolder(verbose):
     except Error as e:
         print("GetFolder(4) {0}".format(e))
         return []
-    c = conn.cursor()
-    c.execute("SELECT * FROM folder order by symbol")
-    keys = list(map(lambda x: x[0].replace("_"," "), c.description))
-    values = c.fetchall()
+    keys = {}
+    values = []
+    if (checkTableExists(conn, "folder")):
+        c = conn.cursor()
+        c.execute("SELECT * FROM folder order by symbol")
+        keys = list(map(lambda x: x[0].replace("_"," "), c.description))
+        values = c.fetchall()
     conn.close()
     if (verbose):
         print ("***\n")
@@ -915,7 +918,7 @@ def AllocationTrends(verbose):
     prev = GetLastAIM(verbose)
     if ("json string" not in prev):
         if (verbose):
-            print ("AllocationTrends(2) could not get previous balances, make sure you have initialized AIM system")
+            print ("AllocationTrends(2) could not get previous prices, make sure you have initialized AIM system")
         return "", "", ""
     js = json.loads(prev['json string'])
     last_list = []
@@ -926,7 +929,7 @@ def AllocationTrends(verbose):
     first = GetFirstAIM(verbose)
     if ("json string" not in first):
         if (verbose):
-            print ("AllocationTrends(3) could not get initial balances, make sure you have initialized AIM system")
+            print ("AllocationTrends(3) could not get initial prices, make sure you have initialized AIM system")
         return "", "", ""
     js = json.loads(first['json string'])
     first_list = []
@@ -962,8 +965,8 @@ def AllocationTrends(verbose):
                     pst = 0
                     test = 0
                     trend = {}
-                    if (row['balance'] is not None):
-                        pst = (row['balance'] - col['balance']) / col['balance'] * 100.
+                    if (row['price'] is not None):
+                        pst = (row['price'] - col['price']) / col['price'] * 100.
                         if pst == 0:
                             trend['arrow'] = "flat"
                             trend['percent'] = "{0} {1}".format(row['symbol'], as_percent(pst))
@@ -1014,10 +1017,13 @@ def GetAIM(verbose):
     except Error as e:
         print("GetAIM(4) {0}".format(e))
         return []
-    c = conn.cursor()
-    c.execute("SELECT * FROM aim order by post_date")
-    keys = list(map(lambda x: x[0].replace("_"," "), c.description))
-    values = c.fetchall()
+    keys = {}
+    values = []
+    if (checkTableExists(conn, "aim")):
+        c = conn.cursor()
+        c.execute("SELECT * FROM aim order by post_date")
+        keys = list(map(lambda x: x[0].replace("_"," "), c.description))
+        values = c.fetchall()
     conn.close()
     if (verbose):
         print ("***\n")
@@ -1068,7 +1074,7 @@ def CreateAIM(verbose):
     ds = {}
     ds['start date'] = dt.strftime("%Y/%m/%d")
     table, symbol_options, balance_options, amount_options = PrintFolder(False)
-    dl = GetCurrentStockList(amount_options)
+    dl = GetCurrentStockList(amount_options, verbose)
     dl.insert(0, ds)
     json_string = json.dumps(dl) 
     c.execute( "INSERT INTO aim VALUES((?),?,?,?,?,?,?,(?))", ("1970/01/01", stock, cash, stock, 0, 0, pv, json_string,))
@@ -1372,7 +1378,7 @@ def Post(verbose):
     if (verbose):
         print("Post(5) {0}".format(look))
     table, symbol_options, balance_options, amount_options = PrintFolder(False)
-    dl = GetCurrentStockList(amount_options)
+    dl = GetCurrentStockList(amount_options, verbose)
     json_string = json.dumps(dl)
     c = conn.cursor()
     c.execute( "INSERT OR IGNORE INTO aim(post_date) VALUES((?))", (db_values['post date'],))
@@ -1391,13 +1397,18 @@ def Post(verbose):
         print ("***\n")
     return True
 
-def GetCurrentStockList(stock_list):
+def GetCurrentStockList(stock_list, verbose):
+    folder = GetFolder(verbose)
     dl = []
     for item in stock_list:
         ds = {}
         ds['symbol'] = item[0]
         ds['balance'] = round(item[1], 2)
         ds['shares'] = round(item[2], 4)
+        if folder != []:
+            for f in folder:
+                if item[0] == f['symbol']:
+                    ds['price'] = f['price']
         dl.append(ds)
     return dl
 
@@ -1491,7 +1502,7 @@ def TestDefaults(verbose):
     sys.stdout = print_out
     count = 0
     fails = 0
-    total_tests = 23
+    total_tests = 24
     defaults, types =  GetDefaults(False)
     if (verbose):
         print ("***")
@@ -1597,6 +1608,17 @@ def TestDefaults(verbose):
             print ("\tfail.")
         fails += 1
     if (verbose):
+        print ("Test #{0} - Add('AAPL', verbose)".format(count + 1))
+    result = Add( "AAPL", verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+    if (verbose):
         print ("Test #{0} - QuoteTradier('AAPL', verbose)".format(count + 1))
     result = QuoteTradier("AAPL", verbose)
     if (result[0]['Error Message'] == "Invalid Access Token"):
@@ -1624,18 +1646,24 @@ def TestDefaults(verbose):
     if (verbose):
         print ("Test #{0} - GetFolder(verbose)".format(count + 1))
     result = GetFolder(verbose)
-    for item in result:
-        if item['symbol'] == "AAPL":
-            if item['price'] == 50.55 and item['quote'] == "test":
-                if (verbose):
-                    print ("\tpass.")
-                count += 1
-                break
-            else:
-                if (verbose):
-                    print ("\tfail.")
-                fails += 1
-                break
+    print (result)
+    if result != []:
+        for item in result:
+            if item['symbol'] == "AAPL":
+                if item['price'] == 50.55 and item['quote'] == "test":
+                    if (verbose):
+                        print ("\tpass.")
+                    count += 1
+                    break
+                else:
+                    if (verbose):
+                        print ("\tfail.")
+                    fails += 1
+                    break
+    else:
+        if (verbose):
+            print ("\tpass.")
+        count += 1
     if (verbose):
         print ("Test #{0} - Holiday(verbose)".format(count + 1))
     result = Holiday(verbose)
@@ -1870,13 +1898,46 @@ def TestAIM(location, verbose):
     sys.stdout = print_out
     count = 0
     fails = 0
-    total_tests = 454
+    total_tests = 457
     defaults, types = GetDefaults(False)
     status, keys, rows = LoadTest(location, verbose)
     if (status and (defaults is not None)):
         if (verbose):
             print ("Test #{0} - UpdateDefaultItem('folder name', 'Test Aim', verbose)".format(count + 1))
         result = UpdateDefaultItem("folder name", "Test Aim", verbose)
+        if (result):
+            if (verbose):
+                print ("\tpass.")
+            count += 1
+        else:
+            if (verbose):
+                print ("\tfail.")
+            fails += 1
+        if (verbose):
+            print ("Test #{0} - Balance('$', '5000', verbose)".format(count + 1))
+        result = Balance( "$", "5000", verbose)
+        if (result):
+            if (verbose):
+                print ("\tpass.")
+            count += 1
+        else:
+            if (verbose):
+                print ("\tfail.")
+            fails += 1
+        if (verbose):
+            print ("Test #{0} - Add('AAPL', verbose)".format(count + 1))
+        result = Add( "AAPL", verbose)
+        if (result):
+            if (verbose):
+                print ("\tpass.")
+            count += 1
+        else:
+            if (verbose):
+                print ("\tfail.")
+            fails += 1
+        if (verbose):
+            print ("Test #{0} - Balance('$', '5000', verbose)".format(count + 1))
+        result = Balance( "$", "5000", verbose)
         if (result):
             if (verbose):
                 print ("\tpass.")
@@ -2000,13 +2061,82 @@ def TestAIM(location, verbose):
     return results
 
 def TestHistory(verbose):
+    results = {}
+    db_file = GetDB(verbose)
+    username = getpass.getuser()
+    Path(username + "/").mkdir(parents=True, exist_ok=True) 
     old_stdout = sys.stdout
     print_out = StringIO()
     sys.stdout = print_out
     count = 0
     fails = 0
-    total_tests = 6
+    total_tests = 11
+    try:
+        conn = sqlite3.connect(db_file)
+        if (verbose):
+            print("TestHistory(1) sqlite3: {0}".format(sqlite3.version))
+    except Error as e:
+        print("TestHistory(2) {0}".format(e))
+        sys.stdout = old_stdout
+        result_string = print_out.getvalue()
+        results['output'] = result_string
+        return results
     defaults, types = GetDefaults(verbose)
+    if (verbose):
+        print ("Test #{0} - Balance('$', '5000', verbose)".format(count + 1))
+    result = Balance( "$", "5000", verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+    if (verbose):
+        print ("Test #{0} - Add('AAPL', verbose)".format(count + 1))
+    result = Add( "AAPL", verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+    if (verbose):
+        print ("Test #{0} - Balance('AAPL', '5000', verbose)".format(count + 1))
+    result = Balance("AAPL", "5000", verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+    if (verbose):
+        print ("Test #{0} - CreateAIM(verbose)".format(count + 1))
+    result, text = CreateAIM(verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+    if (verbose):
+        print ("Test #{0} - checkTableExists(conn, 'aim')".format(count + 1))
+    result  = checkTableExists(conn, "aim")
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+            fails += 1
     if (verbose):
         print ("Test #{0} - PrintAIM('all', verbose)".format(count + 1))
     result, export_options = PrintAIM("all", verbose)
@@ -2017,6 +2147,7 @@ def TestHistory(verbose):
     else:
         if (verbose):
             print ("\tfail.")
+            fails += 1
     if (verbose):
         print ("Test #{0} - ActivitySheet('test/activity_test.csv', verbose)".format(count + 1))
     filename = "{0}activity_test.csv".format(defaults['test root'])
@@ -2028,6 +2159,7 @@ def TestHistory(verbose):
     else:
         if (verbose):
             print ("\tfail.")
+            fails += 1
     if (verbose):
         print ("Test #{0} - FolderSheet('test/folder_test.csv', verbose)".format(count + 1))
     filename = "{0}folder_test.csv".format(defaults['test root'])
@@ -2039,6 +2171,7 @@ def TestHistory(verbose):
     else:
         if (verbose):
             print ("\tfail.")
+            fails += 1
     if (verbose):
         print ("Test #{0} - BeginWorksheet(-500, verbose)".format(count + 1))
     filename = "{0}worksheet_test.csv".format(defaults['test root'])
@@ -2050,6 +2183,7 @@ def TestHistory(verbose):
     else:
         if (verbose):
             print ("\tfail.")
+            fails += 1
     if (verbose):
         print ("Test #{0} - WorkSheet('test/worksheet_test.csv', verbose)".format(count + 1))
     filename = "{0}worksheet_test.csv".format(defaults['test root'])
@@ -2061,6 +2195,7 @@ def TestHistory(verbose):
     else:
         if (verbose):
             print ("\tfail.")
+            fails += 1
     if (verbose):
         print ("Test #{0} - ArchiveSheet('test/activity_test.csv', verbose)".format(count + 1))
     filename = "{0}archive_test.csv".format(defaults['test root'])
@@ -2072,6 +2207,7 @@ def TestHistory(verbose):
     else:
         if (verbose):
             print ("\tfail.")
+            fails += 1
     testResults = False
     if (fails == 0 and count == total_tests):
         print ("ran {0} tests, all pass".format(total_tests))
@@ -2081,7 +2217,6 @@ def TestHistory(verbose):
         testResults =  False
     sys.stdout = old_stdout
     result_string = print_out.getvalue()
-    results = {}
     results['status'] = testResults
     results['total'] = total_tests
     results['pass'] = count
@@ -2094,22 +2229,9 @@ def TestLow(verbose):
     old_stdout = sys.stdout
     print_out = StringIO()
     sys.stdout = print_out
-    db_file = GetDB(verbose)
-    username = getpass.getuser()
-    Path(username + "/").mkdir(parents=True, exist_ok=True) 
-    try:
-        conn = sqlite3.connect(db_file)
-        if (verbose):
-            print("TestLow(1) sqlite3: {0}".format(sqlite3.version))
-    except Error as e:
-        print("TestLow(2) {0}".format(e))
-        sys.stdout = old_stdout
-        result_string = print_out.getvalue()
-        results['output'] = result_string
-        return results
     count = 0
     fails = 0
-    total_tests = 8
+    total_tests = 7
     if (verbose):
         print ("Test #{0} - noteDate('2017/09/29')".format(count + 1))
     result  = noteDate('2017/09/29')
@@ -2120,6 +2242,7 @@ def TestLow(verbose):
     else:
         if (verbose):
             print ("\tfail.")
+            fails += 1
     if (verbose):
         print ("Test #{0} - to_number('(24.45%)', verbose)".format(count + 1))
     result  = to_number('(24.45%)', verbose)
@@ -2130,6 +2253,7 @@ def TestLow(verbose):
     else:
         if (verbose):
             print ("\tfail.")
+            fails += 1
     if (verbose):
         print ("Test #{0} - as_currency(-80000.5)".format(count + 1))
     result  = as_currency(-80000.5)
@@ -2140,6 +2264,7 @@ def TestLow(verbose):
     else:
         if (verbose):
             print ("\tfail.")
+            fails += 1
     if (verbose):
         print ("Test #{0} - as_shares(23.4)".format(count + 1))
     result  = as_shares(23.4)
@@ -2150,6 +2275,7 @@ def TestLow(verbose):
     else:
         if (verbose):
             print ("\tfail.")
+            fails += 1
     if (verbose):
         print ("Test #{0} - as_percent(-23.4)".format(count + 1))
     result  = as_percent(-23.4)
@@ -2160,16 +2286,7 @@ def TestLow(verbose):
     else:
         if (verbose):
             print ("\tfail.")
-    if (verbose):
-        print ("Test #{0} - checkTableExists(conn, 'aim')".format(count + 1))
-    result  = checkTableExists(conn, "aim")
-    if (result):
-        if (verbose):
-            print ("\tpass.")
-        count += 1
-    else:
-        if (verbose):
-            print ("\tfail.")
+            fails += 1
     if (verbose):
         print ("Test #{0} - CheckPretty('fred%&*')".format(count + 1))
     result  = CheckPretty("fred%&*")
@@ -2180,6 +2297,7 @@ def TestLow(verbose):
     else:
         if (verbose):
             print ("\tfail.")
+            fails += 1
     if (verbose):
         print ("Test #{0} - myFloat('fred%&*')".format(count + 1))
     result  = myFloat("fred%&*")
@@ -2190,6 +2308,7 @@ def TestLow(verbose):
     else:
         if (verbose):
             print ("\tfail.")
+            fails += 1
     testResults = False
     if (fails == 0 and count == total_tests):
         print ("ran {0} tests, all pass".format(total_tests))
