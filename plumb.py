@@ -2068,7 +2068,7 @@ def TestHistory(verbose):
     sys.stdout = print_out
     count = 0
     fails = 0
-    total_tests = 21
+    total_tests = 32
     try:
         conn = sqlite3.connect(db_file)
         if (verbose):
@@ -2080,6 +2080,17 @@ def TestHistory(verbose):
         results['output'] = result_string
         return results
     defaults, types = GetDefaults(verbose)
+    if (verbose):
+        print ("Test #{0} - GetDB(verbose)".format(count + 1))
+    result = GetDB(verbose)
+    if (result > ""):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
     if (verbose):
         print ("Test #{0} - UpdateDefaultItem('folder name', 'Test History', verbose)".format(count + 1))
     result = UpdateDefaultItem("folder name", "Test History", verbose)
@@ -2183,8 +2194,40 @@ def TestHistory(verbose):
         if (verbose):
             print ("\tfail.")
         fails += 1
-
-
+    if (verbose):
+        print ("Test #{0} - Look(verbose)".format(count + 1))
+    r1, r2, r3 = Look(verbose)
+    if (r1 != {} and r2 > "" and r3 != {}):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+    if (verbose):
+        print ("Test #{0} - Post(verbose)".format(count + 1))
+    result = Post(verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+    table, symbol_options, balance_options, amount_options = PrintFolder(verbose)
+    if (verbose):
+        print ("Test #{0} - GetCurrentStockList(<amount options>, verbose)".format(count + 1))
+    dl = GetCurrentStockList(amount_options, verbose)
+    if (dl != []):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
     if (verbose):
         print ("Test #{0} - BeginWorksheet(-500, verbose)".format(count + 1))
     filename = "{0}worksheet_test.csv".format(defaults['test root'])
@@ -2198,8 +2241,86 @@ def TestHistory(verbose):
             print ("\tfail.")
             fails += 1
     if (verbose):
+        print ("Test #{0} - SnapSummary(verbose)".format(count + 1))
+    result = SnapSummary(verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+            fails += 1
+    if (verbose):
         print ("Test #{0} - Archive(verbose)".format(count + 1))
     result = Archive(verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+            fails += 1
+    if (verbose):
+        print ("Test #{0} - GetNextSnap(verbose)".format(count + 1))
+    snap = GetNextSnap(verbose)
+    if (snap > 0):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+            fails += 1
+    if (verbose):
+        print ("Test #{0} - GetDetail(snap, verbose)".format(count + 1))
+    ac, sc, wc = GetDetail((snap - 1), verbose)
+    if (ac != []):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+            fails += 1
+    if (verbose):
+        print ("Test #{0} - GetSummary(verbose)".format(count + 1))
+    result = GetSummary(verbose)
+    if (ac != []):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+            fails += 1
+    if (verbose):
+        print ("Test #{0} - PrintSummary(verbose)".format(count + 1))
+    result = PrintSummary(verbose)
+    if (result > ""):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+            fails += 1
+    if (verbose):
+        print ("Test #{0} - GetNames(verbose)".format(count + 1))
+    result = GetNames(verbose)
+    if (result != []):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+            fails += 1
+    d, t = GetDefaults(verbose)
+    if (verbose):
+        print ("Test #{0} - DeleteSnapshot(<current snapshot>, verbose)".format(count + 1))
+    result = DeleteSnapshot(d['snap shot'], verbose)
     if (result):
         if (verbose):
             print ("\tpass.")
@@ -2346,7 +2467,7 @@ def TestLow(verbose):
     sys.stdout = print_out
     count = 0
     fails = 0
-    total_tests = 7
+    total_tests = 9
     if (verbose):
         print ("Test #{0} - noteDate('2017/09/29')".format(count + 1))
     result  = noteDate('2017/09/29')
@@ -2417,6 +2538,31 @@ def TestLow(verbose):
         print ("Test #{0} - myFloat('fred%&*')".format(count + 1))
     result  = myFloat("fred%&*")
     if (result == 0):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+            fails += 1
+    if (verbose):
+        print ("Test #{0} - LogDaemon('test', verbose)".format(count + 1))
+    log = {}
+    log['status'] = "test"
+    log['pid'] = None
+    result  = LogDaemon(log, verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+            fails += 1
+    if (verbose):
+        print ("Test #{0} - PrintDaemon('test', verbose)".format(count + 1))
+    result, status  = PrintDaemon("test", verbose)
+    if (result > ""):
         if (verbose):
             print ("\tpass.")
         count += 1
@@ -3496,6 +3642,7 @@ def BeginWorksheet(market_order, verbose):
         c.execute("UPDATE market SET market_order = ? WHERE key = ?", (market_order, 1,))
         c.execute("UPDATE market SET actual_amount = ? WHERE key = ?", (0, 1,))
         c.execute("UPDATE market SET post_date = ? WHERE key = ?", (today, 1,))
+        c.execute("UPDATE market SET posted = (?) WHERE key = ?", ("no", 1,))
         for f in folder:
             c.execute( "INSERT OR IGNORE INTO worksheet VALUES((?),(?),?,?)", (today, f['symbol'], 0, 0,))
         conn.commit()
