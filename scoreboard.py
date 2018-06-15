@@ -190,7 +190,7 @@ def render_defaults(feedback):
     tradier_key_warning = ""
     if ("tradier key" in defaults):
         if (defaults['tradier key'] == "" or defaults['tradier key'] == "demo"):
-            tradier_key_warning = "Remember to obtain your lifetime API key from tradier, this is needed for getting the market calendar"
+            tradier_key_warning = "Remember to obtain your lifetime API key from tradier, this is needed for getting the market calendar and stock quotes"
     table, column_options, name_options, folder_options = plumb.PrintDefaults(False)
     hide_folder = ""
     if (name_options == ""):

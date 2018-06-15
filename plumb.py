@@ -271,14 +271,14 @@ def GetDefaults(verbose):
         if (verbose):
             print ("GetDefaults(2) {0} file is missing, cannot return the key".format(db_file))
             print ("***\n")
-        return "", ""
+        return {}, {}
     try:
         conn = sqlite3.connect(db_file)
         if (verbose):
             print("GetDefaults(3) sqlite3: {0}".format(sqlite3.version))
     except Error as e:
         print("GetDefaults(4) {0}".format(e))
-        return "", ""
+        return {}, {}
     c = conn.cursor()
     c.execute("SELECT * FROM defaults WHERE username = (?) order by username", (username,))
     keys = list(map(lambda x: x[0].replace("_"," "), c.description))
@@ -584,8 +584,6 @@ def Shares(symbol, shares, verbose):
         return result
     folder = GetFolder(verbose)
     price = GetFolderValue(symbol, "price", folder)
-    if price is None:
-        price = 0
     try:
         conn = sqlite3.connect(db_file)
         if (verbose):
@@ -776,11 +774,17 @@ def GetFolder(verbose):
                 answers.append(js)
     return answers
 
-def GetFolderValue(symbol, key, folder_dict):
+def GetFolderValue(symbol, key, folder_list):
     value = None
-    for row in folder_dict:
-        if row['symbol'] == symbol:
-            return row[key]
+    if folder_list != []:
+        for row in folder_list:
+            if row['symbol'] == symbol:
+                if row[key] == None:
+                    return 0
+                else:
+                    return row[key]
+    if value is None:
+        value = 0
     return value
 
 def GetFolderStockValue(verbose):
@@ -1502,9 +1506,13 @@ def TestDefaults(verbose):
     fails = 0
     total_tests = 24
     defaults, types =  GetDefaults(False)
+    if defaults == {}:
+        result = ResetDefaults(verbose)
+        if (result):
+            defaults, types =  GetDefaults(False)
     if (verbose):
         print ("***")
-        print ("\tRunning tests will preserve your original defaults")
+        print ("\tRunning tests will preserve your original defaults (if they exist)")
         print ("***\n")
     if (verbose):
         print ("Test #{0} - ResetDefaults(verbose)".format(count + 1))
@@ -1809,7 +1817,7 @@ def TestFolder(verbose):
     if (verbose):
         print ("Test #{0} - GetFolderValue('AAPL', 'price', folder)".format(count + 1))
     result = GetFolderValue("AAPL", "price", folder)
-    if (result > 0):
+    if (result >= 0):
         if (verbose):
             print ("\tpass.")
         count += 1
@@ -1820,7 +1828,7 @@ def TestFolder(verbose):
     if (verbose):
         print ("Test #{0} - GetFolderStockValue(verbose)".format(count + 1))
     result = GetFolderStockValue(verbose)
-    if (result > 0):
+    if (result >= 0):
         if (verbose):
             print ("\tpass.")
         count += 1
@@ -2151,6 +2159,17 @@ def TestHistory(verbose):
             print ("\tfail.")
         fails += 1
     if (verbose):
+        print ("Test #{0} - checkTableExists(conn, 'folder')".format(count + 1))
+    result  = checkTableExists(conn, "folder")
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+            fails += 1
+    if (verbose):
         print ("Test #{0} - GetAIM(verbose)".format(count + 1))
     result = GetAIM(verbose)
     if (result != []):
@@ -2241,17 +2260,6 @@ def TestHistory(verbose):
             print ("\tfail.")
             fails += 1
     if (verbose):
-        print ("Test #{0} - SnapSummary(verbose)".format(count + 1))
-    result = SnapSummary(verbose)
-    if (result):
-        if (verbose):
-            print ("\tpass.")
-        count += 1
-    else:
-        if (verbose):
-            print ("\tfail.")
-            fails += 1
-    if (verbose):
         print ("Test #{0} - Archive(verbose)".format(count + 1))
     result = Archive(verbose)
     if (result):
@@ -2310,29 +2318,6 @@ def TestHistory(verbose):
         print ("Test #{0} - GetNames(verbose)".format(count + 1))
     result = GetNames(verbose)
     if (result != []):
-        if (verbose):
-            print ("\tpass.")
-        count += 1
-    else:
-        if (verbose):
-            print ("\tfail.")
-            fails += 1
-    d, t = GetDefaults(verbose)
-    if (verbose):
-        print ("Test #{0} - DeleteSnapshot(<current snapshot>, verbose)".format(count + 1))
-    result = DeleteSnapshot(d['snap shot'], verbose)
-    if (result):
-        if (verbose):
-            print ("\tpass.")
-        count += 1
-    else:
-        if (verbose):
-            print ("\tfail.")
-            fails += 1
-    if (verbose):
-        print ("Test #{0} - checkTableExists(conn, 'aim')".format(count + 1))
-    result  = checkTableExists(conn, "aim")
-    if (result):
         if (verbose):
             print ("\tpass.")
         count += 1
@@ -2425,6 +2410,28 @@ def TestHistory(verbose):
     if (verbose):
         print ("Test #{0} - UpdateDefaultItem('folder name', '<reset back to what it was>', verbose)".format(count + 1))
     result = UpdateDefaultItem("folder name", defaults['folder name'], verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+    if (verbose):
+        print ("Test #{0} - UpdateDefaultItem('snap shot', '<reset back to what it was>', verbose)".format(count + 1))
+    result = UpdateDefaultItem("snap shot", defaults['snap shot'], verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+    if (verbose):
+        print ("Test #{0} - DeleteSnapshot(last snapshot, verbose)".format(count + 1))
+    result = DeleteSnapshot((snap - 1), verbose)
     if (result):
         if (verbose):
             print ("\tpass.")
@@ -2923,6 +2930,7 @@ def Archive(verbose):
         c.execute("DELETE FROM worksheet")
         conn.commit()
         conn.close()
+        UpdateDefaultItem("snap shot", snap, verbose)
         return True
     return False
 
@@ -3035,7 +3043,6 @@ def SnapTables(verbose):
             c.execute( "INSERT OR IGNORE INTO worksheet VALUES(?, (?), (?), ?, ?)", (snap, w['plan date'], w['symbol'], w['shares'], w['adjust amount'],))
     conn.commit()
     conn.close()
-    UpdateDefaultItem("snap shot", snap, verbose)
     if (verbose):
         print ("***\n")
     return True
