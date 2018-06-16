@@ -705,6 +705,22 @@ def Update(verbose):
         print ("***\n")
     return True, ""
 
+def DayisOpen(verbose):
+    answer = False
+    d, t = GetDefaults(verbose)
+    begin = d['open']
+    weekno = datetime.datetime.today().weekday()
+    ct = datetime.datetime.now().time()
+    bt = ct
+    if (begin is not None):
+        if "AM" in begin or "PM" in begin:
+            bt = datetime.datetime.strptime(begin, '%I:%M%p').time()
+        else:
+            bt = datetime.datetime.strptime(begin, '%H:%M').time()
+    if weekno < 5 and ct > bt:
+        answer = True
+    return answer
+
 def DayisClosed(verbose):
     answer = False
     d, t = GetDefaults(verbose)

@@ -1,9 +1,0 @@
-[Desktop Entry]
-Version=1.0
-Type=Application
-Terminal=true
-Exec=/home/jsmith/git/mark-plumb/start_server.sh
-Name=PlumbMark
-Comment=Plumb the Market Server
-Icon=/home/jsmith/git/mark-plumb/Shortcut.png
-GenericName[en_US.UTF-8]=Server for Plumb the Market page
