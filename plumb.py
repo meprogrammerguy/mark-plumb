@@ -58,7 +58,7 @@ def QuoteTradier(quotes, verbose):
             answer["Error Message"] = "Invalid Access Token"
             answers.append(answer)
             return answers
-        returnContent = json.loads(content)
+        returnContent = json.loads(content.decode('utf-8'))
     except http.client.HTTPException as e:
         answer = {}
         answer['url'] = url
@@ -120,7 +120,7 @@ def Holiday(verbose):
             answer['url'] = url
             answer["Error Message"] = "Invalid Access Token"
             return answer
-        returnContent = json.loads(content)
+        returnContent = json.loads(content.decode('utf-8'))
     except http.client.HTTPException as e:
         answer = {}
         answer['url'] = url
