@@ -16,6 +16,8 @@ pyperclip = "*"
 pytz = "*"
 python-dateutil = "*"
 tzlocal = "*"
+daemon = "*"
+"pywin32" = "*"
 
 
 [dev-packages]
