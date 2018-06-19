@@ -3557,7 +3557,11 @@ def CheckPretty(ex):
     return False
 
 def get_pid(name):
-    child = subprocess.Popen(['pgrep', '-f', name], stdout=subprocess.PIPE, shell=False)
+    if os.name == 'nt':
+        imagename = "imagename eq {0}".format(name)
+        child = subprocess.Popen(['tasklist', '/fi', imagename], stdout=subprocess.PIPE, shell=False)
+    else:
+        child = subprocess.Popen(['pgrep', '-f', name], stdout=subprocess.PIPE, shell=False)
     response = child.communicate()[0]
     return [int(pid) for pid in response.split()]
 
