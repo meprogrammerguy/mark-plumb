@@ -1,3 +1,4 @@
+echo off
 rem starts the plumb mark web server
 rem create a shortcut like so:
 rem pipenv run start_server.bat
