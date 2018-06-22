@@ -3556,13 +3556,38 @@ def CheckPretty(ex):
         return True
     return False
 
+def parse_wmic_output(text):
+    result = []
+    # remove empty lines
+    lines = [s for s in text.splitlines() if s.strip()]
+    # No Instance(s) Available
+    if len(lines) == 0:
+        return result
+    header_line = lines[0]
+    # Find headers and their positions
+    headers = re.findall('\S+\s+|\S$', header_line)
+    pos = [0]
+    for header in headers:
+        pos.append(pos[-1] + len(header))
+    for i in range(len(headers)):
+        headers[i] = headers[i].strip()
+    # Parse each entries
+    for r in range(1, len(lines)):
+        row = {}
+        for i in range(len(pos)-1):
+            row[headers[i]] = lines[r][pos[i]:pos[i+1]].strip()
+        result.append(row)
+    return result
+
 def get_pid(name):
     if os.name == 'nt':
-        imagename = "imagename eq {0}".format(name)
-        child = subprocess.Popen(['tasklist', '/fi', imagename], stdout=subprocess.PIPE, shell=False)
-        response = child.communicate()[0]
-        if (b"No tasks are running" in response):
-            response = ""
+        child = subprocess.Popen('wmic path win32_process get CommandLine, processId', stdout=subprocess.PIPE, shell=False)
+        response = parse_wmic_output(child.communicate()[0].decode("utf-8"))
+        pid = ""
+        for itm in response:
+            if (name in itm['CommandLine']):
+                pid = itm['ProcessId']
+        response = pid
     else:
         child = subprocess.Popen(['pgrep', '-f', name], stdout=subprocess.PIPE, shell=False)
         response = child.communicate()[0]
