@@ -105,6 +105,17 @@ def main(argv):
         else:
             runResult = plumb.run_script("./folder_daemon.py")
         exit()
+    if (check):
+        if os.name == 'nt':
+            checkResult = plumb.get_pid("poll_stocks.py")
+        else:
+            checkResult = plumb.get_pid("folder_daemon.py")
+        if (checkResult != []):
+            log = "stock polling app is running at pid: {0}".format(checkResult)
+            print (log)
+        else:
+            print ("stock polling app is not running")
+        exit()
     if (reset):
         endResult = plumb.ResetDefaults(verbose)
         if (endResult):
