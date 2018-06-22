@@ -11,7 +11,7 @@ def main(argv):
     verbose = False
     test = False
     quote = ""
-    company = ""
+    symbol = ""
     key = ""
     item = ""
     printout = False
@@ -19,8 +19,12 @@ def main(argv):
     log = ""
     when = False
     get = False
+    run = False
+    check = False
+    kill = False
     try:
-        opts, args = getopt.getopt(argv, "gwl:rpi:k:hvtc:q:", ["help", "verbose", "test", "quote=", "key=", "company=", "item=", "print", "reset", "log=", "when", "get"])
+        opts, args = getopt.getopt(argv, "rckgwl:rpi:k:hvts:q:", ["help", "verbose", "test", "quote=", "key=", "symbol=", "item=",
+            "print", "reset", "log=", "when", "get", "run", "check", "kill"])
     except getopt.GetoptError as err:
         print(err)
         usage()
@@ -32,6 +36,12 @@ def main(argv):
             test = True
         elif o in ("-g", "--get"):
             get = True
+        elif o in ("-r", "--run"):
+            run = True
+        elif o in ("-c", "--check"):
+            check = True
+        elif o in ("-k", "--kill"):
+            kill = True            
         elif o in ("-w", "--when"):
             when = True
         elif o in ("-r", "--reset"):
@@ -45,8 +55,8 @@ def main(argv):
             item = a
         elif o in ("-q", "--quote"):
             quote = a.upper()
-        elif o in ("-c", "--company"):
-            company = a.upper()
+        elif o in ("-s", "--symbol"):
+            symbol = a.upper()
         elif o in ("-k", "--key"):
             key = a
         elif o in ("-l", "--log"):
@@ -71,8 +81,8 @@ def main(argv):
         quoteResult = plumb.QuoteTradier(quote, verbose)
         pprint.pprint(quoteResult)
         exit()
-    if (company > ""):
-        companyResult = plumb.Company(company, verbose)
+    if (symbol > ""):
+        companyResult = plumb.Company(symbol, verbose)
         pprint.pprint(companyResult)
         exit()
     if (printout):
@@ -81,6 +91,26 @@ def main(argv):
         pprint.pprint(column_options)
         pprint.pprint(folder_options)
         pprint.pprint(name_options)
+        exit()
+    if (reset):
+        endResult = plumb.ResetDefaults(verbose)
+        if (endResult):
+            print ("saved.")
+        else:
+            print ("failed.")
+        exit()
+    if (run):
+        if os.name == 'nt':
+            runResult = plumb.run_script("poll_stocks.py")
+        else:
+            runResult = plumb.run_script("./folder_daemon.py")
+        exit()
+    if (reset):
+        endResult = plumb.ResetDefaults(verbose)
+        if (endResult):
+            print ("saved.")
+        else:
+            print ("failed.")
         exit()
     if (reset):
         endResult = plumb.ResetDefaults(verbose)
@@ -129,7 +159,7 @@ def usage():
     -v  --verbose       increases the information level
     -t  --test          tests the default routines
 
-    -c  --company       retrieves company data from ticker symbol
+    -s  --symbol        retrieves company data from ticker symbol
     -q  --quote         get stock quote from ticker symbol(s)
     -w  --when          retrieves the stock exchange holiday information
 
@@ -144,6 +174,9 @@ def usage():
 
     -l  --log           show daemon log
                             --log='' (entire log), --log='wake' (wake status)
+    -r  --run           runs stock polling app
+    -c  --check         checks if stock polling app is running
+    -k  --kill          kills stock polling app
     """.format(key_list)
     print (usage) 
 
