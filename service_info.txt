@@ -1,1 +1,0 @@
-sc create TestService binpath= "C:\Users\jsmith\AppData\Local\Programs\Python\Python36\Python.exe C:\Users\jsmith\git\mark-plumb\test_service.py" DisplayName= "TestService" start= auto
