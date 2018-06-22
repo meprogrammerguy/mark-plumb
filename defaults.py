@@ -15,7 +15,7 @@ def main(argv):
     key = ""
     item = ""
     printout = False
-    reset = False
+    defaults = False
     log = ""
     when = False
     get = False
@@ -23,8 +23,8 @@ def main(argv):
     check = False
     kill = False
     try:
-        opts, args = getopt.getopt(argv, "rckgwl:rpi:k:hvts:q:", ["help", "verbose", "test", "quote=", "key=", "symbol=", "item=",
-            "print", "reset", "log=", "when", "get", "run", "check", "kill"])
+        opts, args = getopt.getopt(argv, "rckgwl:dpi:k:hvts:q:", ["help", "verbose", "test", "quote=", "key=", "symbol=", "item=",
+            "print", "defaults", "log=", "when", "get", "run", "check", "kill"])
     except getopt.GetoptError as err:
         print(err)
         usage()
@@ -44,8 +44,8 @@ def main(argv):
             kill = True            
         elif o in ("-w", "--when"):
             when = True
-        elif o in ("-r", "--reset"):
-            reset = True
+        elif o in ("-d", "--defaults"):
+            defaults = True
         elif o in ("-p", "--print"):
             printout = True
         elif o in ("-h", "--help"):
@@ -92,7 +92,7 @@ def main(argv):
         pprint.pprint(folder_options)
         pprint.pprint(name_options)
         exit()
-    if (reset):
+    if (defaults):
         endResult = plumb.ResetDefaults(verbose)
         if (endResult):
             print ("saved.")
@@ -116,19 +116,15 @@ def main(argv):
         else:
             print ("stock polling app is not running")
         exit()
-    if (reset):
-        endResult = plumb.ResetDefaults(verbose)
-        if (endResult):
-            print ("saved.")
+    if (kill):
+        if os.name == 'nt':
+            checkResult = plumb.get_pid("poll_stocks.py")
         else:
-            print ("failed.")
-        exit()
-    if (reset):
-        endResult = plumb.ResetDefaults(verbose)
-        if (endResult):
-            print ("saved.")
+            checkResult = plumb.get_pid("folder_daemon.py")
+        if (checkResult != []):
+            plumb.kill_pid(checkResult[0])
         else:
-            print ("failed.")
+            print ("stock polling app is not running")
         exit()
     if (log > ""):
         logResult, status = plumb.PrintDaemon(log, verbose)
@@ -180,7 +176,7 @@ def usage():
     -i  --item          item value to update (used with --key switch)
 
     -p  --print         print out the defaults database (in HTML table format)
-    -r  --reset         reset user back to standard defaults
+    -d  --defaults      reset user back to standard defaults
     -g  --get           Gets/Shows all default fields
 
     -l  --log           show daemon log
