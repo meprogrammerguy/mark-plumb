@@ -4,6 +4,7 @@ from flask import Flask
 from flask import render_template
 from flask import request
 from datetime import datetime
+import os
 import pdb
 import ast
 
@@ -28,11 +29,17 @@ def index():
     return(render_index(""))
 
 def render_index(feedback):
-    pid = plumb.get_pid("folder_daemon.py")
+    if os.name == 'nt':
+        pid = plumb.get_pid("poll_stocks.py")
+    else:
+        pid = plumb.get_pid("folder_daemon.py")
     if (pid == []):
-        plumb.run_script("./folder_daemon.py")
+        if os.name == 'nt':
+            plumb.run_script("poll_stocks.py")
+        else:
+            plumb.run_script("./folder_daemon.py")
         if (feedback == ""):
-            feedback = "daemon started"
+            feedback = "stock polling started"
     l, table, db = plumb.Look(False)
     allocation_list, trends, lives = plumb.AllocationTrends(False)
     notes, initialize_day = plumb.GetAIMNotes(10, False)
@@ -175,10 +182,11 @@ def defaults():
                     plumb.UpdateDefaultItem(request.form['column'], request.form['value'], False)
                     log = "{0} has been updated.".format(request.form['column'])
                 return (render_defaults(log))
-            elif (request.form['action'] == "restart"):
-                plumb.run_script("./folder_daemon.py")
-            elif (request.form['action'] == "start"):
-                plumb.run_script("./folder_daemon.py")
+            elif (request.form['action'] == "restart" or request.form['action'] == "start"):
+                if os.name == 'nt':
+                    plumb.run_script("poll_stocks.py")
+                else:
+                    plumb.run_script("./folder_daemon.py")
 
     except Exception as e:
         return (render_defaults(e))
@@ -196,16 +204,19 @@ def render_defaults(feedback):
     if (name_options == ""):
         hide_folder = "hidden"
     notes, initialize_day = plumb.GetAIMNotes(10, False)
-    pid = plumb.get_pid("folder_daemon.py")
+    if os.name == 'nt':
+        pid = plumb.get_pid("poll_stocks.py")
+    else:
+        pid = plumb.get_pid("folder_daemon.py")
     daemon_check = ""
     daemon_color = "green;"
     daemon_action = ""
     if (pid == []):
-        daemon_check = "WARNING: folder_daemon.py is not running, your stocks are not updating, please start"
+        daemon_check = "WARNING: stock polling is not running, your stocks are not updating, please start"
         daemon_color = "red;"
         daemon_action = "start"
     else:
-        daemon_check = "folder daemon is running on pid: {0}".format(pid[0])
+        daemon_check = "stock polling is running on pid: {0}".format(pid[0])
         daemon_action = "restart"       
     daemon_table, status = plumb.PrintDaemon("all", False)
     daemon_info = ""
