@@ -62,13 +62,6 @@ def do_something(verbose):
         time.sleep(dm * 60)
 
 def run():
-    pid = os.fork()
-    try:
-        if pid > 0:
-            sys.exit(0)
-    except OSError, e:
-        logging.error("Failed to Demonize: %d, %s\n" % (e.errno,e.strerror))
-        sys.exit(1)
     do_something(True)
 
 def price_poll(verbose):

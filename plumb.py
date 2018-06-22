@@ -3604,7 +3604,11 @@ def run_script(name):
         log['pid'] = pid[0]
         LogDaemon(log, False)
         kill_pid(pid[0])
-    os.system(name)
+    if os.name == 'nt':
+        shell = "start /min {0}".format(name)
+        os.system(shell)
+    else:
+        os.system(name)
 
 def myFloat(value):
     try:
