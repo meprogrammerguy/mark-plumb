@@ -157,5 +157,100 @@ def usage():
     """
     print (usage) 
 
+def pathToWindowsShortcut(filename, folder='Desktop'):
+    """
+    This should return a path to the "Desktop" folder, creating a files in that folder will show an icons on the desktop.
+    """
+    try:
+        from win32com.client import Dispatch
+        shell = Dispatch('WScript.Shell')
+        desktop = shell.SpecialFolders(folder)
+        return os.path.join(desktop, filename)
+    except:
+        dhnio.DprintException()
+        return ''
+  
+def createWindowsShortcut(filename, target='', wDir='', icon='', args='', folder='Desktop'):
+    """
+    Creates a shortcut for DataHaven.NET on the desktop. 
+    """
+    if dhnio.Windows():
+        try:
+            from win32com.client import Dispatch
+            shell = Dispatch('WScript.Shell')
+            desktop = shell.SpecialFolders(folder)
+            path = os.path.join(desktop, filename)
+            shortcut = shell.CreateShortCut(path)
+            shortcut.Targetpath = target
+            shortcut.WorkingDirectory = wDir
+            shortcut.Arguments = args
+            if icon != '':
+                shortcut.IconLocation = icon
+            shortcut.save()
+        except:
+            dhnio.DprintException()
+  
+def removeWindowsShortcut(filename, folder='Desktop'):
+    """
+    Removes a DataHaven.NET shortcut from the desktop.
+    """
+    if dhnio.Windows():
+        path = pathToWindowsShortcut(filename, folder)
+        if os.path.isfile(path) and os.access(path, os.W_OK):
+            try:
+                os.remove(path)
+            except:
+                dhnio.DprintException()
+  
+def pathToStartMenuShortcut(filename):
+    """
+    Path to the Windows start menu folder.
+    """
+    try:
+        from win32com.shell import shell, shellcon
+        from win32com.client import Dispatch
+        shell_ = Dispatch('WScript.Shell')
+        csidl = getattr(shellcon, 'CSIDL_PROGRAMS')
+        startmenu = shell.SHGetSpecialFolderPath(0, csidl, False)
+        return os.path.join(startmenu, filename)
+    except:
+        dhnio.DprintException()
+        return ''
+  
+def createStartMenuShortcut(filename, target='', wDir='', icon='', args=''):
+    """
+    Create a DataHaven.NET shortcut in the Windows start menu.
+    """
+    if dhnio.Windows():
+        try:
+            from win32com.shell import shell, shellcon
+            from win32com.client import Dispatch
+            shell_ = Dispatch('WScript.Shell')
+            csidl = getattr(shellcon, 'CSIDL_PROGRAMS')
+            startmenu = shell.SHGetSpecialFolderPath(0, csidl, False)
+            path = os.path.join(startmenu, filename)
+            shortcut = shell_.CreateShortCut(path)
+            shortcut.Targetpath = target
+            shortcut.WorkingDirectory = wDir
+            shortcut.Arguments = args
+            if icon != '':
+                shortcut.IconLocation = icon
+            shortcut.save()
+        except:
+            dhnio.DprintException()
+  
+def removeStartMenuShortcut(filename):
+    """
+    Remove a shortcut from Windows start menu.
+    """
+    if dhnio.Windows():
+        path = pathToStartMenuShortcut(filename)
+        if os.path.isfile(path) and os.access(path, os.W_OK):
+            try:
+                os.remove(path)
+            except:
+                dhnio.DprintException()
+    return
+
 if __name__ == "__main__":
     main(sys.argv[1:])
