@@ -36,28 +36,40 @@ def main(argv):
         else:
             assert False, "unhandled option"
     if (both):
-        bothResult = CreateShortcuts("both", verbose)
+        if os.name == 'nt':
+            bothResult = CreateShortcutWindows("both", verbose)
+        else:
+            bothResult = CreateShortcutLinux("both", verbose)
         if (bothResult):
              print ("updated.")
         else:
             print ("failed.")
         exit()
     if (favorites):
-        favoritesResult = CreateShortcuts("favorites", verbose)
+        if os.name == 'nt':
+            bothResult = CreateShortcutWindows("favorites", verbose)
+        else:
+            bothResult = CreateShortcutLinux("favorites", verbose)
         if (favoritesResult):
              print ("updated.")
         else:
             print ("failed.")
         exit()
     if (desktop):
-        desktopResult = CreateShortcuts("desktop", verbose)
+        if os.name == 'nt':
+            bothResult = CreateShortcutWindows("desktop", verbose)
+        else:
+            bothResult = CreateShortcutLinux("desktop", verbose)
         if (desktopResult):
              print ("updated.")
         else:
             print ("failed.")
         exit()
     if (remove):
-        removeResult = RemoveShortcuts(verbose)
+        if os.name == 'nt':
+            removeResult = RemoveShortcutWindows(verbose)
+        else:
+            removeResult = RemoveShortcutLinux(verbose)
         if (removeResult):
              print ("shortcuts are gone.")
         else:
@@ -65,7 +77,7 @@ def main(argv):
         exit()
     usage()
 
-def CreateShortcuts(what, verbose):
+def CreateShortcutLinux(what, verbose):
     if (verbose):
         print ("***")
         print ("CreateShortcuts(1) where: {0}".format(what))
@@ -119,7 +131,7 @@ def CreateShortcuts(what, verbose):
         print ("***\n")
     return True
 
-def RemoveShortcuts(verbose):
+def RemoveShortcutLinux(verbose):
     home = str(Path.home())
     desktop = "{0}/Desktop/PlumbMark.desktop".format(home)
     favorites = "{0}/.local/share/applications/PlumbMark.desktop".format(home)
@@ -140,6 +152,33 @@ def get_favorites():
     response = child.communicate()[0].decode("utf-8")
     return ast.literal_eval(response)
 
+def CreateShortcutWindows(what, verbose):
+    if (verbose):
+        print ("***")
+        print ("CreateShortcuts(1) where: {0}".format(what))
+    current_dir = os.getcwd()
+    icondir = "{0}/static/Shortcut.png".format(current_dir)
+    target = "pipenv run {0}\start_server.bat".format(current_dir)
+    if (what == "both"):
+        createWindowsShortcut("PlumbMark.lnk", target=target, wDir=current_dir, icon=icondir, args='', folder='Desktop'):
+        createStartMenuShortcut("PlumbMark.lnk", target=target, wDir=current_dir, icon=icondir, args='')
+    elif (what == "favorites"):
+        createStartMenuShortcut("PlumbMark.lnk", target=target, wDir=current_dir, icon=icondir, args='')
+    elif (what == "desktop"):
+        createWindowsShortcut("PlumbMark.lnk", target=target, wDir=current_dir, icon=icondir, args='', folder='Desktop'):
+    else:
+        if (verbose):
+            print ("CreateShortcuts(2) - unknown shortcut option - exiting.")
+        return False
+    if (verbose):
+        print ("***\n")
+    return True
+
+def RemoveShortcutWindows(verbose):
+    removeWindowsShortcut("PlumbMark.lnk", folder='Desktop')
+    removeStartMenuShortcut("PlumbMark.lnk")
+    return True
+
 def usage():
     usage = """
     *****************************
@@ -150,7 +189,7 @@ def usage():
     -v --verbose        increases the information level
 
     -d --desktop        creates a desktop shortcut
-    -f --favorites      creates a shortcut in your favorites
+    -f --favorites      creates a shortcut in your favorites/start menu folder
     -b --both           creates both shortcuts
 
     -r --remove         removes the shortcuts
@@ -172,7 +211,7 @@ def pathToWindowsShortcut(filename, folder='Desktop'):
   
 def createWindowsShortcut(filename, target='', wDir='', icon='', args='', folder='Desktop'):
     """
-    Creates a shortcut for DataHaven.NET on the desktop. 
+    Creates a shortcut for PlumbMark on the desktop. 
     """
     if dhnio.Windows():
         try:
@@ -192,7 +231,7 @@ def createWindowsShortcut(filename, target='', wDir='', icon='', args='', folder
   
 def removeWindowsShortcut(filename, folder='Desktop'):
     """
-    Removes a DataHaven.NET shortcut from the desktop.
+    Removes a PlumbMark shortcut from the desktop.
     """
     if dhnio.Windows():
         path = pathToWindowsShortcut(filename, folder)
@@ -219,7 +258,7 @@ def pathToStartMenuShortcut(filename):
   
 def createStartMenuShortcut(filename, target='', wDir='', icon='', args=''):
     """
-    Create a DataHaven.NET shortcut in the Windows start menu.
+    Create a PlumbMark shortcut in the Windows start menu.
     """
     if dhnio.Windows():
         try:
@@ -241,7 +280,7 @@ def createStartMenuShortcut(filename, target='', wDir='', icon='', args=''):
   
 def removeStartMenuShortcut(filename):
     """
-    Remove a shortcut from Windows start menu.
+    Remove a PlumbMark shortcut from Windows start menu.
     """
     if dhnio.Windows():
         path = pathToStartMenuShortcut(filename)
