@@ -2065,7 +2065,7 @@ def TestHistory(verbose):
     sys.stdout = print_out
     count = 0
     fails = 0
-    total_tests = 32
+    total_tests = 31
     try:
         conn = sqlite3.connect(db_file)
         if (verbose):
@@ -2148,17 +2148,6 @@ def TestHistory(verbose):
         if (verbose):
             print ("\tfail.")
         fails += 1
-    if (verbose):
-        print ("Test #{0} - checkTableExists(conn, 'aim')".format(count + 1))
-    result  = checkTableExists(conn, "aim")
-    if (not result):
-        if (verbose):
-            print ("\tpass.")
-        count += 1
-    else:
-        if (verbose):
-            print ("\tfail.")
-            fails += 1
     if (verbose):
         print ("Test #{0} - GetAIM(verbose)".format(count + 1))
     result = GetAIM(verbose)
