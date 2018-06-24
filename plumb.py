@@ -1520,7 +1520,7 @@ def TestDefaults(verbose):
     sys.stdout = print_out
     count = 0
     fails = 0
-    total_tests = 24
+    total_tests = 22
     defaults, types =  GetDefaults(False)
     if defaults == {}:
         result = ResetDefaults(verbose)
@@ -1531,8 +1531,8 @@ def TestDefaults(verbose):
         print ("\tRunning tests will preserve your original defaults (if they exist)")
         print ("***\n")
     if (verbose):
-        print ("Test #{0} - ResetDefaults(verbose)".format(count + 1))
-    result = ResetDefaults(verbose)
+        print ("Test #{0} - UpdateDefaultItem('folder name', 'Test Folder', False)".format(count + 1))
+    result = UpdateDefaultItem("folder name", "Test Folder", verbose)
     if (result):
         if (verbose):
             print ("\tpass.")
@@ -1599,17 +1599,6 @@ def TestDefaults(verbose):
     if (verbose):
         print ("Test #{0} - UpdateDefaultItem('open', '8:30AM', False)".format(count + 1))
     result = UpdateDefaultItem("open", "8:30AM", verbose)
-    if (result):
-        if (verbose):
-            print ("\tpass.")
-        count += 1
-    else:
-        if (verbose):
-            print ("\tfail.")
-        fails += 1
-    if (verbose):
-        print ("Test #{0} - UpdateDefaultItem('folder name', 'Practice Portfolio', False)".format(count + 1))
-    result = UpdateDefaultItem("folder name", "Practice Portfolio", verbose)
     if (result):
         if (verbose):
             print ("\tpass.")
@@ -1689,23 +1678,7 @@ def TestDefaults(verbose):
     if (verbose):
         print ("Test #{0} - Holiday(verbose)".format(count + 1))
     result = Holiday(verbose)
-    if ("Error Message" in result or "open" in result):
-        if (verbose):
-            print ("\tpass.")
-        count += 1
-    else:
-        if (verbose):
-            print ("\tfail.")
-        fails += 1
-    if (verbose):
-        print ("Test #{0} - GetDefaults(False)".format(count + 1))
-    result, types = GetDefaults(verbose)
-    if (result['tradier key'] == "TEST"
-        and result['poll minutes'] == 10
-        and result['open'] == "08:30AM"
-        and result['close'] == "03:00PM"
-        and result['test root'] == "test/"
-        and result['folder name'] == "Practice Portfolio"):
+    if ("Error Message" in result or 'status' in result):
         if (verbose):
             print ("\tpass.")
         count += 1
@@ -2097,8 +2070,9 @@ def TestHistory(verbose):
         conn = sqlite3.connect(db_file)
         if (verbose):
             print("TestHistory(1) sqlite3: {0}".format(sqlite3.version))
+            print("TestHistory(2) db_file: {0}".format(db_file))
     except Error as e:
-        print("TestHistory(2) {0}".format(e))
+        print("TestHistory(3) {0}".format(e))
         sys.stdout = old_stdout
         result_string = print_out.getvalue()
         results['output'] = result_string
@@ -2175,9 +2149,9 @@ def TestHistory(verbose):
             print ("\tfail.")
         fails += 1
     if (verbose):
-        print ("Test #{0} - checkTableExists(conn, 'folder')".format(count + 1))
-    result  = checkTableExists(conn, "folder")
-    if (result):
+        print ("Test #{0} - checkTableExists(conn, 'aim')".format(count + 1))
+    result  = checkTableExists(conn, "aim")
+    if (not result):
         if (verbose):
             print ("\tpass.")
         count += 1
