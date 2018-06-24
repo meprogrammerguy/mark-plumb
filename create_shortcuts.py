@@ -41,27 +41,27 @@ def main(argv):
         else:
             bothResult = CreateShortcutLinux("both", verbose)
         if (bothResult):
-             print ("updated.")
+             print ("shortcuts created.")
         else:
             print ("failed.")
         exit()
     if (favorites):
         if os.name == 'nt':
-            bothResult = CreateShortcutWindows("favorites", verbose)
+            favoritesResult = CreateShortcutWindows("favorites", verbose)
         else:
-            bothResult = CreateShortcutLinux("favorites", verbose)
+            favoritesResult = CreateShortcutLinux("favorites", verbose)
         if (favoritesResult):
-             print ("updated.")
+             print ("shortcut created.")
         else:
             print ("failed.")
         exit()
     if (desktop):
         if os.name == 'nt':
-            bothResult = CreateShortcutWindows("desktop", verbose)
+            desktopResult = CreateShortcutWindows("desktop", verbose)
         else:
-            bothResult = CreateShortcutLinux("desktop", verbose)
+            desktopResult = CreateShortcutLinux("desktop", verbose)
         if (desktopResult):
-             print ("updated.")
+             print ("shortcut created.")
         else:
             print ("failed.")
         exit()
@@ -156,16 +156,17 @@ def CreateShortcutWindows(what, verbose):
     if (verbose):
         print ("***")
         print ("CreateShortcuts(1) where: {0}".format(what))
+    home = str(Path.home())
     current_dir = os.getcwd()
-    icondir = "{0}/static/Shortcut.png".format(current_dir)
-    target = "pipenv run {0}\start_server.bat".format(current_dir)
+    icondir = "{0}/static/favicon.ico".format(current_dir)
+    target = "{0}\AppData\Local\Programs\Python\Python36\Scripts\pipenv.exe".format(home)
     if (what == "both"):
-        createWindowsShortcut("PlumbMark.lnk", target=target, wDir=current_dir, icon=icondir, args='', folder='Desktop'):
-        createStartMenuShortcut("PlumbMark.lnk", target=target, wDir=current_dir, icon=icondir, args='')
+        createWindowsShortcut("PlumbMark.lnk", target=target, wDir=current_dir, icon=icondir, args='run start_server.bat', folder='Desktop')
+        createStartMenuShortcut("PlumbMark.lnk", target=target, wDir=current_dir, icon=icondir, args='run start_server.bat')
     elif (what == "favorites"):
-        createStartMenuShortcut("PlumbMark.lnk", target=target, wDir=current_dir, icon=icondir, args='')
+        createStartMenuShortcut("PlumbMark.lnk", target=target, wDir=current_dir, icon=icondir, args='run start_server.bat')
     elif (what == "desktop"):
-        createWindowsShortcut("PlumbMark.lnk", target=target, wDir=current_dir, icon=icondir, args='', folder='Desktop'):
+        createWindowsShortcut("PlumbMark.lnk", target=target, wDir=current_dir, icon=icondir, args='run start_server.bat', folder='Desktop')
     else:
         if (verbose):
             print ("CreateShortcuts(2) - unknown shortcut option - exiting.")
@@ -197,54 +198,40 @@ def usage():
     print (usage) 
 
 def pathToWindowsShortcut(filename, folder='Desktop'):
-    """
-    This should return a path to the "Desktop" folder, creating a files in that folder will show an icons on the desktop.
-    """
     try:
         from win32com.client import Dispatch
         shell = Dispatch('WScript.Shell')
         desktop = shell.SpecialFolders(folder)
         return os.path.join(desktop, filename)
-    except:
-        dhnio.DprintException()
+    except Error as e:
+        print("pathToWindowsShortcut(1) {0}".format(e))
         return ''
   
 def createWindowsShortcut(filename, target='', wDir='', icon='', args='', folder='Desktop'):
-    """
-    Creates a shortcut for PlumbMark on the desktop. 
-    """
-    if dhnio.Windows():
-        try:
-            from win32com.client import Dispatch
-            shell = Dispatch('WScript.Shell')
-            desktop = shell.SpecialFolders(folder)
-            path = os.path.join(desktop, filename)
-            shortcut = shell.CreateShortCut(path)
-            shortcut.Targetpath = target
-            shortcut.WorkingDirectory = wDir
-            shortcut.Arguments = args
-            if icon != '':
-                shortcut.IconLocation = icon
-            shortcut.save()
-        except:
-            dhnio.DprintException()
+    try:
+        from win32com.client import Dispatch
+        shell = Dispatch('WScript.Shell')
+        desktop = shell.SpecialFolders(folder)
+        path = os.path.join(desktop, filename)
+        shortcut = shell.CreateShortCut(path)
+        shortcut.Targetpath = target
+        shortcut.WorkingDirectory = wDir
+        shortcut.Arguments = args
+        if icon != '':
+            shortcut.IconLocation = icon
+        shortcut.save()
+    except Error as e:
+        print("createWindowsShortcut(1) {0}".format(e))
   
 def removeWindowsShortcut(filename, folder='Desktop'):
-    """
-    Removes a PlumbMark shortcut from the desktop.
-    """
-    if dhnio.Windows():
-        path = pathToWindowsShortcut(filename, folder)
-        if os.path.isfile(path) and os.access(path, os.W_OK):
-            try:
-                os.remove(path)
-            except:
-                dhnio.DprintException()
+    path = pathToWindowsShortcut(filename, folder)
+    if os.path.isfile(path) and os.access(path, os.W_OK):
+        try:
+            os.remove(path)
+        except Error as e:
+            print("removeWindowsShortcut(1) {0}".format(e))
   
 def pathToStartMenuShortcut(filename):
-    """
-    Path to the Windows start menu folder.
-    """
     try:
         from win32com.shell import shell, shellcon
         from win32com.client import Dispatch
@@ -252,44 +239,36 @@ def pathToStartMenuShortcut(filename):
         csidl = getattr(shellcon, 'CSIDL_PROGRAMS')
         startmenu = shell.SHGetSpecialFolderPath(0, csidl, False)
         return os.path.join(startmenu, filename)
-    except:
-        dhnio.DprintException()
+    except Error as e:
+        print("pathToStartMenuShortcut(1) {0}".format(e))
         return ''
   
 def createStartMenuShortcut(filename, target='', wDir='', icon='', args=''):
-    """
-    Create a PlumbMark shortcut in the Windows start menu.
-    """
-    if dhnio.Windows():
-        try:
-            from win32com.shell import shell, shellcon
-            from win32com.client import Dispatch
-            shell_ = Dispatch('WScript.Shell')
-            csidl = getattr(shellcon, 'CSIDL_PROGRAMS')
-            startmenu = shell.SHGetSpecialFolderPath(0, csidl, False)
-            path = os.path.join(startmenu, filename)
-            shortcut = shell_.CreateShortCut(path)
-            shortcut.Targetpath = target
-            shortcut.WorkingDirectory = wDir
-            shortcut.Arguments = args
-            if icon != '':
-                shortcut.IconLocation = icon
-            shortcut.save()
-        except:
-            dhnio.DprintException()
+    try:
+        from win32com.shell import shell, shellcon
+        from win32com.client import Dispatch
+        shell_ = Dispatch('WScript.Shell')
+        csidl = getattr(shellcon, 'CSIDL_PROGRAMS')
+        startmenu = shell.SHGetSpecialFolderPath(0, csidl, False)
+        path = os.path.join(startmenu, filename)
+        shortcut = shell_.CreateShortCut(path)
+        shortcut.Targetpath = target
+        shortcut.WorkingDirectory = wDir
+        shortcut.Arguments = args
+        if icon != '':
+            shortcut.IconLocation = icon
+        shortcut.save()
+    except Error as e:
+        print("createStartMenuShortcut(1) {0}".format(e))
   
 def removeStartMenuShortcut(filename):
-    """
-    Remove a PlumbMark shortcut from Windows start menu.
-    """
-    if dhnio.Windows():
-        path = pathToStartMenuShortcut(filename)
-        if os.path.isfile(path) and os.access(path, os.W_OK):
-            try:
-                os.remove(path)
-            except:
-                dhnio.DprintException()
-    return
+    path = pathToStartMenuShortcut(filename)
+    if os.path.isfile(path) and os.access(path, os.W_OK):
+        try:
+            os.remove(path)
+        except Error as e:
+            print("removeStartMenuShortcut(1) {0}".format(e))
+        return
 
 if __name__ == "__main__":
     main(sys.argv[1:])
