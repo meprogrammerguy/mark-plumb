@@ -159,7 +159,6 @@ def CreateShortcutWindows(what, verbose):
     home = str(Path.home())
     current_dir = os.getcwd()
     icondir = "{0}/static/favicon.ico".format(current_dir)
-    #target = "{0}\AppData\Local\Programs\Python\Python36\Scripts\pipenv.exe".format(home)
     target = "pipenv.exe"
     if (what == "both"):
         createWindowsShortcut("PlumbMark.lnk", target=target, wDir=current_dir, icon=icondir, args='run start_server.bat', folder='Desktop')
