@@ -128,6 +128,9 @@ def folder():
                 plumb.Add(s, False)
                 log =  "company {0} has been added to portfolio.".format(s)
                 return(render_folder("display: none;", log, ""))
+            elif (request.form['action'] == "refresh"):
+                plumb.Update(False)
+                return(render_folder("display: none;", "prices updated.", ""))
             elif (request.form['action'] != "Ticker symbol"):
                 s = request.form['action']
                 return(render_folder("display: block;", "", s))
