@@ -9,15 +9,14 @@ name = "pypi"
 
 "bs4" = "*"
 "html5lib" = "*"
-flask = "*"
-flask-table = "*"
+Flask = "*"
+Flask-Table = "*"
 python-daemon = "*"
 pyperclip = "*"
 pytz = "*"
 python-dateutil = "*"
 tzlocal = "*"
 daemon = "*"
-"pywin32" = "*"
 
 
 [dev-packages]
@@ -26,4 +25,4 @@ daemon = "*"
 
 [requires]
 
-python_version = "3.7"
+python_version = "3.6"
