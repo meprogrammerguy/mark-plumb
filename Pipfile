@@ -9,14 +9,15 @@ name = "pypi"
 
 "bs4" = "*"
 "html5lib" = "*"
-Flask = "*"
-Flask-Table = "*"
+flask = "*"
+flask-table = "*"
 python-daemon = "*"
 pyperclip = "*"
 pytz = "*"
 python-dateutil = "*"
 tzlocal = "*"
 daemon = "*"
+"pypiwin32" = "*"
 
 
 [dev-packages]
