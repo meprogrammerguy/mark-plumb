@@ -17,7 +17,7 @@ pytz = "*"
 python-dateutil = "*"
 tzlocal = "*"
 daemon = "*"
-"pywin32" = "*"
+"pypiwin32" = "*"
 
 
 [dev-packages]
@@ -26,4 +26,4 @@ daemon = "*"
 
 [requires]
 
-python_version = "3.7"
+python_version = "3.6"

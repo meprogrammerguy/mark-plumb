@@ -98,6 +98,10 @@ def Holiday(verbose):
     dt = datetime.datetime.now()
     today = dt.strftime('%Y-%m-%d')
     defaults, types = GetDefaults(verbose)
+    if defaults == {}:
+        result = ResetDefaults(verbose)
+        if (result):
+            defaults, types =  GetDefaults(verbose)
     if ("market status" in defaults):
         js = defaults['market status']
         if "date" in js:
