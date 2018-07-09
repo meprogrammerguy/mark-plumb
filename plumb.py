@@ -18,7 +18,6 @@ import csv
 import math
 from flask_table import create_table, Table, Col
 import pprint
-import pyperclip
 import pytz
 from dateutil import tz
 import subprocess
