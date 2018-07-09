@@ -12,12 +12,10 @@ name = "pypi"
 flask = "*"
 flask-table = "*"
 python-daemon = "*"
-pyperclip = "*"
 pytz = "*"
 python-dateutil = "*"
 tzlocal = "*"
 daemon = "*"
-"pypiwin32" = "*"
 
 
 [dev-packages]
