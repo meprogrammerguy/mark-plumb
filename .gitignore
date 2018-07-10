@@ -10,6 +10,7 @@ __pycache__/
 *.db
 *.json
 *.csv
+*.lock
 
 # Allow
 !/test/aim/*.csv
