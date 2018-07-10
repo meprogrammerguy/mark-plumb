@@ -16,6 +16,7 @@ pytz = "*"
 python-dateutil = "*"
 tzlocal = "*"
 daemon = "*"
+"pypiwin32" = "*"
 
 
 [dev-packages]
