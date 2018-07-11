@@ -16,7 +16,6 @@ pytz = "*"
 python-dateutil = "*"
 tzlocal = "*"
 daemon = "*"
-"pypiwin32" = {"*", sys_platform = "== 'windows'"}
 
 
 [dev-packages]
