@@ -1243,6 +1243,8 @@ def GetAIMNotes(count, verbose):
             print ("***\n")
         return {}, True
     count = GetAIMCount(verbose)
+    if (count > 5):
+        count = 5   # show just the last 5 transactions
     try:
         conn = sqlite3.connect(db_file)
         if (verbose):
