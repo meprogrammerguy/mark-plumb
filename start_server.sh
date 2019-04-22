@@ -1,3 +1,5 @@
+#!/bin/bash
+#!/usr/bin/env/python
 # starts the scoreboard web page server
 #
 cd $HOME/git/mark-plumb/
