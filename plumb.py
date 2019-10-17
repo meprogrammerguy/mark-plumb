@@ -148,7 +148,8 @@ def Holiday(verbose):
     return answer
 
 def Company(ticker, verbose):
-    url = "https://api.iextrading.com/1.0/stock/{0}/company".format(ticker)
+    #url = "https://api.iextrading.com/1.0/stock/{0}/company".format(ticker)
+    url = "https://cloud.iexapis.com/stable/stock/{0}/company?token=pk_01f4e195f0c74a6592b3cbed0ca46ee8".format(ticker)
     if (verbose):
         print ("***")
         print ("Company(1) ticker: {0}".format(ticker))
@@ -1549,7 +1550,7 @@ def TestDefaults(verbose):
     if (verbose):
         print ("Test #{0} - Company('AAPL', verbose)".format(count + 1))
     result = Company("AAPL", verbose)
-    if (result['companyName'] == "Apple Inc."):
+    if (result['companyName'] == "Apple, Inc."):
         if (verbose):
             print ("\tpass.")
         count += 1
