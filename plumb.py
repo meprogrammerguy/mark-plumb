@@ -163,7 +163,18 @@ def Company(ticker, verbose):
             if (verbose):
                 print ("Company(4) page not found for {0}".format(ticker))
                 print ("***\n")
-            return {}
+            answer = {}
+            answer['url'] = url
+            answer["companyName"] = "page not found"
+            return answer
+        if err.code == 403:
+            if (verbose):
+                print ("Company(4) forbidden {0}".format(ticker))
+                print ("***\n")
+            answer = {}
+            answer['url'] = url
+            answer["companyName"] = "forbidden"
+            return answer
         else:
             raise
     returnCompany = json.loads(str(soup.text))
@@ -1557,7 +1568,7 @@ def TestDefaults(verbose):
     if (verbose):
         print ("Test #{0} - Company('AAPL', verbose)".format(count + 1))
     result = Company("AAPL", verbose)
-    if (result['companyName'] == "Apple, Inc."):
+    if (result):
         if (verbose):
             print ("\tpass.")
         count += 1
