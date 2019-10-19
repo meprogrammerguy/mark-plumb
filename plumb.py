@@ -148,19 +148,20 @@ def Holiday(verbose):
     return answer
 
 def Company(ticker, verbose):
-    #url = "https://api.iextrading.com/1.0/stock/{0}/company".format(ticker)
-    url = "https://cloud.iexapis.com/stable/stock/{0}/company?token=pk_01f4e195f0c74a6592b3cbed0ca46ee8".format(ticker)
+    defaults, types = GetDefaults(verbose)
+    url = "https://cloud.iexapis.com/stable/stock/{0}/company?token={1}".format(ticker,defaults["IEX key"])
     if (verbose):
         print ("***")
         print ("Company(1) ticker: {0}".format(ticker))
         print ("Company(2) URL: {0}".format(url))
+        print ("Company(3) token: {0}".format(defaults["IEX key"]))
     try:
         with contextlib.closing(urllib.request.urlopen(url)) as page:
             soup = BeautifulSoup(page, "html5lib")
     except urllib.error.HTTPError as err:
         if err.code == 404:
             if (verbose):
-                print ("Company(3) page not found for {0}".format(ticker))
+                print ("Company(4) page not found for {0}".format(ticker))
                 print ("***\n")
             return {}
         else:
@@ -237,6 +238,7 @@ def ResetDefaults(verbose):
         desktop = "/home/{0}/Desktop".format(getpass.getuser())
         c = conn.cursor()
         c.execute("UPDATE defaults SET tradier_key = (?) WHERE username = (?)", ("demo", username,))
+        c.execute("UPDATE defaults SET IEX_key = (?) WHERE username = (?)", ("demo", username,))
         c.execute("UPDATE defaults SET poll_minutes = ? WHERE username = (?)", (10, username,))
         c.execute("UPDATE defaults SET open = (?) WHERE username = (?)", (opentime, username,))
         c.execute("UPDATE defaults SET close = (?) WHERE username = (?)", (closetime, username,))
@@ -311,7 +313,7 @@ def CreateDefaults(verbose):
         print("CreateDefaults(3) {0}".format(e))
         return False
     c = conn.cursor()
-    c.execute("CREATE TABLE if not exists 'defaults' ( `username` TEXT NOT NULL UNIQUE, `folder_name` NUMERIC, `snap_shot` INTEGER, `open` TEXT, `close` TEXT, `poll_minutes` INTEGER, `test_root` TEXT, `export_dir` TEXT, `tradier_key` TEXT, `market_status` TEXT, PRIMARY KEY(`username`) )")
+    c.execute("CREATE TABLE if not exists 'defaults' ( `username` TEXT NOT NULL UNIQUE, `folder_name` NUMERIC, `snap_shot` INTEGER, `open` TEXT, `close` TEXT, `poll_minutes` INTEGER, `test_root` TEXT, `export_dir` TEXT, `tradier_key` TEXT, `IEX_key` TEXT, `market_status` TEXT, PRIMARY KEY(`username`) )")
     c.execute( "INSERT OR IGNORE INTO defaults(username) VALUES((?))", (username,))
     conn.commit()
     conn.close()
@@ -356,6 +358,11 @@ def PrintDefaults(verbose):
         col_list = []
         for i in range(len(row)):
             if (keys[i] == "tradier key"):
+                if row[i] == "demo" or row[i] == "" or row[i] == "TEST":
+                    col_list.append(row[i])
+                else:
+                    col_list.append("[key]")
+            elif (keys[i] == "IEX key"):
                 if row[i] == "demo" or row[i] == "" or row[i] == "TEST":
                     col_list.append(row[i])
                 else:
@@ -1526,7 +1533,7 @@ def TestDefaults(verbose):
     sys.stdout = print_out
     count = 0
     fails = 0
-    total_tests = 22
+    total_tests = 23
     defaults, types =  GetDefaults(False)
     if defaults == {}:
         result = ResetDefaults(verbose)
@@ -1572,6 +1579,17 @@ def TestDefaults(verbose):
     if (verbose):
         print ("Test #{0} - UpdateDefaultItem('tradier key', 'TEST', verbose)".format(count + 1))
     result = UpdateDefaultItem("tradier key", "TEST", verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+    if (verbose):
+        print ("Test #{0} - UpdateDefaultItem('IEX key', 'TEST', verbose)".format(count + 1))
+    result = UpdateDefaultItem("IEX key", "TEST", verbose)
     if (result):
         if (verbose):
             print ("\tpass.")
@@ -2968,6 +2986,8 @@ def BumpSnap(verbose):
         c.execute("UPDATE key SET last_snap = (?) WHERE key = ?", (snap, 1,))
         if ("tradier key" in d):
             c.execute("UPDATE key SET tradier_key = (?) WHERE key = ?", (d['tradier key'], 1,))
+        if ("IEX key" in d):
+            c.execute("UPDATE key SET IEX_key = (?) WHERE key = ?", (d['IEX key'], 1,))
     conn.commit()
     conn.close()
     if (verbose):
@@ -3148,8 +3168,8 @@ def CreateArchive(verbose):
         print("CreateArchive(3) {0}".format(e))
         return False
     c = conn.cursor()
-    c.execute("CREATE TABLE if not exists `key` ( `key` INTEGER NOT NULL UNIQUE, `last_snap` INTEGER, `tradier_key` TEXT )")
-    c.execute( "INSERT OR IGNORE INTO key(key, last_snap, tradier_key) VALUES(?, ?, ?)", (1,0,"",))
+    c.execute("CREATE TABLE if not exists `key` ( `key` INTEGER NOT NULL UNIQUE, `last_snap` INTEGER, `tradier_key` TEXT, `IEX_key` TEXT )")
+    c.execute( "INSERT OR IGNORE INTO key(key, last_snap, tradier_key, IEX_key) VALUES(?, ?, ?, ?)", (1,0,"","",))
     c.execute("CREATE TABLE if not exists 'summary' ( `snap_date` TEXT NOT NULL, `folder_name` TEXT NOT NULL, `snapshot` INTEGER NOT NULL, `aim_rows` INTEGER, `shares_rows` INTEGER, `worksheet_rows` INTEGER, `initial` REAL, `profit_percent` INTEGER, PRIMARY KEY(`snap_date`,`folder_name`,`snapshot`) )")
     c.execute("CREATE TABLE if not exists 'aim' ( `snapshot` INTEGER NOT NULL, `post_date` TEXT NOT NULL, `stock_value` REAL, `cash` REAL, `portfolio_control` REAL, `buy_sell_advice` REAL, `market_order` REAL, `portfolio_value` REAL, PRIMARY KEY(`snapshot`,`post_date`) )")
     c.execute("CREATE TABLE if not exists 'shares' ( `snapshot` INTEGER NOT NULL, `post_date` TEXT NOT NULL, `symbol` TEXT NOT NULL, `balance` REAL, `shares` REAL, PRIMARY KEY(`snapshot`,`post_date`,`symbol`) )")
