@@ -19,4 +19,4 @@ daemon = "*"
 "pypiwin32" = {version = "*", sys_platform = "== 'win32'"}
 
 [requires]
-python_version = "3.7"
+python_version = "3.8"
