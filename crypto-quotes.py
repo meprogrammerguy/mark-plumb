@@ -7,7 +7,7 @@ import json
 import http.client
 import pprint
 
-url = 'https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest?start=1&limit=5000&convert=USD'
+url = 'https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?slug=bitcoin&convert=USD'
 
 headers = {
   'Accepts': 'application/json',
