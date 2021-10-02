@@ -250,6 +250,7 @@ def ResetDefaults(verbose):
         c = conn.cursor()
         c.execute("UPDATE defaults SET tradier_key = (?) WHERE username = (?)", ("demo", username,))
         c.execute("UPDATE defaults SET IEX_key = (?) WHERE username = (?)", ("demo", username,))
+        c.execute("UPDATE defaults SET coin_key = (?) WHERE username = (?)", ("demo", username,))
         c.execute("UPDATE defaults SET poll_minutes = ? WHERE username = (?)", (10, username,))
         c.execute("UPDATE defaults SET open = (?) WHERE username = (?)", (opentime, username,))
         c.execute("UPDATE defaults SET close = (?) WHERE username = (?)", (closetime, username,))
@@ -324,7 +325,7 @@ def CreateDefaults(verbose):
         print("CreateDefaults(3) {0}".format(e))
         return False
     c = conn.cursor()
-    c.execute("CREATE TABLE if not exists 'defaults' ( `username` TEXT NOT NULL UNIQUE, `folder_name` NUMERIC, `snap_shot` INTEGER, `open` TEXT, `close` TEXT, `poll_minutes` INTEGER, `test_root` TEXT, `export_dir` TEXT, `tradier_key` TEXT, `IEX_key` TEXT, `market_status` TEXT, PRIMARY KEY(`username`) )")
+    c.execute("CREATE TABLE if not exists 'defaults' ( `username` TEXT NOT NULL UNIQUE, `folder_name` NUMERIC, `snap_shot` INTEGER, `open` TEXT, `close` TEXT, `poll_minutes` INTEGER, `test_root` TEXT, `export_dir` TEXT, `tradier_key` TEXT, `IEX_key` TEXT, `coin_key` TEXT, `market_status` TEXT, PRIMARY KEY(`username`) )")
     c.execute( "INSERT OR IGNORE INTO defaults(username) VALUES((?))", (username,))
     conn.commit()
     conn.close()
@@ -374,6 +375,11 @@ def PrintDefaults(verbose):
                 else:
                     col_list.append("[key]")
             elif (keys[i] == "IEX key"):
+                if row[i] == "demo" or row[i] == "" or row[i] == "TEST":
+                    col_list.append(row[i])
+                else:
+                    col_list.append("[key]")
+            elif (keys[i] == "coin key"):
                 if row[i] == "demo" or row[i] == "" or row[i] == "TEST":
                     col_list.append(row[i])
                 else:

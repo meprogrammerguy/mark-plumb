@@ -201,11 +201,15 @@ def render_defaults(feedback):
     tradier_key_warning = ""
     if ("tradier key" in defaults):
         if (defaults['tradier key'] == "" or defaults['tradier key'] == "demo"):
-            tradier_key_warning = "Remember to obtain your lifetime API key from tradier, this is needed for getting the market calendar and stock quotes"
+            tradier_key_warning = "Remember to obtain your lifetime API key from tradier, this is needed for getting the market calendar and quotes"
     IEX_key_warning = ""
     if ("IEX key" in defaults):
         if (defaults['IEX key'] == "" or defaults['IEX key'] == "demo"):
             IEX_key_warning = "Remember to obtain your lifetime API key from IEX cloud, this is needed for getting company ticker information"
+    coin_key_warning = ""
+    if ("coin key" in defaults):
+        if (defaults['coin key'] == "" or defaults['coin key'] == "demo"):
+            coin_key_warning = "Remember to obtain your lifetime API key from coin market cap, this is needed for getting cryptocoin information"
     table, column_options, name_options, folder_options = plumb.PrintDefaults(False)
     hide_folder = ""
     if (name_options == ""):
@@ -235,7 +239,7 @@ def render_defaults(feedback):
             daemon_info = "{0}, Last active status: {1}".format(checkOpen['description'], status)
     return (render_template('defaults.html', table = table, feedback = feedback, column_options = column_options, notes = notes,
         daemon_table = daemon_table, daemon_check = daemon_check, daemon_color = daemon_color, daemon_info = daemon_info, daemon_action = daemon_action,
-        name_options = name_options, folder_options = folder_options, hide_folder = hide_folder, tradier_key_warning = tradier_key_warning, IEX_key_warning = IEX_key_warning))
+        name_options = name_options, folder_options = folder_options, hide_folder = hide_folder, tradier_key_warning = tradier_key_warning, IEX_key_warning = IEX_key_warning, coin_key_warning = coin_key_warning))
 
 @app.route('/history/', methods=["GET","POST"])
 def history():
