@@ -182,6 +182,47 @@ def Company(ticker, verbose):
         print ("***\n")
     return returnCompany
 
+def CryptoCompany(ticker, verbose):
+    defaults, types = GetDefaults(verbose)
+    url = "https://pro-api.coinmarketcap.com/v1/cryptocurrency/info?symbol={0}".format(ticker.lower())
+    headers = {}
+    headers["Accepts"] = "application/json"
+    headers["X-CMC_PRO_API_KEY"] = defaults["coin key"]
+    connection = http.client.HTTPSConnection('pro-api.coinmarketcap.com', 443, timeout = 30)
+    connection.request('GET', url, None, headers)
+    if (verbose):
+        print ("***")
+        print ("Company(1) ticker: {0}".format(ticker))
+        print ("Company(2) URL: {0}".format(url))
+        print ("Company(3) token: {0}".format(defaults["coin key"]))
+    try:
+        response = connection.getresponse()
+        page = response.read()
+        soup = BeautifulSoup(page, "html5lib")
+    except urllib.error.HTTPError as err:
+        if err.code == 404:
+            if (verbose):
+                print ("Company(4) page not found for {0}".format(ticker))
+                print ("***\n")
+            answer = {}
+            answer['url'] = url
+            answer["companyName"] = "page not found"
+            return answer
+        if err.code == 403:
+            if (verbose):
+                print ("Company(4) forbidden {0}".format(ticker))
+                print ("***\n")
+            answer = {}
+            answer['url'] = url
+            answer["companyName"] = "forbidden"
+            return answer
+        else:
+            raise
+    returnCompany = json.loads(str(soup.text))
+    if (verbose):
+        print ("***\n")
+    return returnCompany
+
 def UpdateDefaultItem(key, item, verbose):
     key_db = key.replace(" ", "_")
     d, t = GetDefaults(verbose)

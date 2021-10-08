@@ -9,17 +9,11 @@ import pprint
 def main(argv):
     verbose = False
     test = False
-    update = False
-    cash = ""
-    add = ""
-    remove = ""
+    info = False
+    quote = False
     symbol = ""
-    balance = ""
-    shares = ""
-    printout = False
-    get = False
     try:
-        opts, args = getopt.getopt(argv, 'gpub:n:s:a:r:c:hvt', ['help', 'verbose', 'test', 'cash=', 'add=', 'remove=', 'symbol=', 'balance=', 'number=', 'update', 'print', 'get'])
+        opts, args = getopt.getopt(argv, 'hvtiq:s', ['help', 'verbose', 'test', 'info', 'quote', 'symbol='])
     except getopt.GetoptError as err:
         print(err)
         usage()
@@ -29,107 +23,28 @@ def main(argv):
             verbose = True
         elif o in ("-t", "--test"):
             test = True
-        elif o in ("-g", "--get"):
-            get = True
-        elif o in ("-u", "--update"):
-            update = True
-        elif o in ("-p", "--print"):
-            printout = True
         elif o in ("-h", "--help"):
             usage()
             exit()
-        elif o in ("-a", "--add"):
-            add = a.upper()
-        elif o in ("-c", "--cash"):
-            cash = a
-        elif o in ("-r", "--remove"):
-            remove = a.upper()
+        elif o in ("-i", "--info"):
+            info = True
+        elif o in ("-q", "--quote"):
+            quote = True
         elif o in ("-s", "--symbol"):
             symbol = a.upper()
-        elif o in ("-b", "--balance"):
-            balance = a
-        elif o in ("-n", "--number"):
-            shares = a
         else:
             assert False, "unhandled option"
     if (test):
-        testResult = plumb.TestFolder(verbose)
-        print(testResult['output'])
+        #testResult = plumb.TestCrypto(verbose)
+        #print(testResult['output'])
+        print("crypto test stub")
         exit()
-    defaults, types = plumb.GetDefaults(verbose)
-    if defaults['folder name'] is None:
-        print ("\tWarning, the database name is not set, please correct this")
-        exit()
-    if (cash > ""):
-        cashResult = plumb.Balance("$", cash, verbose)
-        if (cashResult):
-            print ("balance updated.")
-        else:
-            print ("failed.")
-        exit()
-    if (add > ""):
-        addResult = plumb.Add(add, verbose)
-        if (addResult):
-            print ("added.")
-        else:
-            print ("failed.")
-        exit()
-    if (remove > ""):
-        removeResult = plumb.Remove(remove, verbose)
-        if (removeResult):
-            print ("removed.")
-        else:
-            print ("failed.")
-        exit()
-    if (balance > ""):
+    if (info):
         if (symbol == ""):
-            print ("\tWarning, to update the balance you also need a --symbol switch")
+            print ("\tWarning, to get the company info you also need a --symbol switch")
             exit()
-        balanceResult = plumb.Balance(symbol, balance, verbose)
-        if (balanceResult['status']):
-            print ("symbol: {0}, current shares: {1}".format(symbol, balanceResult['shares']))
-        else:
-            print ("failed.")
-        exit()
-    if (shares > ""):
-        if (symbol == ""):
-            print ("\tWarning, to update the shares you also need a --symbol switch")
-            exit()
-        sharesResult = plumb.Shares(symbol, shares, verbose)
-        if (sharesResult['status']):
-            print ("symbol: {0}, current balance: {1}".format(symbol, sharesResult['balance']))
-        else:
-            print ("failed.")
-        exit()
-    if (update):
-        updateResult, updateError = plumb.Update(verbose)
-        if (updateResult):
-            print ("prices updated.")
-        else:
-            print ("failed. Error: {0}".format(updateError))
-        exit()
-    if (printout):
-        printResult, symbol_options, balance_options, amount_options = plumb.PrintFolder(verbose)
-        if (printResult > ""):
-            pprint.pprint(printResult)
-        else:
-            print ("failed.")
-        if (symbol_options > ""):
-            pprint.pprint(symbol_options)
-        else:
-            print ("failed.")
-        if (balance_options > ""):
-            pprint.pprint(balance_options)
-        else:
-            print ("failed.")
-        if (amount_options is not None):
-            pprint.pprint(amount_options)
-        else:
-            print ("failed.")
-        exit()
-    if (get):
-        getResult = plumb.GetFolder(verbose)
-        pprint.pprint(getResult)
+        infoResult = plumb.CryptoCompany(symbol, verbose)
+        pprint.pprint(infoResult)
         exit()
     usage()
 
@@ -143,17 +58,12 @@ def usage():
     -v --verbose        increases the information level
     -t --test           tests the crypto routines
 
-    -s --show           show company by ticker symbol
-    -r --remove         remove company by ticker symbol
+    -s --symbol         ticker symbol (used with --info or --quote)
 
-    -s --symbol         ticker symbol (used with --number or --balance)
-    -n --number         number of shares owned (used with --symbol)
-    -b --balance        balance in dollars (used with --symbol)
-
-    -u --update         update all prices (to within default interval minutes)
-    -p --print          print out the folder database (in HTML table format)
-    -g --get            Get/Show current folder
+    -i --info           show company info by ticker symbol (used with --symbol)
+    -n --quote          show company quotes by ticker symbol (used with --symbol)
     """
+
     print (usage) 
 
 if __name__ == "__main__":
