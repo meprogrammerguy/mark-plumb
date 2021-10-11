@@ -124,7 +124,7 @@ def QuoteCrypto(quotes, verbose):
     if (verbose):
         pprint.pprint(returnContent)
         print ("***\n")
-    if "BTC" in returnContent['data']:
+    if quotes.upper() in returnContent['data']:
         row = returnContent['data']['BTC']["quote"]["USD"]
         answer = {}
         answer['symbol'] = returnContent['data']['BTC']["symbol"]
