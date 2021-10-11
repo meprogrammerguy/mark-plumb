@@ -89,6 +89,52 @@ def QuoteTradier(quotes, verbose):
         answers.append(returnContent)
     return answers
 
+def QuoteCrypto(quotes, verbose):
+    answers = []
+    defaults, types = GetDefaults(verbose)
+    url = "/v1/cryptocurrency/quotes/latest?symbol={0}&convert=USD".format(quotes)
+    if (verbose):
+        print ("***")
+        print ("QuoteCrypto(1) URL: {0}".format(url))
+        print ("QuoteCrypto(2) token: {0}".format(defaults["coin key"]))
+    connection = http.client.HTTPSConnection('pro-api.coinmarketcap.com', 443, timeout = 30)
+
+    headers = {}
+    headers["Accepts"] = "application/json"
+    headers["X-CMC_PRO_API_KEY"] = defaults["coin key"]
+    headers["connection"] = "close"
+
+    connection.request('GET', url, None, headers)
+    try:
+        response = connection.getresponse()
+        content = response.read()
+        if (b"Invalid Access Token" in content):
+            answer = {}
+            answer['url'] = url
+            answer["Error Message"] = "Invalid Access Token"
+            answers.append(answer)
+            return answers
+        returnContent = json.loads(content.decode('utf-8'))
+    except http.client.HTTPException as e:
+        answer = {}
+        answer['url'] = url
+        answer["Error Message"] = e
+        answers.append(answer)
+        return answers
+    if (verbose):
+        pprint.pprint(returnContent)
+        print ("***\n")
+    if "BTC" in returnContent['data']:
+        row = returnContent['data']['BTC']["quote"]["USD"]
+        answer = {}
+        answer['symbol'] = returnContent['data']['BTC']["symbol"]
+        answer['quote'] = "last"
+        answer['price'] = row['price']
+        answers.append(answer)
+    else:
+        answers.append(returnContent)
+    return answers
+
 def Holiday(verbose):
     url = "/v1/markets/calendar"
     if (verbose):
@@ -192,9 +238,9 @@ def CryptoCompany(ticker, verbose):
     connection.request('GET', url, None, headers)
     if (verbose):
         print ("***")
-        print ("Company(1) ticker: {0}".format(ticker))
-        print ("Company(2) URL: {0}".format(url))
-        print ("Company(3) token: {0}".format(defaults["coin key"]))
+        print ("CryptoCompany(1) ticker: {0}".format(ticker))
+        print ("CryptoCompany(2) URL: {0}".format(url))
+        print ("CryptoCompany(3) token: {0}".format(defaults["coin key"]))
     try:
         response = connection.getresponse()
         page = response.read()
@@ -202,7 +248,7 @@ def CryptoCompany(ticker, verbose):
     except urllib.error.HTTPError as err:
         if err.code == 404:
             if (verbose):
-                print ("Company(4) page not found for {0}".format(ticker))
+                print ("CryptoCompany(4) page not found for {0}".format(ticker))
                 print ("***\n")
             answer = {}
             answer['url'] = url
@@ -210,7 +256,7 @@ def CryptoCompany(ticker, verbose):
             return answer
         if err.code == 403:
             if (verbose):
-                print ("Company(4) forbidden {0}".format(ticker))
+                print ("CryptoCompany(4) forbidden {0}".format(ticker))
                 print ("***\n")
             answer = {}
             answer['url'] = url

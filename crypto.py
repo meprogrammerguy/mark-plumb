@@ -46,6 +46,13 @@ def main(argv):
         infoResult = plumb.CryptoCompany(symbol, verbose)
         pprint.pprint(infoResult)
         exit()
+    if (quote):
+        if (symbol == ""):
+            print ("\tWarning, to get the crypto quotes you also need a --symbol switch")
+            exit()
+        quoteResult = plumb.QuoteCrypto(symbol, verbose)
+        pprint.pprint(quoteResult)
+        exit()
     usage()
 
 def usage():
