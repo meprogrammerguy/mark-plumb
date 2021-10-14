@@ -90,57 +90,58 @@ def folder():
                         plumb.CalculateWorksheet(values, False)
                     else:
                         log = "Warning: Portfolio not found, cannot recalculate"
-                return(render_folder("display: none;", log, ""))
+                return(render_folder("display: none;", log, "", ""))
             if (request.form['action'] == "adjust"):
                 if (request.form['options'] == "calculations"):
                     plumb.PostWorksheet(False)
                     log =  "adjusted portfolio based on worksheet calculations"
-                    return(render_folder("display: none;", log, ""))
+                    return(render_folder("display: none;", log, "", ""))
                 elif (request.form['options'] == "balance"):
                     if (request.form['balance'] == ""):
-                        return(render_folder("display: none;", "balance is blank, cannot adjust.", ""))
+                        return(render_folder("display: none;", "balance is blank, cannot adjust.", "", ""))
                     else:
                         plumb.Balance(request.form['symbol'], request.form['balance'], False)
                         log =  "company {0}, balance is now {1}".format(request.form['symbol'], plumb.as_currency(plumb.to_number(request.form['balance'], False)))
-                        return(render_folder("display: none;", log, ""))
+                        return(render_folder("display: none;", log, "", ""))
                 elif (request.form['options'] == "shares"):
                     if (request.form['balance'] == ""):
-                        return(render_folder("display: none;", "shares are blank, cannot adjust.", ""))
+                        return(render_folder("display: none;", "shares are blank, cannot adjust.", "", ""))
                     else:
                         plumb.Shares(request.form['symbol'], request.form['balance'], False)
                         log =  "company {0}, shares are now {1}".format(request.form['symbol'], round(plumb.to_number(request.form['balance'], False), 4))
-                        return(render_folder("display: none;", log, ""))
+                        return(render_folder("display: none;", log, "", ""))
                 else:
                     if (request.form['balance'] == ""):
-                        return(render_folder("display: none;", "amount is blank, cannot adjust.", ""))
+                        return(render_folder("display: none;", "amount is blank, cannot adjust.", "", ""))
                     else:
                         curr_balance = CurrentBalance(request.form['symbol'], request.form['amount'])
                         balance = curr_balance + plumb.to_number(request.form['balance'], False)
                         log = "company {0}, balance {1}, adjusted by {2}.".format(request.form['symbol'], plumb.as_currency(curr_balance), plumb.as_currency(plumb.to_number(request.form['balance'], False)))
                         plumb.Balance(request.form['symbol'], str(balance), False)
-                        return(render_folder("display: none;", log, ""))
+                        return(render_folder("display: none;", log, "", ""))
             elif (request.form['action'] == "remove"):
                 plumb.Remove(request.form['remove_symbol'], False)
                 log =  "company {0} has been removed from portfolio.".format(request.form['remove_symbol'])
-                return(render_folder("display: none;", log, ""))
+                return(render_folder("display: none;", log, "", ""))
             elif (request.form['action'] == "add"):
                 s = request.form['add_symbol']
                 plumb.Add(s, False)
                 log =  "company {0} has been added to portfolio.".format(s)
-                return(render_folder("display: none;", log, ""))
+                return(render_folder("display: none;", log, "", ""))
             elif (request.form['action'] == "refresh"):
                 plumb.Update(False)
                 return(render_folder("display: none;", "prices updated.", ""))
-            elif (request.form['action'] != "Ticker symbol"):
+            elif (request.form['action'] != "symbol"):
                 s = request.form['action']
-                return(render_folder("display: block;", "", s))
-
+                flag = request.form['symbol']
+                return(render_folder("display: block;", "", s, flag))
+ 
     except Exception as e:
-        return (render_folder("display: none;", e, ""))
+        return (render_folder("display: none;", e, "", ""))
 
-    return(render_folder("display: none;", "", ""))
+    return(render_folder("display: none;", "", "", ""))
 
-def render_folder(ticker_style, feedback, symbol):
+def render_folder(ticker_style, feedback, symbol, flag):
     defaults, types = plumb.GetDefaults(False)
     folder_name = "folder"
     if ("folder name" in defaults):
@@ -149,7 +150,10 @@ def render_folder(ticker_style, feedback, symbol):
     notes, initialize_day = plumb.GetAIMNotes(10, False)
     co = {}
     if (symbol > ""):
-        co = plumb.Company(symbol, False)
+        if (flag == "stock"):
+            co = plumb.Company(symbol, False)
+        if (flag == "crypto"):
+            co = plumb.CryptoCompany(symbol, False)
         if not co:
             feedback = "symbol not found."
             ticker_style = "display: none;"

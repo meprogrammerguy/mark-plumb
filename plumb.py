@@ -230,10 +230,11 @@ def Company(ticker, verbose):
 
 def CryptoCompany(ticker, verbose):
     defaults, types = GetDefaults(verbose)
-    url = "https://pro-api.coinmarketcap.com/v1/cryptocurrency/info?symbol={0}".format(ticker.lower())
+    url = "/v1/cryptocurrency/info?symbol={0}".format(ticker)
     headers = {}
     headers["Accepts"] = "application/json"
     headers["X-CMC_PRO_API_KEY"] = defaults["coin key"]
+    headers["connection"] = "close"
     connection = http.client.HTTPSConnection('pro-api.coinmarketcap.com', 443, timeout = 30)
     connection.request('GET', url, None, headers)
     if (verbose):
@@ -265,6 +266,13 @@ def CryptoCompany(ticker, verbose):
         else:
             raise
     returnCompany = json.loads(str(soup.text))
+    if (returnCompany['status']['error_code'] != 0):
+        answer = {}
+        answer['symbol'] = ticker
+        answer['url'] = url
+        answer["companyName"] = returnCompany['status']['error_message']
+        answer['error_code'] = returnCompany['status']['error_code']
+        return answer
     if (verbose):
         print ("***\n")
     return returnCompany
