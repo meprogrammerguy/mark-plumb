@@ -275,6 +275,11 @@ def CryptoCompany(ticker, verbose):
         return answer
     if (verbose):
         print ("***\n")
+    returnCompany['description'] =  returnCompany['data'][ticker.upper()]['description']
+    returnCompany['symbol'] =  returnCompany['data'][ticker.upper()]['symbol']
+    returnCompany['companyName'] =  returnCompany['data'][ticker.upper()]['name']
+    returnCompany['website'] =  returnCompany['data'][ticker.upper()]['urls']['website']
+    returnCompany['exchange'] =  "coinbase"
     return returnCompany
 
 def UpdateDefaultItem(key, item, verbose):
