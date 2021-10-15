@@ -125,7 +125,8 @@ def folder():
                 return(render_folder("display: none;", log, "", ""))
             elif (request.form['action'] == "add"):
                 s = request.form['add_symbol']
-                plumb.Add(s, False)
+                e = request.form['add_type']
+                plumb.Add(s, e, False)
                 log =  "company {0} has been added to portfolio.".format(s)
                 return(render_folder("display: none;", log, "", ""))
             elif (request.form['action'] == "refresh"):

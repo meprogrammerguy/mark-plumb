@@ -510,22 +510,26 @@ def PrintDefaults(verbose):
     return table.__html__(), column_options, name_options, folder_options
 #endregion defaults
 #region folder
-def Add(symbol, verbose):
+def Add(symbol, exchange, verbose):
     db_file = GetDB(verbose)
     if (verbose):
         print ("***")
         print ("Add(1) symbol: {0}".format(symbol))
-        print ("Add(2) dbase: {0}".format(db_file))
+        print ("Add(2) exchange: {0}".format(exchange))
+        print ("Add(3) dbase: {0}".format(db_file))
     result = CreateFolder(symbol, verbose)
     if (result):
         try:
             conn = sqlite3.connect(db_file)
             if (verbose):
-                print("Add(3) sqlite3: {0}".format(sqlite3.version))
+                print("Add(4) sqlite3: {0}".format(sqlite3.version))
         except Error as e:
-            print("Add(4) {0}".format(e))
+            print("Add(5) {0}".format(e))
             return False
-        json_data = Company(symbol, verbose)
+        if (exchange =="coinbase"):
+            json_data = CryptoCompany(symbol, verbose)
+        else:
+            json_data = Company(symbol, verbose)
         json_string = json.dumps(json_data)
         c = conn.cursor()
         c.execute("UPDATE folder SET json_string = (?) WHERE symbol = (?)", (json_string, symbol,))
@@ -533,7 +537,10 @@ def Add(symbol, verbose):
         c.execute("UPDATE folder SET update_time = (?) WHERE symbol = (?)", (dt.strftime("%m/%d/%y %H:%M"), symbol,))
         conn.commit()
         conn.close()
-        quote = QuoteTradier(symbol, verbose)
+        if (exchange =="coinbase"):
+            quote = QuoteCrypto(symbol, verbose)
+        else:
+            quote = QuoteTradier(symbol, verbose)
         errors = []
         if ("Error Message" in quote[0]):
             errors.append([symbol, quote[0]['url'], quote[0]["Error Message"]])
@@ -1760,8 +1767,8 @@ def TestDefaults(verbose):
             print ("\tfail.")
         fails += 1
     if (verbose):
-        print ("Test #{0} - Add('AAPL', verbose)".format(count + 1))
-    result = Add( "AAPL", verbose)
+        print ("Test #{0} - Add('AAPL', 'exchange', verbose)".format(count + 1))
+    result = Add( "AAPL", "exchange", verbose)
     if (result):
         if (verbose):
             print ("\tpass.")
@@ -1878,8 +1885,8 @@ def TestFolder(verbose):
             print ("\tfail.")
         fails += 1
     if (verbose):
-        print ("Test #{0} - Add('AAPL', verbose)".format(count + 1))
-    result = Add( "AAPL", verbose)
+        print ("Test #{0} - Add('AAPL', 'exchange', verbose)".format(count + 1))
+    result = Add( "AAPL", "exchange", verbose)
     if (result):
         if (verbose):
             print ("\tpass.")
@@ -2061,8 +2068,8 @@ def TestAIM(location, verbose):
                 print ("\tfail.")
             fails += 1
         if (verbose):
-            print ("Test #{0} - Add('AAPL', verbose)".format(count + 1))
-        result = Add( "AAPL", verbose)
+            print ("Test #{0} - Add('AAPL', 'exchange', verbose)".format(count + 1))
+        result = Add( "AAPL", "exchange", verbose)
         if (result):
             if (verbose):
                 print ("\tpass.")
@@ -2253,8 +2260,8 @@ def TestHistory(verbose):
             print ("\tfail.")
         fails += 1
     if (verbose):
-        print ("Test #{0} - Add('AAPL', verbose)".format(count + 1))
-    result = Add( "AAPL", verbose)
+        print ("Test #{0} - Add('AAPL', 'exchange', verbose)".format(count + 1))
+    result = Add( "AAPL", "exchange", verbose)
     if (result):
         if (verbose):
             print ("\tpass.")
