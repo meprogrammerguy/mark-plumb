@@ -1865,6 +1865,15 @@ def TestDefaults(verbose):
     results['output'] = result_string
     return results
 
+def TestCrypto(verbose):
+    results = {}
+    results['status'] = False
+    results['total'] = 0
+    results['pass'] = 0
+    results['fails'] = 0
+    results['output'] = "TestCrypto stub"
+    return results
+
 def TestFolder(verbose):
     old_stdout = sys.stdout
     print_out = StringIO()
