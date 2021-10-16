@@ -10,7 +10,7 @@ def main(argv):
     verbose = False
     test = False
     update = False
-    cash = ""
+    dollars = ""
     add = ""
     remove = ""
     symbol = ""
@@ -18,8 +18,9 @@ def main(argv):
     shares = ""
     printout = False
     get = False
+    crypto = False
     try:
-        opts, args = getopt.getopt(argv, 'gpub:n:s:a:r:c:hvt', ['help', 'verbose', 'test', 'cash=', 'add=', 'remove=', 'symbol=', 'balance=', 'number=', 'update', 'print', 'get'])
+        opts, args = getopt.getopt(argv, 'cgpub:n:s:a:r:d:hvt', ['help', 'verbose', 'test', 'crypto', 'dollars=', 'add=', 'remove=', 'symbol=', 'balance=', 'number=', 'update', 'print', 'get'])
     except getopt.GetoptError as err:
         print(err)
         usage()
@@ -31,6 +32,8 @@ def main(argv):
             test = True
         elif o in ("-g", "--get"):
             get = True
+        elif o in ("-c", "--crypto"):
+            crypto = True
         elif o in ("-u", "--update"):
             update = True
         elif o in ("-p", "--print"):
@@ -40,8 +43,8 @@ def main(argv):
             exit()
         elif o in ("-a", "--add"):
             add = a.upper()
-        elif o in ("-c", "--cash"):
-            cash = a
+        elif o in ("-d", "--dollars"):
+            dollars = a
         elif o in ("-r", "--remove"):
             remove = a.upper()
         elif o in ("-s", "--symbol"):
@@ -60,15 +63,22 @@ def main(argv):
     if defaults['folder name'] is None:
         print ("\tWarning, the database name is not set, please correct this")
         exit()
-    if (cash > ""):
-        cashResult = plumb.Balance("$", cash, verbose)
+    if (dollars > ""):
+        cashResult = plumb.Balance("$", dollars, verbose)
         if (cashResult):
             print ("balance updated.")
         else:
             print ("failed.")
         exit()
-    if (add > ""):
-        addResult = plumb.Add(add, verbose)
+    if (add > "" and not crypto):
+        addResult = plumb.Add(add, "", verbose)
+        if (addResult):
+            print ("added.")
+        else:
+            print ("failed.")
+        exit()
+    if (add > "" and crypto):
+        addResult = plumb.Add(add, "coinbase", verbose)
         if (addResult):
             print ("added.")
         else:
@@ -142,15 +152,16 @@ def usage():
     -h --help           prints this help
     -v --verbose        increases the information level
     -t --test           tests the folder routines
+    -c --crypto         crypto-coin flag (initially is set to False)
 
-    -c --cash           enter your cash balance in dollars
+    -d --dollars        enter your cash balance in dollars
 
-    -a --add            add company by ticker symbol
-    -r --remove         remove company by ticker symbol
+    -a --add            add company by ticker symbol (use --crypto flag, or not)
+    -r --remove         remove company by ticker symbol (use --crypto flag, or not)
 
-    -s --symbol         ticker symbol (used with --number or --balance)
-    -n --number         number of shares owned (used with --symbol)
-    -b --balance        balance in dollars (used with --symbol)
+    -s --symbol         ticker symbol (used with --number or --balance or --crypto)
+    -n --number         number of shares owned (used with --symbol, --crypto)
+    -b --balance        balance in dollars (used with --symbol, --crypto)
 
     -u --update         update all prices (to within default interval minutes)
     -p --print          print out the folder database (in HTML table format)

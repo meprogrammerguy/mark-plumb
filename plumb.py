@@ -533,6 +533,10 @@ def Add(symbol, exchange, verbose):
         json_string = json.dumps(json_data)
         c = conn.cursor()
         c.execute("UPDATE folder SET json_string = (?) WHERE symbol = (?)", (json_string, symbol,))
+        if (exchange == "coinbase"):
+            c.execute("UPDATE folder SET crypto = 1 WHERE symbol = (?)", (symbol,))
+        else:
+            c.execute("UPDATE folder SET crypto = 0 WHERE symbol = (?)", (symbol,))
         dt = datetime.datetime.now()
         c.execute("UPDATE folder SET update_time = (?) WHERE symbol = (?)", (dt.strftime("%m/%d/%y %H:%M"), symbol,))
         conn.commit()
@@ -553,21 +557,25 @@ def Add(symbol, exchange, verbose):
         print ("***\n")
     return True
 
-def Remove(symbol, verbose):
+def Remove(symbol, exchange, verbose):
     db_file = GetDB(verbose)
     if (verbose):
         print ("***")
         print ("Remove(1) symbol: {0}".format(symbol))
-        print ("Remove(2) dbase: {0}".format(db_file))
+        print ("Remove(2) exchange: {0}".format(exchange))
+        print ("Remove(3) dbase: {0}".format(db_file))
     try:
         conn = sqlite3.connect(db_file)
         if (verbose):
-            print("Remove(3) sqlite3: {0}".format(sqlite3.version))
+            print("Remove(4) sqlite3: {0}".format(sqlite3.version))
     except Error as e:
-        print("Remove(4) {0}".format(e))
+        print("Remove(5) {0}".format(e))
         return False
     c = conn.cursor()
-    c.execute("DELETE FROM folder WHERE symbol=(?)", (symbol,))
+    if (exchange == "coinbase"):
+        c.execute("DELETE FROM folder WHERE symbol=(?) and crypto = 1", (symbol,))
+    else:
+        c.execute("DELETE FROM folder WHERE symbol=(?) and crypto = 0", (symbol,))
     conn.commit()
     conn.close()
     if (verbose):
@@ -627,6 +635,7 @@ def Cash(balance, verbose):
         dt = datetime.datetime.now()
         c.execute("UPDATE folder SET update_time = (?) WHERE symbol = '$'", (dt.strftime("%m/%d/%y %H:%M"),))
         c.execute("UPDATE folder SET price = 1.00 WHERE symbol = '$'")
+        c.execute("UPDATE folder SET crypto = 0 WHERE symbol = '$'")
         conn.commit()
         conn.close()
     if (verbose):
@@ -681,7 +690,7 @@ def CreateFolder(key, verbose):
         print("CreateFolder(3) {0}".format(e))
         return False
     c = conn.cursor()
-    c.execute("CREATE TABLE if not exists 'folder' ( `symbol` TEXT NOT NULL UNIQUE, `balance` REAL, `shares` REAL, `price` NUMERIC, `quote` TEXT, `update_time` TEXT, `json_string` TEXT, PRIMARY KEY(`symbol`) )")
+    c.execute("CREATE TABLE if not exists 'folder' ( `symbol` TEXT NOT NULL UNIQUE, `balance` REAL, `shares` REAL, `price` NUMERIC, `crypto` INTEGER, `quote` TEXT, `update_time` TEXT, `json_string` TEXT, PRIMARY KEY(`symbol`) )")
     c.execute( "INSERT OR IGNORE INTO folder(symbol) VALUES((?))", (key,))
     conn.commit()
     conn.close()
@@ -1994,8 +2003,8 @@ def TestFolder(verbose):
             print ("\tfail.")
         fails += 1
     if (verbose):
-        print ("Test #{0} - Remove('AAPL', verbose)".format(count + 1))
-    result = Remove("AAPL", verbose)
+        print ("Test #{0} - Remove('AAPL', 'exchange', verbose)".format(count + 1))
+    result = Remove("AAPL", "exchange", verbose)
     if (result):
         if (verbose):
             print ("\tpass.")
@@ -2533,8 +2542,8 @@ def TestHistory(verbose):
             print ("\tfail.")
             fails += 1
     if (verbose):
-        print ("Test #{0} - Remove('AAPL', verbose)".format(count + 1))
-    result = Remove("AAPL", verbose)
+        print ("Test #{0} - Remove('AAPL', 'exchange', verbose)".format(count + 1))
+    result = Remove("AAPL", "exchange", verbose)
     if (result):
         if (verbose):
             print ("\tpass.")
