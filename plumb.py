@@ -526,19 +526,18 @@ def Add(symbol, exchange, verbose):
         except Error as e:
             print("Add(5) {0}".format(e))
             return False
+        crypto = 0
         if (exchange =="coinbase"):
             json_data = CryptoCompany(symbol, verbose)
+            crypto = 1
         else:
             json_data = Company(symbol, verbose)
         json_string = json.dumps(json_data)
         c = conn.cursor()
-        c.execute("UPDATE folder SET json_string = (?) WHERE symbol = (?)", (json_string, symbol,))
-        if (exchange == "coinbase"):
-            c.execute("UPDATE folder SET crypto = 1 WHERE symbol = (?)", (symbol,))
-        else:
-            c.execute("UPDATE folder SET crypto = 0 WHERE symbol = (?)", (symbol,))
+        c.execute("INSERT OR IGNORE INTO folder (symbol, crypto) VALUES ((?),?)", (symbol, crypto,))
+        c.execute("UPDATE folder SET json_string = (?) WHERE symbol = (?) and crypto = ?", (json_string, symbol, crypto,))
         dt = datetime.datetime.now()
-        c.execute("UPDATE folder SET update_time = (?) WHERE symbol = (?)", (dt.strftime("%m/%d/%y %H:%M"), symbol,))
+        c.execute("UPDATE folder SET update_time = (?) WHERE symbol = (?) and crypto = ?", (dt.strftime("%m/%d/%y %H:%M"), symbol, crypto,))
         conn.commit()
         conn.close()
         if (exchange =="coinbase"):
@@ -690,7 +689,7 @@ def CreateFolder(key, verbose):
         print("CreateFolder(3) {0}".format(e))
         return False
     c = conn.cursor()
-    c.execute("CREATE TABLE if not exists 'folder' ( `symbol` TEXT NOT NULL UNIQUE, `balance` REAL, `shares` REAL, `price` NUMERIC, `crypto` INTEGER, `quote` TEXT, `update_time` TEXT, `json_string` TEXT, PRIMARY KEY(`symbol`) )")
+    c.execute("CREATE TABLE if not exists 'folder' ( `symbol` TEXT NOT NULL, `balance` REAL, `shares` REAL, `price` NUMERIC, `crypto` INTEGER, `quote` TEXT, `update_time` TEXT, `json_string` TEXT, PRIMARY KEY(`crypto`,`symbol`) )")
     c.execute( "INSERT OR IGNORE INTO folder(symbol) VALUES((?))", (key,))
     conn.commit()
     conn.close()
@@ -3314,8 +3313,8 @@ def CreateArchive(verbose):
     c.execute( "INSERT OR IGNORE INTO key(key, last_snap, tradier_key, IEX_key) VALUES(?, ?, ?, ?)", (1,0,"","",))
     c.execute("CREATE TABLE if not exists 'summary' ( `snap_date` TEXT NOT NULL, `folder_name` TEXT NOT NULL, `snapshot` INTEGER NOT NULL, `aim_rows` INTEGER, `shares_rows` INTEGER, `worksheet_rows` INTEGER, `initial` REAL, `profit_percent` INTEGER, PRIMARY KEY(`snap_date`,`folder_name`,`snapshot`) )")
     c.execute("CREATE TABLE if not exists 'aim' ( `snapshot` INTEGER NOT NULL, `post_date` TEXT NOT NULL, `stock_value` REAL, `cash` REAL, `portfolio_control` REAL, `buy_sell_advice` REAL, `market_order` REAL, `portfolio_value` REAL, PRIMARY KEY(`snapshot`,`post_date`) )")
-    c.execute("CREATE TABLE if not exists 'shares' ( `snapshot` INTEGER NOT NULL, `post_date` TEXT NOT NULL, `symbol` TEXT NOT NULL, `balance` REAL, `shares` REAL, PRIMARY KEY(`snapshot`,`post_date`,`symbol`) )")
-    c.execute("CREATE TABLE if not exists `worksheet` ( `snapshot` INTEGER NOT NULL, `plan_date` TEXT NOT NULL, `symbol` TEXT NOT NULL, `shares` REAL, `adjust_amount` REAL, PRIMARY KEY(`snapshot`,`plan_date`,`symbol`) )")
+    c.execute("CREATE TABLE if not exists 'shares' ( `snapshot` INTEGER NOT NULL, `post_date` TEXT NOT NULL, `symbol` TEXT NOT NULL, `crypto` INTEGER, `balance` REAL, `shares` REAL, PRIMARY KEY(`snapshot`,`post_date`,`crypto`,`symbol`) )")
+    c.execute("CREATE TABLE if not exists `worksheet` ( `snapshot` INTEGER NOT NULL, `plan_date` TEXT NOT NULL, `symbol` TEXT NOT NULL, `crypto` INTEGER, `shares` REAL, `adjust_amount` REAL, PRIMARY KEY(`snapshot`,`plan_date`,`crypto`,`symbol`) )")
     conn.commit()
     conn.close()
     if (verbose):
@@ -3796,7 +3795,7 @@ def CreateWorksheet(verbose):
         return False
     c = conn.cursor()
     c.execute("CREATE TABLE if not exists 'market' ( `key` INTEGER NOT NULL UNIQUE, `market_order` REAL, `post_date` TEXT, `actual_amount` REAL, `posted` TEXT, PRIMARY KEY(`key`) )")
-    c.execute("CREATE TABLE if not exists `worksheet` ( `plan_date` TEXT NOT NULL, `symbol` TEXT NOT NULL, `shares` REAL, `adjust_amount` REAL, PRIMARY KEY(`plan_date`,`symbol`) )")
+    c.execute("CREATE TABLE if not exists `worksheet` ( `plan_date` TEXT NOT NULL, `symbol` TEXT NOT NULL, `crypto` INTEGER, `shares` REAL, `adjust_amount` REAL, PRIMARY KEY(`plan_date`,`crypto`,`symbol`) )")
     c.execute( "INSERT OR IGNORE INTO market(key) VALUES(?)", (1,))
     conn.commit()
     conn.close()
