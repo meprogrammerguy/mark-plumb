@@ -1063,7 +1063,7 @@ def AddRemoveButtons(table):
         symbol = table[start + 8 :table.find("</td>", start + 8)]
         row += 1
         if (symbol != "$"):
-            r_button = '<tr><td><form action="#" method="post"><input class="submit" type="submit" name="action" value="remove"/><input hidden type="text" name="remove_symbol" value="{0}"/></form></td><td>'.format(symbol)
+            r_button = '<tr><td><form action="#" method="post"><input class="submit" type="submit" name="action" value="remove"/><input hidden type="text" name="remove_symbol" value="{0}"/><input hidden type="text" name="remove_type" value="{1}"/></form></td><td>'.format(symbol, "coinbase")
             table = table[0 : start] + table[start:].replace(pattern, r_button, 1)
         else:
             table = table[0 : start] + table[start:].replace(pattern, "<tr><td></td><td>", 1)

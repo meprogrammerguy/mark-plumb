@@ -120,7 +120,9 @@ def folder():
                         plumb.Balance(request.form['symbol'], str(balance), False)
                         return(render_folder("display: none;", log, "", ""))
             elif (request.form['action'] == "remove"):
-                plumb.Remove(request.form['remove_symbol'], False)
+                s = request.form['remove_symbol']
+                e = request.form['remove_type']
+                plumb.Remove(s, e, False)
                 log =  "company {0} has been removed from portfolio.".format(request.form['remove_symbol'])
                 return(render_folder("display: none;", log, "", ""))
             elif (request.form['action'] == "add"):
