@@ -1060,10 +1060,16 @@ def AddRemoveButtons(table):
         if start == -1:
             done = True
             continue
+        matches = re.finditer("<td>", table)
+        matches_positions = [match.start() for match in matches]
+        match_index = matches_positions.index(start + 4)
         symbol = table[start + 8 :table.find("</td>", start + 8)]
-        row += 1
+        crypto = table[matches_positions[match_index + 5] + 4 :table.find("</td>", matches_positions[match_index + 5] + 4)]
         if (symbol != "$"):
-            r_button = '<tr><td><form action="#" method="post"><input class="submit" type="submit" name="action" value="remove"/><input hidden type="text" name="remove_symbol" value="{0}"/><input hidden type="text" name="remove_type" value="{1}"/></form></td><td>'.format(symbol, "coinbase")
+            exchange = ""
+            if (crypto == "1"):
+                    exchange = "coinbase"
+            r_button = '<tr><td><form action="#" method="post"><input class="submit" type="submit" name="action" value="remove"/><input hidden type="text" name="remove_symbol" value="{0}"/><input hidden type="text" name="remove_type" value="{1}"/></form></td><td>'.format(symbol, exchange)
             table = table[0 : start] + table[start:].replace(pattern, r_button, 1)
         else:
             table = table[0 : start] + table[start:].replace(pattern, "<tr><td></td><td>", 1)
