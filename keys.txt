@@ -1,0 +1,4 @@
+tradier	j1AmwxGRVuqhtM1OzSAwy8ftbdkn
+iex	pk_01f4e195f0c74a6592b3cbed0ca46ee8
+coin	6fe0163a-ebe2-43bd-85de-eccb14a1e973
+

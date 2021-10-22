@@ -64,7 +64,7 @@ def main(argv):
         print ("\tWarning, the database name is not set, please correct this")
         exit()
     if (dollars > ""):
-        cashResult = plumb.Balance("$", dollars, verbose)
+        cashResult = plumb.Balance("$", 0, dollars, verbose)
         if (cashResult):
             print ("balance updated.")
         else:
@@ -84,30 +84,57 @@ def main(argv):
         else:
             print ("failed.")
         exit()
-    if (remove > ""):
-        removeResult = plumb.Remove(remove, verbose)
+    if (remove > "" and not crypto):
+        removeResult = plumb.Remove(remove, "", verbose)
         if (removeResult):
             print ("removed.")
         else:
             print ("failed.")
         exit()
-    if (balance > ""):
-        if (symbol == ""):
-            print ("\tWarning, to update the balance you also need a --symbol switch")
-            exit()
-        balanceResult = plumb.Balance(symbol, balance, verbose)
-        if (balanceResult['status']):
-            print ("symbol: {0}, current shares: {1}".format(symbol, balanceResult['shares']))
+    if (remove > "" and crypto):
+        removeResult = plumb.Remove(remove, "coinbase", verbose)
+        if (removeResult):
+            print ("removed.")
         else:
             print ("failed.")
         exit()
-    if (shares > ""):
+    if (balance > "" and not crypto):
+        if (symbol == ""):
+            print ("\tWarning, to update the balance you also need a --symbol switch")
+            exit()
+        balanceResult = plumb.Balance(symbol, 0, balance, verbose)
+        if (balanceResult['status']):
+            print ("stock symbol: {0}, current shares: {1}".format(symbol, balanceResult['shares']))
+        else:
+            print ("failed.")
+        exit()
+    if (balance > "" and crypto):
+        if (symbol == ""):
+            print ("\tWarning, to update the balance you also need a --symbol switch")
+            exit()
+        balanceResult = plumb.Balance(symbol, 1, balance, verbose)
+        if (balanceResult['status']):
+            print ("crypto symbol: {0}, current shares: {1}".format(symbol, balanceResult['shares']))
+        else:
+            print ("failed.")
+        exit()
+    if (shares > "" and not crypto):
         if (symbol == ""):
             print ("\tWarning, to update the shares you also need a --symbol switch")
             exit()
-        sharesResult = plumb.Shares(symbol, shares, verbose)
+        sharesResult = plumb.Shares(symbol, 0, shares, verbose)
         if (sharesResult['status']):
-            print ("symbol: {0}, current balance: {1}".format(symbol, sharesResult['balance']))
+            print ("stock symbol: {0}, current balance: {1}".format(symbol, sharesResult['balance']))
+        else:
+            print ("failed.")
+        exit()
+    if (shares > "" and crypto):
+        if (symbol == ""):
+            print ("\tWarning, to update the shares you also need a --symbol switch")
+            exit()
+        sharesResult = plumb.Shares(symbol, 1, shares, verbose)
+        if (sharesResult['status']):
+            print ("crypto symbol: {0}, current balance: {1}".format(symbol, sharesResult['balance']))
         else:
             print ("failed.")
         exit()

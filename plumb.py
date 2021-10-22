@@ -517,7 +517,12 @@ def Add(symbol, exchange, verbose):
         print ("Add(1) symbol: {0}".format(symbol))
         print ("Add(2) exchange: {0}".format(exchange))
         print ("Add(3) dbase: {0}".format(db_file))
-    result = CreateFolder(symbol, verbose)
+
+    crypto = 0
+    if (exchange =="coinbase"):
+        crypto = 1
+        
+    result = CreateFolder(symbol, crypto, verbose)
     if (result):
         try:
             conn = sqlite3.connect(db_file)
@@ -548,8 +553,12 @@ def Add(symbol, exchange, verbose):
         if ("Error Message" in quote[0]):
             errors.append([symbol, quote[0]['url'], quote[0]["Error Message"]])
         else:
-            Price(symbol, quote[0], verbose)
-            Shares(symbol, None, verbose)
+            if (exchange =="coinbase"):
+                Price(symbol, 1, quote[0], verbose)
+                Shares(symbol, 1, None, verbose)
+            else:
+                Price(symbol, 0, quote[0], verbose)
+                Shares(symbol, 0, None, verbose)
     if (verbose):
         if (errors):
             pprint.pprint(errors)
@@ -581,28 +590,29 @@ def Remove(symbol, exchange, verbose):
         print ("***\n")
     return True
 
-def Price(symbol, quote, verbose):
+def Price(symbol, crypto, quote, verbose):
     db_file = GetDB(verbose)
     if (verbose):
         print ("***")
         print ("Price(1) symbol: {0}".format(symbol))
-        print ("Price(2) price: {0}".format(quote['price']))
-        print ("Price(3) quote: {0}".format(quote['quote']))
-        print ("Price(4) dbase: {0}".format(db_file))
+        print ("Price(3) crypto: {0}".format(crypto))
+        print ("Price(4) price: {0}".format(quote['price']))
+        print ("Price(5) quote: {0}".format(quote['quote']))
+        print ("Price(6) dbase: {0}".format(db_file))
     result = CreateFolder(symbol, verbose)
     if (result):
         try:
             conn = sqlite3.connect(db_file)
             if (verbose):
-                print("Price(5) sqlite3: {0}".format(sqlite3.version))
+                print("Price(7) sqlite3: {0}".format(sqlite3.version))
         except Error as e:
-            print("Price(6) {0}".format(e))
+            print("Price(8) {0}".format(e))
             return False
         c = conn.cursor()
-        c.execute("UPDATE folder SET price = ? WHERE symbol = (?)", (quote['price'], symbol,))
-        c.execute("UPDATE folder SET quote = ? WHERE symbol = (?)", (quote['quote'], symbol,))
+        c.execute("UPDATE folder SET price = ? WHERE symbol = (?) and crypto = ?", (quote['price'], symbol,crypto,))
+        c.execute("UPDATE folder SET quote = ? WHERE symbol = (?) and crypto = ?", (quote['quote'], symbol,crypto,))
         dt = datetime.datetime.now()
-        c.execute("UPDATE folder SET update_time = (?) WHERE symbol = (?)", (dt.strftime("%m/%d/%y %H:%M"), symbol,))
+        c.execute("UPDATE folder SET update_time = (?) WHERE symbol = (?) and crypto = ?", (dt.strftime("%m/%d/%y %H:%M"), symbol,crypto,))
         conn.commit()
         conn.close()
     if (verbose):
@@ -616,7 +626,7 @@ def Cash(balance, verbose):
         print ("***")
         print ("Cash(1) balance: {0}".format(balance))
         print ("Cash(2) dbase: {0}".format(db_file))
-    result = CreateFolder("$", verbose)
+    result = CreateFolder("$", 0, verbose)
     if (result):
         try:
             conn = sqlite3.connect(db_file)
@@ -626,15 +636,15 @@ def Cash(balance, verbose):
             print("Cash(4) {0}".format(e))
             return False
         c = conn.cursor()
-        c.execute("UPDATE folder SET balance = ? WHERE symbol = '$'", (round(float(balance), 2),))
+        c.execute("UPDATE folder SET balance = ? WHERE symbol = '$' and crypto = 0", (round(float(balance), 2),))
         dict_string = {'companyName': 'CASH', 'description': 'Cash Account', 'symbol': '$'}
         json_string = json.dumps(dict_string)
-        c.execute("UPDATE folder SET json_string = (?) WHERE symbol = '$'", (json_string,))
-        c.execute("UPDATE folder SET shares = ? WHERE symbol = '$'", (round(float(balance), 4),))
+        c.execute("UPDATE folder SET json_string = (?) WHERE symbol = '$' and crypto = 0", (json_string,))
+        c.execute("UPDATE folder SET shares = ? WHERE symbol = '$' and crypto = 0", (round(float(balance), 4),))
         dt = datetime.datetime.now()
-        c.execute("UPDATE folder SET update_time = (?) WHERE symbol = '$'", (dt.strftime("%m/%d/%y %H:%M"),))
-        c.execute("UPDATE folder SET price = 1.00 WHERE symbol = '$'")
-        c.execute("UPDATE folder SET crypto = 0 WHERE symbol = '$'")
+        c.execute("UPDATE folder SET update_time = (?) WHERE symbol = '$' and crypto = 0", (dt.strftime("%m/%d/%y %H:%M"),))
+        c.execute("UPDATE folder SET price = 1.00 WHERE symbol = '$' and crypto = 0")
+        c.execute("UPDATE folder SET crypto = 0 WHERE symbol = '$' and crypto = 0")
         conn.commit()
         conn.close()
     if (verbose):
@@ -674,7 +684,7 @@ def GetFolderCount(verbose):
         print ("***\n")
     return len(results)
 
-def CreateFolder(key, verbose):
+def CreateFolder(symbol, crypto, verbose):
     db_file = GetDB(verbose)
     username = getpass.getuser()
     Path(username + "/").mkdir(parents=True, exist_ok=True) 
@@ -690,17 +700,17 @@ def CreateFolder(key, verbose):
         return False
     c = conn.cursor()
     c.execute("CREATE TABLE if not exists 'folder' ( `symbol` TEXT NOT NULL, `balance` REAL, `shares` REAL, `price` NUMERIC, `crypto` INTEGER, `quote` TEXT, `update_time` TEXT, `json_string` TEXT, PRIMARY KEY(`crypto`,`symbol`) )")
-    c.execute( "INSERT OR IGNORE INTO folder(symbol) VALUES((?))", (key,))
+    c.execute( "INSERT OR IGNORE INTO folder(symbol, crypto) VALUES((?),?)", (symbol,crypto,))
     conn.commit()
     conn.close()
     count = GetFolderCount(verbose)
-    if (count == 1 and key != "$"):
+    if (count == 1 and symbol != "$"):
         Cash("0", verbose)
     if (verbose):
         print ("***\n")
     return True
 
-def Shares(symbol, shares, verbose):
+def Shares(symbol, crypto, shares, verbose):
     result = {}
     if shares is None:
         shares = "0"
@@ -716,8 +726,9 @@ def Shares(symbol, shares, verbose):
     if (verbose):
         print ("***")
         print ("Shares(1) symbol: {0}".format(symbol))
-        print ("Shares(2) shares: {0}".format(shares))
-        print ("Shares(3) dbase: {0}".format(db_file))
+        print ("Shares(2) crypto: {0}".format(crypto))
+        print ("Shares(3) shares: {0}".format(shares))
+        print ("Shares(4) dbase: {0}".format(db_file))
     if (symbol == ""):
         e = "Error: symbol cannot be blank"
         print (e)
@@ -726,21 +737,21 @@ def Shares(symbol, shares, verbose):
         result['exception'] = e
         return result
     folder = GetFolder(verbose)
-    price = GetFolderValue(symbol, "price", folder)
+    price = GetFolderValue(symbol, crypto, "price", folder)
     try:
         conn = sqlite3.connect(db_file)
         if (verbose):
-            print("Shares(4) sqlite3: {0}".format(sqlite3.version))
+            print("Shares(5) sqlite3: {0}".format(sqlite3.version))
     except Error as e:
-        print("Shares(5) {0}".format(e))
+        print("Shares(6) {0}".format(e))
         result['status'] = False
         result['balance'] = 0
         result['exception'] = e
         return result
     c = conn.cursor()
-    c.execute("UPDATE folder SET shares = ? WHERE symbol = (?)", (shares, symbol,))
+    c.execute("UPDATE folder SET shares = ? WHERE symbol = (?) and crypto = ?", (shares, symbol,crypto,))
     balance = shares * price
-    c.execute("UPDATE folder SET balance = ? WHERE symbol = (?)", (balance, symbol,))
+    c.execute("UPDATE folder SET balance = ? WHERE symbol = (?) and crypto = ?", (balance, symbol,crypto,))
     conn.commit()
     conn.close()
     if (verbose):
@@ -749,7 +760,7 @@ def Shares(symbol, shares, verbose):
     result['balance'] = balance
     return result
 
-def Balance(symbol, balance, verbose):
+def Balance(symbol, crypto, balance, verbose):
     result = {}
     if (balance is None):
         balance = "0"
@@ -765,8 +776,9 @@ def Balance(symbol, balance, verbose):
     if (verbose):
         print ("***")
         print ("Balance(1) symbol: {0}".format(symbol))
-        print ("Balance(2) balance: {0}".format(balance))
-        print ("Balance(3) dbase: {0}".format(db_file))
+        print ("Balance(2) crypto: {0}".format(crypto))
+        print ("Balance(3) balance: {0}".format(balance))
+        print ("Balance(4) dbase: {0}".format(db_file))
     if (symbol == ""):
         e = "Error: symbol cannot be blank"
         print (e)
@@ -775,13 +787,13 @@ def Balance(symbol, balance, verbose):
         result['exception'] = e
         return result
     folder = GetFolder(verbose)
-    price = GetFolderValue(symbol, "price", folder)
+    price = GetFolderValue(symbol, crypto, "price", folder)
     try:
         conn = sqlite3.connect(db_file)
         if (verbose):
-            print("Balance(4) sqlite3: {0}".format(sqlite3.version))
+            print("Balance(5) sqlite3: {0}".format(sqlite3.version))
     except Error as e:
-        print("Balance(5) {0}".format(e))
+        print("Balance(6) {0}".format(e))
         result['status'] = False
         result['shares'] = 0
         result['exception'] = e
@@ -792,8 +804,8 @@ def Balance(symbol, balance, verbose):
         price = 0
     if price > 0:
         shares = balance / price
-    c.execute("UPDATE folder SET shares = ? WHERE symbol = (?)", (shares, symbol,))
-    c.execute("UPDATE folder SET balance = ? WHERE symbol = (?)", (balance, symbol,))
+    c.execute("UPDATE folder SET shares = ? WHERE symbol = (?) and crypto = ?", (shares, symbol,crypto,))
+    c.execute("UPDATE folder SET balance = ? WHERE symbol = (?) and crypto = ?", (balance, symbol,crypto,))
     conn.commit()
     conn.close()
     if (verbose):
@@ -802,46 +814,66 @@ def Balance(symbol, balance, verbose):
     result['shares'] = shares
     return result
 
-def Update(verbose):
+def Update(market_open, verbose):
     db_file = GetDB(verbose)
     username = getpass.getuser()
     Path(username + "/").mkdir(parents=True, exist_ok=True) 
     if (verbose):
         print ("***")
-        print ("Update(1) dbase: {0}".format(db_file))
+        print ("Update(1) Is the stock market open? : {0}".format(market_open))
+        print ("Update(2) dbase: {0}".format(db_file))
     try:
         conn = sqlite3.connect(db_file)
         if (verbose):
-            print("Update(2) sqlite3: {0}".format(sqlite3.version))
+            print("Update(3) sqlite3: {0}".format(sqlite3.version))
     except Error as e:
-        print("Update(3) dbase: {0}, {1}".format(db_file, e))
+        print("Update(4) dbase: {0}, {1}".format(db_file, e))
         return False, e
     c = conn.cursor()
     try:
-        c.execute("SELECT symbol, shares, balance FROM folder where symbol != '$' order by symbol")
+        c.execute("SELECT symbol, crypto, shares, balance FROM folder where symbol != '$' order by crypto,symbol")
     except Error as e:
-        print("Update(4) dbase: {0}, {1}".format(db_file, e))
+        print("Update(5) dbase: {0}, {1}".format(db_file, e))
         return False, e
     rows = c.fetchall()
     conn.commit()
     conn.close()
-    quote_list = ""
+    quote1_list = ""
+    quote0_list = ""
+    quote1 = []
+    quote0 = []
     for row in rows:
-        quote_list += row[0] + ","
-    quote_list = quote_list[:-1]
-    quotes = QuoteTradier(quote_list, verbose)
+        if (row[1] == 1):
+            quote1_list += row[0] + ","
+        if (row[1] == 0):
+            quote0_list += row[0] + ","
+    quote1_list = quote1_list[:-1]
+    quote0_list = quote0_list[:-1]
+    pdb.set_trace()
+    if (market_open == True):
+        quotes0 = QuoteTradier(quote0_list, verbose)
+    quotes1 = QuoteCrypto(quote1_list, verbose)
     errors = []
-    if ("Error Message" in quotes[0]):
-        errors.append(quotes)
+    if ("Error Message" in quotes1[0]):
+        errors.append(quotes1)
+    if ("Error Message" in quotes0[0]):
+        errors.append(quotes0)
     if errors == []:
         for row in rows:
-            for quote in quotes:
-                if row[0] == quote["symbol"]:
-                    result = Price(row[0], quote, verbose)
-                    result = Shares(row[0], str(row[1]), verbose)
+            for quote in quotes1:
+                if (row[0] == quote["symbol"] and row[1] == 1):
+                    result = Price(row[0], row[1], quote, verbose)
+                    result = Shares(row[0], row[1], str(row[1]), verbose)
                     if (result['status']):
                         if (verbose):
-                            print ("symbol: {0}, current shares: {1}, previous balance: {2}, current balance: {3}".format(row[0], row[1], row[2], result['balance']))
+                            print ("crypto symbol: {0}, current shares: {1}, previous balance: {2}, current balance: {3}".format(row[0], row[2], row[3], result['balance']))
+            for quote in quotes0:
+                if (row[0] == quote["symbol"] and row[1] == 0):
+                    result = Price(row[0], row[1], quote, verbose)
+                    result = Shares(row[0], row[1], str(row[1]), verbose)
+                    if (result['status']):
+                        if (verbose):
+                            print ("stock symbol: {0}, current shares: {1}, previous balance: {2}, current balance: {3}".format(row[0], row[2], row[3], result['balance']))
     if (verbose):
         if (errors):
             pprint.pprint(errors)
@@ -1963,8 +1995,8 @@ def TestFolder(verbose):
             print ("\tfail.")
         fails += 1
     if (verbose):
-        print ("Test #{0} - Shares('AAPL', '50', verbose)".format(count + 1))
-    result = Shares("AAPL", "50", verbose)
+        print ("Test #{0} - Shares('AAPL', 0, '50', verbose)".format(count + 1))
+    result = Shares("AAPL", 0, "50", verbose)
     if (result['status']):
         if (verbose):
             print ("\tpass.")
@@ -4046,7 +4078,7 @@ def PostWorksheet(verbose):
     if (verbose):
         print ("***")
         print ("PostWorksheet(1) dbase: {0}".format(db_file))
-    result = CreateFolder("$", verbose)
+    result = CreateFolder("$", 0, verbose)
     if (result):
         try:
             conn = sqlite3.connect(db_file)
