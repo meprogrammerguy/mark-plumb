@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import sys
 import pdb
 from bs4 import BeautifulSoup
 import html5lib
@@ -595,18 +596,18 @@ def Price(symbol, crypto, quote, verbose):
     if (verbose):
         print ("***")
         print ("Price(1) symbol: {0}".format(symbol))
-        print ("Price(3) crypto: {0}".format(crypto))
-        print ("Price(4) price: {0}".format(quote['price']))
-        print ("Price(5) quote: {0}".format(quote['quote']))
-        print ("Price(6) dbase: {0}".format(db_file))
-    result = CreateFolder(symbol, verbose)
+        print ("Price(2) crypto: {0}".format(crypto))
+        print ("Price(3) price: {0}".format(quote['price']))
+        print ("Price(4) quote: {0}".format(quote['quote']))
+        print ("Price(5) dbase: {0}".format(db_file))
+    result = CreateFolder(symbol, crypto, verbose)
     if (result):
         try:
             conn = sqlite3.connect(db_file)
             if (verbose):
-                print("Price(7) sqlite3: {0}".format(sqlite3.version))
+                print("Price(6) sqlite3: {0}".format(sqlite3.version))
         except Error as e:
-            print("Price(8) {0}".format(e))
+            print("Price(7) {0}".format(e))
             return False
         c = conn.cursor()
         c.execute("UPDATE folder SET price = ? WHERE symbol = (?) and crypto = ?", (quote['price'], symbol,crypto,))
@@ -965,11 +966,11 @@ def GetFolder(verbose):
                 answers.append(js)
     return answers
 
-def GetFolderValue(symbol, key, folder_list):
+def GetFolderValue(symbol, crypto, key, folder_list):
     value = None
     if folder_list != []:
         for row in folder_list:
-            if row['symbol'] == symbol:
+            if (row['symbol'] == symbol) and (row['crypto'] == crypto):
                 if row[key] == None:
                     return 0
                 else:
@@ -1703,7 +1704,7 @@ def TestDefaults(verbose):
     sys.stdout = print_out
     count = 0
     fails = 0
-    total_tests = 23
+    total_tests = 24
     defaults, types =  GetDefaults(False)
     if defaults == {}:
         result = ResetDefaults(verbose)
@@ -1760,6 +1761,17 @@ def TestDefaults(verbose):
     if (verbose):
         print ("Test #{0} - UpdateDefaultItem('IEX key', 'TEST', verbose)".format(count + 1))
     result = UpdateDefaultItem("IEX key", "TEST", verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+    if (verbose):
+        print ("Test #{0} - UpdateDefaultItem('coin key', 'TEST', verbose)".format(count + 1))
+    result = UpdateDefaultItem("coin key", "TEST", verbose)
     if (result):
         if (verbose):
             print ("\tpass.")
@@ -1835,11 +1847,11 @@ def TestDefaults(verbose):
             print ("\tfail.")
         fails += 1
     if (verbose):
-        print ("Test #{0} - Price('AAPL', quote, verbose)".format(count + 1))
+        print ("Test #{0} - Price('AAPL', 0, quote, verbose)".format(count + 1))
     quote = {}
     quote['price'] = 50.55
     quote['quote'] = "test"
-    result = Price("AAPL", quote, verbose)
+    result = Price("AAPL", 0, quote, verbose)
     if (result):
         if (verbose):
             print ("\tpass.")
@@ -1951,8 +1963,8 @@ def TestFolder(verbose):
             print ("\tfail.")
         fails += 1
     if (verbose):
-        print ("Test #{0} - Balance('$', '5000', verbose)".format(count + 1))
-    result = Balance( "$", "5000", verbose)
+        print ("Test #{0} - Balance('$', 0, '5000', verbose)".format(count + 1))
+    result = Balance( "$", 0, "5000", verbose)
     if (result):
         if (verbose):
             print ("\tpass.")
@@ -1984,8 +1996,8 @@ def TestFolder(verbose):
             print ("\tfail.")
         fails += 1
     if (verbose):
-        print ("Test #{0} - Balance('AAPL', '5000', verbose)".format(count + 1))
-    result = Balance("AAPL", "5000", verbose)
+        print ("Test #{0} - Balance('AAPL', 0, '5000', verbose)".format(count + 1))
+    result = Balance("AAPL", 0, "5000", verbose)
     if (result['status']):
         if (verbose):
             print ("\tpass.")
@@ -2007,8 +2019,8 @@ def TestFolder(verbose):
         fails += 1
     folder = GetFolder(verbose)
     if (verbose):
-        print ("Test #{0} - GetFolderValue('AAPL', 'price', folder)".format(count + 1))
-    result = GetFolderValue("AAPL", "price", folder)
+        print ("Test #{0} - GetFolderValue('AAPL', 0, 'price', folder)".format(count + 1))
+    result = GetFolderValue("AAPL", 0, "price", folder)
     if (result >= 0):
         if (verbose):
             print ("\tpass.")
@@ -2029,8 +2041,8 @@ def TestFolder(verbose):
             print ("\tfail.")
         fails += 1
     if (verbose):
-        print ("Test #{0} - Update(verbose)".format(count + 1))
-    result = Update(verbose)
+        print ("Test #{0} - Update(True, verbose)".format(count + 1))
+    result = Update(True, verbose)
     if (result):
         if (verbose):
             print ("\tpass.")
@@ -2040,8 +2052,8 @@ def TestFolder(verbose):
             print ("\tfail.")
         fails += 1
     if (verbose):
-        print ("Test #{0} - Remove('AAPL', 'exchange', verbose)".format(count + 1))
-    result = Remove("AAPL", "exchange", verbose)
+        print ("Test #{0} - Remove('AAPL', 'NASDAQ', verbose)".format(count + 1))
+    result = Remove("AAPL", "NASDAQ", verbose)
     if (result):
         if (verbose):
             print ("\tpass.")
@@ -2112,8 +2124,8 @@ def TestAIM(location, verbose):
                 print ("\tfail.")
             fails += 1
         if (verbose):
-            print ("Test #{0} - Balance('$', '5000', verbose)".format(count + 1))
-        result = Balance( "$", "5000", verbose)
+            print ("Test #{0} - Balance('$', 0, '5000', verbose)".format(count + 1))
+        result = Balance( "$", 0, "5000", verbose)
         if (result):
             if (verbose):
                 print ("\tpass.")
@@ -2123,8 +2135,8 @@ def TestAIM(location, verbose):
                 print ("\tfail.")
             fails += 1
         if (verbose):
-            print ("Test #{0} - Add('AAPL', 'exchange', verbose)".format(count + 1))
-        result = Add( "AAPL", "exchange", verbose)
+            print ("Test #{0} - Add('AAPL', 'NASDAQ', verbose)".format(count + 1))
+        result = Add( "AAPL", "NASDAQ", verbose)
         if (result):
             if (verbose):
                 print ("\tpass.")
@@ -2134,8 +2146,8 @@ def TestAIM(location, verbose):
                 print ("\tfail.")
             fails += 1
         if (verbose):
-            print ("Test #{0} - Balance('$', '5000', verbose)".format(count + 1))
-        result = Balance( "$", "5000", verbose)
+            print ("Test #{0} - Balance('$', 0, '5000', verbose)".format(count + 1))
+        result = Balance( "$", 0, "5000", verbose)
         if (result):
             if (verbose):
                 print ("\tpass.")
@@ -2304,8 +2316,8 @@ def TestHistory(verbose):
             print ("\tfail.")
         fails += 1
     if (verbose):
-        print ("Test #{0} - Balance('$', '5000', verbose)".format(count + 1))
-    result = Balance( "$", "5000", verbose)
+        print ("Test #{0} - Balance('$', 0, '5000', verbose)".format(count + 1))
+    result = Balance( "$", 0, "5000", verbose)
     if (result):
         if (verbose):
             print ("\tpass.")
@@ -2315,8 +2327,8 @@ def TestHistory(verbose):
             print ("\tfail.")
         fails += 1
     if (verbose):
-        print ("Test #{0} - Add('AAPL', 'exchange', verbose)".format(count + 1))
-    result = Add( "AAPL", "exchange", verbose)
+        print ("Test #{0} - Add('AAPL', 'NASDAQ', verbose)".format(count + 1))
+    result = Add( "AAPL", "NASDAQ", verbose)
     if (result):
         if (verbose):
             print ("\tpass.")
@@ -2326,8 +2338,8 @@ def TestHistory(verbose):
             print ("\tfail.")
         fails += 1
     if (verbose):
-        print ("Test #{0} - Balance('AAPL', '5000', verbose)".format(count + 1))
-    result = Balance("AAPL", "5000", verbose)
+        print ("Test #{0} - Balance('AAPL', 0, '5000', verbose)".format(count + 1))
+    result = Balance("AAPL", 0, "5000", verbose)
     if (result):
         if (verbose):
             print ("\tpass.")
@@ -2579,8 +2591,8 @@ def TestHistory(verbose):
             print ("\tfail.")
             fails += 1
     if (verbose):
-        print ("Test #{0} - Remove('AAPL', 'exchange', verbose)".format(count + 1))
-    result = Remove("AAPL", "exchange", verbose)
+        print ("Test #{0} - Remove('AAPL', 'NASDAQ', verbose)".format(count + 1))
+    result = Remove("AAPL", "NASDAQ", verbose)
     if (result):
         if (verbose):
             print ("\tpass.")
@@ -4050,14 +4062,15 @@ def CalculateWorksheet(adjust, verbose):
                         a['amount'] = 0
                     if (negative):
                         a['amount'] = -a['amount']
-                    c.execute("UPDATE worksheet SET adjust_amount = ? WHERE plan_date = (?) and symbol = (?)", (a['amount'], today, a['symbol'],))
+                    c.execute("UPDATE worksheet SET adjust_amount = ? WHERE plan_date = (?) and symbol = (?) and crypto = ?", 
+                        (a['amount'], today, a['symbol'], a['crypto'],))
     cash = 0
     total = 0
     for a in adjust:
         cash = cash + a['amount']
         total = total + a['amount']
     cash = -cash
-    c.execute("UPDATE worksheet SET adjust_amount = ? WHERE plan_date = (?) and symbol = (?)", (cash, today, "$",))
+    c.execute("UPDATE worksheet SET adjust_amount = ? WHERE plan_date = (?) and symbol = (?) and crypto = 0", (cash, today, "$",))
     c.execute("UPDATE market SET actual_amount = ? WHERE key = ?", (total, 1,))
     for a in adjust:
         for f in folder:
@@ -4066,7 +4079,8 @@ def CalculateWorksheet(adjust, verbose):
                     shares = 0.0
                     if (f['price'] > 0):
                         shares = a['amount'] / f['price']
-                        c.execute("UPDATE worksheet SET shares = ? WHERE plan_date = (?) and symbol = (?)", (shares, today, a['symbol'],))
+                        c.execute("UPDATE worksheet SET shares = ? WHERE plan_date = (?) and symbol = (?) and crypto = ?", 
+                            (shares, today, a['symbol'], a['crypto'],))
     conn.commit()
     conn.close()
     if (verbose):

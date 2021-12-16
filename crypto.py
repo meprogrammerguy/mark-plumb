@@ -67,7 +67,7 @@ def usage():
     -s --symbol         ticker symbol (used with --info or --quote)
 
     -i --info           show company info by ticker symbol (used with --symbol)
-    -n --quote          show company quotes by ticker symbol (used with --symbol)
+    -q --quote          show company quotes by ticker symbol (used with --symbol)
     """
 
     print (usage) 

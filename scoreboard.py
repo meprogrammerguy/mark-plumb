@@ -83,8 +83,9 @@ def folder():
                         for f in folder:
                             value = {}
                             if (f['symbol'] != "$"):
-                                theText = 'box_{0}'.format(f['symbol'])
+                                theText = 'box_{0}:{1}'.format(f['symbol'], f['crypto'])
                                 value['symbol'] = f['symbol']
+                                value['crypto'] = f['crypto']
                                 value['adjust'] = request.form[theText]
                                 values.append(value)
                         plumb.CalculateWorksheet(values, False)
@@ -100,7 +101,9 @@ def folder():
                     if (request.form['balance'] == ""):
                         return(render_folder("display: none;", "balance is blank, cannot adjust.", "", ""))
                     else:
-                        plumb.Balance(request.form['symbol'], request.form['balance'], False)
+                        print(request.form)
+                        pdb.set_trace()
+                        plumb.Balance(request.form['symbol'],request.form['crypto'], request.form['balance'], False)
                         log =  "company {0}, balance is now {1}".format(request.form['symbol'], plumb.as_currency(plumb.to_number(request.form['balance'], False)))
                         return(render_folder("display: none;", log, "", ""))
                 elif (request.form['options'] == "shares"):
@@ -132,7 +135,7 @@ def folder():
                 log =  "company {0} has been added to portfolio.".format(s)
                 return(render_folder("display: none;", log, "", ""))
             elif (request.form['action'] == "refresh"):
-                plumb.Update(False)
+                plumb.Update(True, False)
                 return(render_folder("display: none;", "prices updated.", ""))
             elif (request.form['action'] != "symbol"):
                 s = request.form['action']
