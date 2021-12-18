@@ -101,8 +101,6 @@ def folder():
                     if (request.form['balance'] == ""):
                         return(render_folder("display: none;", "balance is blank, cannot adjust.", "", ""))
                     else:
-                        print(request.form)
-                        pdb.set_trace()
                         plumb.Balance(request.form['symbol'],request.form['crypto'], request.form['balance'], False)
                         log =  "company {0}, balance is now {1}".format(request.form['symbol'], plumb.as_currency(plumb.to_number(request.form['balance'], False)))
                         return(render_folder("display: none;", log, "", ""))
@@ -152,7 +150,7 @@ def render_folder(ticker_style, feedback, symbol, flag):
     folder_name = "folder"
     if ("folder name" in defaults):
         folder_name = defaults['folder name']
-    table, symbol_options, balance_options, amount_options = plumb.PrintFolder(False)
+    table, symbol_options, crypto_options, balance_options, amount_options = plumb.PrintFolder(False)
     notes, initialize_day = plumb.GetAIMNotes(10, False)
     co = {}
     if (symbol > ""):
@@ -168,7 +166,7 @@ def render_folder(ticker_style, feedback, symbol, flag):
     if worksheet_table > "":
         worksheet_style = "display: block;"
 
-    return(render_template('folder.html', table = table,  ticker_style = ticker_style, symbol_options = symbol_options, balance_options = balance_options, notes = notes, ticker = co,
+    return(render_template('folder.html', table = table,  ticker_style = ticker_style, symbol_options = symbol_options, crypto_options = crypto_options, balance_options = balance_options, notes = notes, ticker = co,
         feedback = feedback, amount_options = amount_options, folder_name = folder_name, worksheet_table = worksheet_table, worksheet_style = worksheet_style, worksheet_warning = worksheet_warning))
  
 @app.route('/defaults/', methods=["GET","POST"])
