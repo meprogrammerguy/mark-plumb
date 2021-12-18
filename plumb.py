@@ -1045,7 +1045,7 @@ def PrintFolder(verbose):
         for value in f.values():
             row.append(value)
         row = row[:1] + [''] + row[1:-1]
-        symbol_options += '<option value="{0}">{1}</option>'.format(row[keys.index("symbol")], row[keys.index("symbol")])
+        symbol_options += '<option value="{0},{1}">{2}</option>'.format(row[keys.index("symbol")], row[keys.index("crypto")], row[keys.index("symbol")])
         crypto_options += '<option value="{0}">{1}</option>'.format(row[keys.index("crypto")], row[keys.index("crypto")])
         json_string = f['json string']
         col_list = []
