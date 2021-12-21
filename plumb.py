@@ -1030,7 +1030,6 @@ def PrintFolder(verbose):
     items = []
     answer = {}
     symbol_options = ""
-    crypto_options = ""
     balance_options = ""
     if (post_worksheet):
         symbol_options += '<option value="worksheet">worksheet</option>'
@@ -1046,7 +1045,6 @@ def PrintFolder(verbose):
             row.append(value)
         row = row[:1] + [''] + row[1:-1]
         symbol_options += '<option value="{0},{1}">{2}</option>'.format(row[keys.index("symbol")], row[keys.index("crypto")], row[keys.index("symbol")])
-        crypto_options += '<option value="{0}">{1}</option>'.format(row[keys.index("crypto")], row[keys.index("crypto")])
         json_string = f['json string']
         col_list = []
         for i in range(len(keys)):
@@ -1082,7 +1080,7 @@ def PrintFolder(verbose):
     if (verbose):
         print ("***\n")
     button_table = AddRemoveButtons(table.__html__())
-    return button_table, symbol_options, crypto_options, balance_options, amount_options
+    return button_table, symbol_options, balance_options, amount_options
 
 def AddRemoveButtons(table):
     table = table.replace("<thead><tr><th>", "<thead><tr><th></th><th>", 1)
