@@ -720,6 +720,7 @@ def Shares(symbol, crypto, shares, verbose):
         result['status'] = True
         result['shares'] = shares
         return result
+    pdb.set_trace()
     shares = to_number(shares, verbose)
     db_file = GetDB(verbose)
     username = getpass.getuser()
@@ -737,6 +738,7 @@ def Shares(symbol, crypto, shares, verbose):
         result['balance'] = 0
         result['exception'] = e
         return result
+    pdb.set_trace()
     folder = GetFolder(verbose)
     price = GetFolderValue(symbol, crypto, "price", folder)
     try:
@@ -749,6 +751,7 @@ def Shares(symbol, crypto, shares, verbose):
         result['balance'] = 0
         result['exception'] = e
         return result
+    pdb.set_trace()
     c = conn.cursor()
     c.execute("UPDATE folder SET shares = ? WHERE symbol = (?) and crypto = ?", (shares, symbol,crypto,))
     balance = shares * price
@@ -1151,6 +1154,8 @@ def AllocationTrends(verbose):
         if (row['symbol'] != "$"):
             if (row['balance'] is not None):
                 total = total + row['balance']
+    if (total == 0):
+        total = 1
     allocation = ""
     for row in rows:
         pst = 0
