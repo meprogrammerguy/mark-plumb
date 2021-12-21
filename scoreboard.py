@@ -109,8 +109,9 @@ def folder():
                     if (request.form['balance'] == ""):
                         return(render_folder("display: none;", "shares are blank, cannot adjust.", "", ""))
                     else:
-                        plumb.Shares(request.form['symbol'], request.form['balance'], False)
-                        log =  "company {0}, shares are now {1}".format(request.form['symbol'], round(plumb.to_number(request.form['balance'], False), 4))
+                        chunks = request.form['symbol'].split(',')
+                        plumb.Shares(chunks[0], chunks[1], request.form['balance'], False)
+                        log =  "company {0}, shares are now {1}".format(chunks[0], round(plumb.to_number(request.form['balance'], False), 4))
                         return(render_folder("display: none;", log, "", ""))
                 else:
                     if (request.form['balance'] == ""):
