@@ -720,7 +720,6 @@ def Shares(symbol, crypto, shares, verbose):
         result['status'] = True
         result['shares'] = shares
         return result
-    pdb.set_trace()
     shares = to_number(shares, verbose)
     db_file = GetDB(verbose)
     username = getpass.getuser()
@@ -738,7 +737,6 @@ def Shares(symbol, crypto, shares, verbose):
         result['balance'] = 0
         result['exception'] = e
         return result
-    pdb.set_trace()
     folder = GetFolder(verbose)
     price = GetFolderValue(symbol, crypto, "price", folder)
     try:
@@ -751,11 +749,10 @@ def Shares(symbol, crypto, shares, verbose):
         result['balance'] = 0
         result['exception'] = e
         return result
-    pdb.set_trace()
     c = conn.cursor()
-    c.execute("UPDATE folder SET shares = ? WHERE symbol = (?) and crypto = ?", (shares, symbol,crypto,))
+    c.execute("UPDATE folder SET shares = ? WHERE symbol = (?) and crypto = ?", (shares, symbol, crypto,))
     balance = shares * price
-    c.execute("UPDATE folder SET balance = ? WHERE symbol = (?) and crypto = ?", (balance, symbol,crypto,))
+    c.execute("UPDATE folder SET balance = ? WHERE symbol = (?) and crypto = ?", (balance, symbol, crypto,))
     conn.commit()
     conn.close()
     if (verbose):
@@ -973,7 +970,7 @@ def GetFolderValue(symbol, crypto, key, folder_list):
     value = None
     if folder_list != []:
         for row in folder_list:
-            if (row['symbol'] == symbol) and (row['crypto'] == crypto):
+            if (row['symbol'] == symbol) and (row['crypto'] == int(crypto)):
                 if row[key] == None:
                     return 0
                 else:
