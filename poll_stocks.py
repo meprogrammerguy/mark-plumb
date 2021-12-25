@@ -49,7 +49,7 @@ def do_something(verbose):
         log['status'] = 'sleep'
         plumb.LogDaemon(log, verbose)
 
-        result, resultError, exceptionError = price_poll(market_open, verbose)
+        result, resultError, exceptionError = price_poll(True, verbose )# always poll because crypto is open 24/7
         if not result:
             if resultError > "":
                 log['status'] = 'error'

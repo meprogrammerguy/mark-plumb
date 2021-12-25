@@ -125,6 +125,12 @@ def QuoteCrypto(quotes, verbose):
     if (verbose):
         pprint.pprint(returnContent)
         print ("***\n")
+    if (returnContent['status']['error_code'] == 1001):
+        answer = {}
+        answer['url'] = url
+        answer["Error Message"] = returnContent['status']['error_message']
+        answers.append(answer)
+        return answers
     if quotes.upper() in returnContent['data']:
         row = returnContent['data'][quotes.upper()]["quote"]["USD"]
         answer = {}
@@ -560,9 +566,9 @@ def Add(symbol, exchange, verbose):
             else:
                 Price(symbol, 0, quote[0], verbose)
                 Shares(symbol, 0, None, verbose)
+    if (errors):
+        return False
     if (verbose):
-        if (errors):
-            pprint.pprint(errors)
         print ("***\n")
     return True
 
@@ -850,7 +856,6 @@ def Update(market_open, verbose):
             quote0_list += row[0] + ","
     quote1_list = quote1_list[:-1]
     quote0_list = quote0_list[:-1]
-    pdb.set_trace()
     if (market_open == True):
         quotes0 = QuoteTradier(quote0_list, verbose)
     quotes1 = QuoteCrypto(quote1_list, verbose)
@@ -984,7 +989,8 @@ def GetFolderStockValue(verbose):
     answer = 0
     for item in folder:
         if item['symbol'] != "$":
-            answer += item['balance']
+            if (item['balance'] != None):
+                answer += item['balance']
     return answer
 
 def PrintFolder(verbose):
@@ -1706,7 +1712,7 @@ def TestDefaults(verbose):
     sys.stdout = print_out
     count = 0
     fails = 0
-    total_tests = 24
+    total_tests = 26
     defaults, types =  GetDefaults(False)
     if defaults == {}:
         result = ResetDefaults(verbose)
@@ -2102,6 +2108,7 @@ def TestFolder(verbose):
     results['pass'] = count
     results['fails'] = fails
     results['output'] = result_string
+    pdb.set_trace()
     return results
 
 def TestAIM(location, verbose):

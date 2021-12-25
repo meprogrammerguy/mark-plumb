@@ -325,12 +325,18 @@ def render_tests():
     count_total += testLow['total']
     test_low = testLow['output']
 
+    testCrypto = plumb.TestCrypto(True)
+    count_pass += testCrypto['pass']
+    count_failures += testCrypto['fails']
+    count_total += testCrypto['total']
+    test_low = testCrypto['output']
+
     test_results = "{0} passes, {1} failures out of {2} total tests run.".format(count_pass, count_failures, count_total)
     test_color = "green;"
     if (count_failures > 0):
         test_color = "red;"
     return render_template('tests.html', test_defaults = test_defaults, test_folder = test_folder, test_history = test_history, test_aim = test_aim, test_results = test_results,
-        test_color = test_color, test_low = test_low)
+        test_color = test_color, test_low = test_low, test_crypto = test_crypto)
 
 @app.errorhandler(404)
 def page_not_found(e):
