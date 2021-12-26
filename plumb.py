@@ -125,7 +125,7 @@ def QuoteCrypto(quotes, verbose):
     if (verbose):
         pprint.pprint(returnContent)
         print ("***\n")
-    if (returnContent['status']['error_code'] == 1001):
+    if (returnContent['status']['error_code'] != 0):
         answer = {}
         answer['url'] = url
         answer["Error Message"] = returnContent['status']['error_message']
@@ -1075,6 +1075,7 @@ def PrintFolder(verbose):
                     if (keys[i] == "balance"):
                         amount_option = []
                         amount_option.append(row[keys.index("symbol")])
+                        amount_option.append(row[keys.index("crypto")])
                         amount_option.append(row[i])
                         amount_option.append(row[keys.index("shares")])
                         amount_options.append(amount_option)
@@ -1613,11 +1614,12 @@ def GetCurrentStockList(stock_list, verbose):
     for item in stock_list:
         ds = {}
         ds['symbol'] = item[0]
-        ds['balance'] = round(item[1], 2)
-        ds['shares'] = round(item[2], 4)
+        ds['crypto'] = item[1]
+        ds['balance'] = round(item[2], 2)
+        ds['shares'] = round(item[3], 4)
         if folder != []:
             for f in folder:
-                if item[0] == f['symbol']:
+                if (item[0] == f['symbol']) and (f['crypto'] == int(item[1])):
                     ds['price'] = f['price']
         dl.append(ds)
     return dl
@@ -2108,7 +2110,6 @@ def TestFolder(verbose):
     results['pass'] = count
     results['fails'] = fails
     results['output'] = result_string
-    pdb.set_trace()
     return results
 
 def TestAIM(location, verbose):
@@ -3233,19 +3234,19 @@ def SnapTables(verbose):
         for j in i['json string']:
             if ("symbol" in j):
                 if ("shares" in j):
-                    c.execute( "INSERT OR IGNORE INTO shares VALUES(?, (?), (?), ?, ?)", (snap, i['post date'], j['symbol'], j['balance'], j['shares'],))
+                    c.execute( "INSERT OR IGNORE INTO shares VALUES(?, (?), (?), ?, ?, ?)", (snap, i['post date'], j['symbol'], j['crypto'], j['balance'], j['shares'],))
                 else:
-                    c.execute( "INSERT OR IGNORE INTO shares VALUES(?, (?), (?), ?, ?)", (snap, i['post date'], j['symbol'], j['balance'], 0,))
+                    c.execute( "INSERT OR IGNORE INTO shares VALUES(?, (?), (?), ?, ?, ?)", (snap, i['post date'], j['symbol'], j['crypto'], j['balance'], 0,))
     dt = datetime.datetime.now()
     for f in folder:
         if ("symbol" in f):
             if ("shares" in f):
-                c.execute( "INSERT OR IGNORE INTO shares VALUES(?, (?), (?), ?, ?)", (snap, dt.strftime('%Y/%m/%d'), f['symbol'], f['balance'], f['shares'],))
+                c.execute( "INSERT OR IGNORE INTO shares VALUES(?, (?), (?), ?, ?, ?)", (snap, dt.strftime('%Y/%m/%d'), f['symbol'], f['crypto'], f['balance'], f['shares'],))
             else:
-                c.execute( "INSERT OR IGNORE INTO shares VALUES(?, (?), (?), ?, ?)", (snap, dt.strftime('%Y/%m/%d'), f['symbol'], f['balance'], 0,))
+                c.execute( "INSERT OR IGNORE INTO shares VALUES(?, (?), (?), ?, ?, ?)", (snap, dt.strftime('%Y/%m/%d'), f['symbol'], f['crypto'], f['balance'], 0,))
     if worksheet != []:
         for w in worksheet:
-            c.execute( "INSERT OR IGNORE INTO worksheet VALUES(?, (?), (?), ?, ?)", (snap, w['plan date'], w['symbol'], w['shares'], w['adjust amount'],))
+            c.execute( "INSERT OR IGNORE INTO worksheet VALUES(?, (?), (?), ?, ?, ?)", (snap, w['plan date'], w['symbol'], f['crypto'], w['shares'], w['adjust amount'],))
     conn.commit()
     conn.close()
     if (verbose):
@@ -3892,7 +3893,7 @@ def BeginWorksheet(market_order, verbose):
         c.execute("UPDATE market SET post_date = ? WHERE key = ?", (today, 1,))
         c.execute("UPDATE market SET posted = (?) WHERE key = ?", ("no", 1,))
         for f in folder:
-            c.execute( "INSERT OR IGNORE INTO worksheet VALUES((?),(?),?,?)", (today, f['symbol'], 0, 0,))
+            c.execute( "INSERT OR IGNORE INTO worksheet VALUES((?),(?),?, ?,?)", (today, f['symbol'], f['crypto'], 0, 0,))
         conn.commit()
         conn.close()
     else:

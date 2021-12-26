@@ -136,7 +136,7 @@ def folder():
                 return(render_folder("display: none;", log, "", ""))
             elif (request.form['action'] == "refresh"):
                 plumb.Update(True, False)
-                return(render_folder("display: none;", "prices updated.", ""))
+                return(render_folder("display: none;", "prices updated.", "", ""))
             elif (request.form['action'] != "symbol"):
                 s = request.form['action']
                 flag = request.form['symbol']
@@ -307,6 +307,12 @@ def render_tests():
     count_total += testFolder['total']
     test_folder = testFolder['output']
 
+    testCrypto = plumb.TestCrypto(True)
+    count_pass += testCrypto['pass']
+    count_failures += testCrypto['fails']
+    count_total += testCrypto['total']
+    test_crypto = testCrypto['output']
+
     testHistory = plumb.TestHistory(True)
     count_pass += testHistory['pass']
     count_failures += testHistory['fails']
@@ -325,18 +331,12 @@ def render_tests():
     count_total += testLow['total']
     test_low = testLow['output']
 
-    testCrypto = plumb.TestCrypto(True)
-    count_pass += testCrypto['pass']
-    count_failures += testCrypto['fails']
-    count_total += testCrypto['total']
-    test_low = testCrypto['output']
-
     test_results = "{0} passes, {1} failures out of {2} total tests run.".format(count_pass, count_failures, count_total)
     test_color = "green;"
     if (count_failures > 0):
         test_color = "red;"
-    return render_template('tests.html', test_defaults = test_defaults, test_folder = test_folder, test_history = test_history, test_aim = test_aim, test_results = test_results,
-        test_color = test_color, test_low = test_low, test_crypto = test_crypto)
+    return render_template('tests.html', test_defaults = test_defaults, test_folder = test_folder, test_crypto = test_crypto, test_history = test_history, test_aim = test_aim, test_results = test_results,
+        test_color = test_color, test_low = test_low)
 
 @app.errorhandler(404)
 def page_not_found(e):
