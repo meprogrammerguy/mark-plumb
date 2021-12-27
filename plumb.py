@@ -564,10 +564,10 @@ def Add(symbol, exchange, verbose):
         else:
             errors.append("Success")
             if (exchange =="coinbase"):
-                Price(symbol, 1, quote[0], verbose)
+                Price(symbol, 1, quote, verbose)
                 Shares(symbol, 1, None, verbose)
             else:
-                Price(symbol, 0, quote[0], verbose)
+                Price(symbol, 0, quote, verbose)
                 Shares(symbol, 0, None, verbose)
     if (verbose):
         print ("***\n")
