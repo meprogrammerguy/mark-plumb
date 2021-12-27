@@ -870,14 +870,14 @@ def Update(market_open, verbose):
             for quote in quotes1:
                 if (row[0] == quote["symbol"] and row[1] == 1):
                     result = Price(row[0], row[1], quote, verbose)
-                    result = Shares(row[0], row[1], str(row[1]), verbose)
+                    result = Shares(row[0], row[1], str(row[2]), verbose)
                     if (result['status']):
                         if (verbose):
                             print ("crypto symbol: {0}, current shares: {1}, previous balance: {2}, current balance: {3}".format(row[0], row[2], row[3], result['balance']))
             for quote in quotes0:
                 if (row[0] == quote["symbol"] and row[1] == 0):
                     result = Price(row[0], row[1], quote, verbose)
-                    result = Shares(row[0], row[1], str(row[1]), verbose)
+                    result = Shares(row[0], row[1], str(row[2]), verbose)
                     if (result['status']):
                         if (verbose):
                             print ("stock symbol: {0}, current shares: {1}, previous balance: {2}, current balance: {3}".format(row[0], row[2], row[3], result['balance']))
