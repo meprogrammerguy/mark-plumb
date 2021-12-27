@@ -117,10 +117,11 @@ def folder():
                     if (request.form['balance'] == ""):
                         return(render_folder("display: none;", "amount is blank, cannot adjust.", "", ""))
                     else:
-                        curr_balance = CurrentBalance(request.form['symbol'], request.form['amount'])
+                        chunks = request.form['symbol'].split(',')
+                        curr_balance = CurrentBalance(chunks[0], chunks[1], request.form['amount'])
                         balance = curr_balance + plumb.to_number(request.form['balance'], False)
-                        log = "company {0}, balance {1}, adjusted by {2}.".format(request.form['symbol'], plumb.as_currency(curr_balance), plumb.as_currency(plumb.to_number(request.form['balance'], False)))
-                        plumb.Balance(request.form['symbol'], str(balance), False)
+                        log = "company {0}, balance {1}, adjusted by {2}.".format(chunks[0], plumb.as_currency(curr_balance), plumb.as_currency(plumb.to_number(request.form['balance'], False)))
+                        plumb.Balance(chunks[0], chunks[1], str(balance), False)
                         return(render_folder("display: none;", log, "", ""))
             elif (request.form['action'] == "remove"):
                 s = request.form['remove_symbol']
@@ -342,9 +343,10 @@ def render_tests():
 def page_not_found(e):
     return render_template('404.html'), 404
 
-def CurrentBalance(symbol, string):
+def CurrentBalance(symbol, crypto, string):
     amounts_list = ast.literal_eval(string)
-    result = [element[1] for element in amounts_list if element[0] == symbol]
+    pdb.set_trace()
+    result = [element[2] for element in amounts_list if (element[0] == symbol) and (element[1] == int(crypto))]
     return result[0]
 
 if __name__ == "__main__":
