@@ -82,7 +82,7 @@ def QuoteTradier(quotes, verbose):
             else:
                 answer['quote'] = "close"
                 answer['price'] = row['close']
-                answer['url'] = url
+            answer['url'] = url
             answers.append(answer)
             if (itm == "symbol"):
                 break
@@ -137,8 +137,10 @@ def QuoteCrypto(quotes, verbose):
         answer['symbol'] = returnContent['data'][quotes.upper()]["symbol"]
         answer['quote'] = "last"
         answer['price'] = row['price']
+        answer['url'] = url
         answers.append(answer)
     else:
+        answer['url'] = url
         answers.append(returnContent)
     return answers
 
