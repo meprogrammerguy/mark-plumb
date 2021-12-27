@@ -556,21 +556,20 @@ def Add(symbol, exchange, verbose):
             quote = QuoteCrypto(symbol, verbose)
         else:
             quote = QuoteTradier(symbol, verbose)
-        errors = []
+        errors = [symbol, quote[0]['url']]
         if ("Error Message" in quote[0]):
-            errors.append([symbol, quote[0]['url'], quote[0]["Error Message"]])
+            errors.append(quote[0]["Error Message"])
         else:
+            errors.append("Success")
             if (exchange =="coinbase"):
                 Price(symbol, 1, quote[0], verbose)
                 Shares(symbol, 1, None, verbose)
             else:
                 Price(symbol, 0, quote[0], verbose)
                 Shares(symbol, 0, None, verbose)
-    if (errors):
-        return False
     if (verbose):
         print ("***\n")
-    return True
+    return errors
 
 def Remove(symbol, exchange, verbose):
     db_file = GetDB(verbose)
@@ -1835,9 +1834,9 @@ def TestDefaults(verbose):
             print ("\tfail.")
         fails += 1
     if (verbose):
-        print ("Test #{0} - Add('AAPL', 'exchange', verbose)".format(count + 1))
-    result = Add( "AAPL", "exchange", verbose)
-    if (result):
+        print ("Test #{0} - Add('AAPL', 'NASDAQ', verbose)".format(count + 1))
+    result = Add( "AAPL", "NASDAQ", verbose)
+    if ("Invalid Access Token" in result) or ("Success" in result):
         if (verbose):
             print ("\tpass.")
         count += 1
@@ -1962,9 +1961,9 @@ def TestFolder(verbose):
             print ("\tfail.")
         fails += 1
     if (verbose):
-        print ("Test #{0} - Add('AAPL', 'exchange', verbose)".format(count + 1))
-    result = Add( "AAPL", "exchange", verbose)
-    if (result):
+        print ("Test #{0} - Add('AAPL', 'NASDAQ', verbose)".format(count + 1))
+    result = Add( "AAPL", "NASDAQ", verbose)
+    if ("Invalid Access Token" in result) or ("Success" in result):
         if (verbose):
             print ("\tpass.")
         count += 1
@@ -2147,7 +2146,7 @@ def TestAIM(location, verbose):
         if (verbose):
             print ("Test #{0} - Add('AAPL', 'NASDAQ', verbose)".format(count + 1))
         result = Add( "AAPL", "NASDAQ", verbose)
-        if (result):
+        if ("Invalid Access Token" in result) or ("Success" in result):
             if (verbose):
                 print ("\tpass.")
             count += 1
@@ -2339,7 +2338,7 @@ def TestHistory(verbose):
     if (verbose):
         print ("Test #{0} - Add('AAPL', 'NASDAQ', verbose)".format(count + 1))
     result = Add( "AAPL", "NASDAQ", verbose)
-    if (result):
+    if ("Invalid Access Token" in result) or ("Success" in result):
         if (verbose):
             print ("\tpass.")
         count += 1
@@ -3189,6 +3188,8 @@ def BumpSnap(verbose):
             c.execute("UPDATE key SET tradier_key = (?) WHERE key = ?", (d['tradier key'], 1,))
         if ("IEX key" in d):
             c.execute("UPDATE key SET IEX_key = (?) WHERE key = ?", (d['IEX key'], 1,))
+        if ("coin key" in d):
+            c.execute("UPDATE key SET coin_key = (?) WHERE key = ?", (d['coin key'], 1,))
     conn.commit()
     conn.close()
     if (verbose):
@@ -3369,8 +3370,8 @@ def CreateArchive(verbose):
         print("CreateArchive(3) {0}".format(e))
         return False
     c = conn.cursor()
-    c.execute("CREATE TABLE if not exists `key` ( `key` INTEGER NOT NULL UNIQUE, `last_snap` INTEGER, `tradier_key` TEXT, `IEX_key` TEXT )")
-    c.execute( "INSERT OR IGNORE INTO key(key, last_snap, tradier_key, IEX_key) VALUES(?, ?, ?, ?)", (1,0,"","",))
+    c.execute("CREATE TABLE if not exists `key` ( `key` INTEGER NOT NULL UNIQUE, `last_snap` INTEGER, `tradier_key` TEXT, `IEX_key` TEXT, `coin_key` TEXT )")
+    c.execute( "INSERT OR IGNORE INTO key(key, last_snap, tradier_key, IEX_key, coin_key) VALUES(?, ?, ?, ?, ?)", (1,0,"","","",))
     c.execute("CREATE TABLE if not exists 'summary' ( `snap_date` TEXT NOT NULL, `folder_name` TEXT NOT NULL, `snapshot` INTEGER NOT NULL, `aim_rows` INTEGER, `shares_rows` INTEGER, `worksheet_rows` INTEGER, `initial` REAL, `profit_percent` INTEGER, PRIMARY KEY(`snap_date`,`folder_name`,`snapshot`) )")
     c.execute("CREATE TABLE if not exists 'aim' ( `snapshot` INTEGER NOT NULL, `post_date` TEXT NOT NULL, `stock_value` REAL, `cash` REAL, `portfolio_control` REAL, `buy_sell_advice` REAL, `market_order` REAL, `portfolio_value` REAL, PRIMARY KEY(`snapshot`,`post_date`) )")
     c.execute("CREATE TABLE if not exists 'shares' ( `snapshot` INTEGER NOT NULL, `post_date` TEXT NOT NULL, `symbol` TEXT NOT NULL, `crypto` INTEGER, `balance` REAL, `shares` REAL, PRIMARY KEY(`snapshot`,`post_date`,`crypto`,`symbol`) )")
