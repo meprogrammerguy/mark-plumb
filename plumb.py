@@ -871,14 +871,14 @@ def Update(market_open, verbose):
                 if (row[0] == quote["symbol"] and row[1] == 1):
                     result = Price(row[0], row[1], quote, verbose)
                     result = Shares(row[0], row[1], str(row[2]), verbose)
-                    if (result['status']):
+                    if (result['status'] == True):
                         if (verbose):
                             print ("crypto symbol: {0}, current shares: {1}, previous balance: {2}, current balance: {3}".format(row[0], row[2], row[3], result['balance']))
             for quote in quotes0:
                 if (row[0] == quote["symbol"] and row[1] == 0):
                     result = Price(row[0], row[1], quote, verbose)
                     result = Shares(row[0], row[1], str(row[2]), verbose)
-                    if (result['status']):
+                    if (result['status'] == True):
                         if (verbose):
                             print ("stock symbol: {0}, current shares: {1}, previous balance: {2}, current balance: {3}".format(row[0], row[2], row[3], result['balance']))
     if (verbose):
@@ -4069,7 +4069,7 @@ def CalculateWorksheet(adjust, verbose):
     for a in adjust:
         for w in worksheet:
             if (w['symbol'] != "$"):
-                if (w['symbol'] == a['symbol']):
+                if (w['symbol'] == a['symbol']) and (w['crypto'] == a['crypto']):
                     a['amount'] = abs(w['adjust amount']) + to_number(a['adjust'], verbose)
                     if (a['amount'] < 0):
                         a['amount'] = 0
@@ -4088,7 +4088,7 @@ def CalculateWorksheet(adjust, verbose):
     for a in adjust:
         for f in folder:
             if (f['symbol'] != "$"):
-                if (f['symbol'] == a['symbol']):
+                if (f['symbol'] == a['symbol']) and (f['crypto'] == a['crypto']):
                     shares = 0.0
                     if (f['price'] > 0):
                         shares = a['amount'] / f['price']
@@ -4127,13 +4127,13 @@ def PostWorksheet(verbose):
         c = conn.cursor()
         for w in worksheet:
             for f in folder:
-                if (w['symbol'] == f['symbol']):
+                if (w['symbol'] == f['symbol']) and (w['crypto'] == f['crypto']):
                     if (w['symbol'] == "$"):
                         amount = f['balance'] + w['adjust amount']
-                        c.execute("UPDATE folder SET balance = ? WHERE symbol = '$'", (amount,))
+                        c.execute("UPDATE folder SET balance = ? WHERE symbol = '$' and crypto = 0", (amount,))
                     else:
                         amount = f['shares'] + w['shares']
-                        c.execute("UPDATE folder SET shares = ? WHERE symbol = (?)", (amount, w['symbol'],))
+                        c.execute("UPDATE folder SET shares = ? WHERE symbol = (?) and crypto = ?", (amount, w['symbol'], w['crypto'],))
         c.execute("UPDATE market SET posted = (?) WHERE key = 1", ("yes",))
         c.execute("DELETE from worksheet WHERE adjust_amount = 0")
         conn.commit()

@@ -36,7 +36,7 @@ def do_something(verbose):
             df = plumb.GetDB(False)
         log['poll minutes'] = dm
         log['dbase name'] = df
-        market_open = Flase
+        market_open = False
         if plumb.DayisOpen(False) and (not plumb.DayisClosed(False)):
             market_open = True
             log['open'] = defaults['open']
