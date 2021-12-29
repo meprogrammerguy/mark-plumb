@@ -1173,13 +1173,11 @@ def AllocationTrends(verbose):
         if (row['symbol'] != "$"):
             if (row['balance'] is not None):
                 total = total + row['balance']
-    if (total == 0):
-        total = 1
     allocation = ""
     for row in rows:
         pst = 0
         if (row['symbol'] != "$"):
-            if (row['balance'] is not None):
+            if (row['balance'] is not None) and (total != 0):
                 pst = row['balance'] / total * 100.
             allocation = allocation + "<li>{0} {1}</li>".format(row['symbol'], as_percent(pst))
     trends = []
@@ -1190,7 +1188,7 @@ def AllocationTrends(verbose):
                     pst = 0
                     test = 0
                     trend = {}
-                    if (col['price'] is not None):
+                    if (col['price'] is not None) and (col['price'] != 0):
                         pst = (row['price'] - col['price']) / col['price'] * 100.
                         if pst == 0:
                             trend['arrow'] = "flat"
@@ -1209,7 +1207,7 @@ def AllocationTrends(verbose):
                 pst = 0
                 test = 0
                 trend = {}
-                if (col['balance'] is not None):
+                if (col['balance'] is not None) and (col['balance'] != 0):
                     pst = (row['balance'] - col['balance']) / col['balance'] * 100.
                     if pst == 0:
                         trend['arrow'] = "flat"
