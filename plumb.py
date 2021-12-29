@@ -52,21 +52,30 @@ def QuoteTradier(quotes, verbose):
     try:
         response = connection.getresponse()
         content = response.read()
+        if (verbose):
+            pprint.pprint(content)
+            print ("***\n")
         if (b"Invalid Access Token" in content):
             answer = {}
             answer['url'] = url
             answer["Error Message"] = "Invalid Access Token"
             answers.append(answer)
             return answers
-        returnContent = json.loads(content.decode('utf-8'))
+        if (b'Invalid Parameter: symbols' in content):
+            answer = {}
+            answer['url'] = url
+            answer["Error Message"] = "Invalid Parameter: symbols"
+            answers.append(answer)
+            return answers
     except http.client.HTTPException as e:
         answer = {}
         answer['url'] = url
         answer["Error Message"] = e
         answers.append(answer)
         return answers
+    returnContent = json.loads(content.decode('utf-8'))
     if (verbose):
-        pprint.pprint(returnContent)
+        pprint.pprint(content)
         print ("***\n")
     if "quote" in returnContent['quotes']:
         for itm in returnContent['quotes']['quote']:
@@ -131,17 +140,19 @@ def QuoteCrypto(quotes, verbose):
         answer["Error Message"] = returnContent['status']['error_message']
         answers.append(answer)
         return answers
-    if quotes.upper() in returnContent['data']:
-        row = returnContent['data'][quotes.upper()]["quote"]["USD"]
-        answer = {}
-        answer['symbol'] = returnContent['data'][quotes.upper()]["symbol"]
-        answer['quote'] = "last"
-        answer['price'] = row['price']
-        answer['url'] = url
-        answers.append(answer)
-    else:
-        answer['url'] = url
-        answers.append(returnContent)
+    for itm in  quotes.upper().split(","):
+        if itm in returnContent['data']:
+            row = returnContent['data'][itm]["quote"]["USD"]
+            answer = {}
+            answer['symbol'] = returnContent['data'][itm]["symbol"]
+            answer['quote'] = "last"
+            answer['price'] = row['price']
+            answer['url'] = url
+            answers.append(answer)
+        else:
+            answer = {}
+            answer['url'] = url
+            answers.append(returnContent)
     return answers
 
 def Holiday(verbose):
@@ -850,6 +861,8 @@ def Update(market_open, verbose):
     quote0_list = ""
     quote1 = []
     quote0 = []
+    quotes0 = []
+    quotes1 = []
     for row in rows:
         if (row[1] == 1):
             quote1_list += row[0] + ","
@@ -857,13 +870,14 @@ def Update(market_open, verbose):
             quote0_list += row[0] + ","
     quote1_list = quote1_list[:-1]
     quote0_list = quote0_list[:-1]
-    if (market_open == True):
+    if (market_open == True) and (quote0_list != ""):
         quotes0 = QuoteTradier(quote0_list, verbose)
-    quotes1 = QuoteCrypto(quote1_list, verbose)
+    if (quote1_list != ""):
+        quotes1 = QuoteCrypto(quote1_list, verbose)
     errors = []
-    if ("Error Message" in quotes1[0]):
+    if (quotes1 != []) and ("Error Message" in quotes1[0]):
         errors.append(quotes1)
-    if ("Error Message" in quotes0[0]):
+    if (quotes0 != []) and ("Error Message" in quotes0[0]):
         errors.append(quotes0)
     if errors == []:
         for row in rows:
@@ -1172,11 +1186,11 @@ def AllocationTrends(verbose):
     for row in rows:
         for col in last_list:
             if (row['symbol'] != "$"):
-                if (row['symbol'] == col['symbol']):
+                if (row['symbol'] == col['symbol'] and row['crypto'] == col['crypto']):
                     pst = 0
                     test = 0
                     trend = {}
-                    if (row['price'] is not None):
+                    if (col['price'] is not None):
                         pst = (row['price'] - col['price']) / col['price'] * 100.
                         if pst == 0:
                             trend['arrow'] = "flat"
@@ -1191,11 +1205,11 @@ def AllocationTrends(verbose):
     life_trends = []
     for row in rows:
         for col in first_list:
-            if (row['symbol'] == col['symbol']):
+            if (row['symbol'] == col['symbol'] and row['crypto'] == col['crypto']):
                 pst = 0
                 test = 0
                 trend = {}
-                if (row['balance'] is not None):
+                if (col['balance'] is not None):
                     pst = (row['balance'] - col['balance']) / col['balance'] * 100.
                     if pst == 0:
                         trend['arrow'] = "flat"

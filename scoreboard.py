@@ -345,7 +345,6 @@ def page_not_found(e):
 
 def CurrentBalance(symbol, crypto, string):
     amounts_list = ast.literal_eval(string)
-    pdb.set_trace()
     result = [element[2] for element in amounts_list if (element[0] == symbol) and (element[1] == int(crypto))]
     return result[0]
 

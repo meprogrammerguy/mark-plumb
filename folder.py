@@ -139,7 +139,7 @@ def main(argv):
             print ("failed.")
         exit()
     if (update):
-        updateResult, updateError = plumb.Update(verbose)
+        updateResult, updateError = plumb.Update(True, verbose)
         if (updateResult):
             print ("prices updated.")
         else:
