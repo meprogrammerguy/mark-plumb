@@ -92,6 +92,7 @@ def QuoteTradier(quotes, verbose):
                 answer['quote'] = "close"
                 answer['price'] = row['close']
             answer['url'] = url
+            answer['description'] = row['description']
             answers.append(answer)
             if (itm == "symbol"):
                 break
@@ -148,6 +149,7 @@ def QuoteCrypto(quotes, verbose):
             answer['quote'] = "last"
             answer['price'] = row['price']
             answer['url'] = url
+            answer['description'] = row['description']
             answers.append(answer)
         else:
             answer = {}
@@ -569,7 +571,7 @@ def Add(symbol, exchange, verbose):
             quote = QuoteCrypto(symbol, verbose)
         else:
             quote = QuoteTradier(symbol, verbose)
-        errors = [symbol, quote[0]['url']]
+        errors = [symbol, quote[0]['url'], quote[0]['description']]
         if ("Error Message" in quote[0]):
             errors.append(quote[0]["Error Message"])
         else:
@@ -1951,12 +1953,88 @@ def TestDefaults(verbose):
     return results
 
 def TestCrypto(verbose):
+   # old_stdout = sys.stdout
+    #print_out = StringIO()
+    #sys.stdout = print_out
+    count = 0
+    fails = 0
+    total_tests = 5
+    defaults, types = GetDefaults(verbose)
+    if (verbose):
+        print ("Test #{0} - UpdateDefaultItem('folder name', 'Test Crypto', verbose)".format(count + 1))
+    result = UpdateDefaultItem("folder name", "Test Crypto", verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+    if (verbose):
+        print ("Test #{0} - Add('MMM', 'NASDAQ', verbose)".format(count + 1))
+    result = Add( "MMM", "NASDAQ", verbose)
+    if ("Invalid Access Token" in result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    elif ("Success" in result) and (result[2] == "3M Co"):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+    if (verbose):
+        print ("Test #{0} - Balance('$', 0, '5000', verbose)".format(count + 1))
+    result = Balance( "$", 0, "5000", verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+    if (verbose):
+        print ("Test #{0} - GetFolderCount(verbose)".format(count + 1))
+    result = GetFolderCount(verbose)
+    if (result > 0):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+
+    if (verbose):
+        print ("Test #{0} - DeleteName('Test Crypto', verbose)".format(count + 1))
+    result = DeleteName("Test Crypto", verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+    testResults = False
+    if (fails == 0 and count == total_tests):
+        print ("ran {0} tests, all pass".format(total_tests))
+        testResults = True
+    else:
+        print ("test count expected {0} passes, received {1}, failures {2}".format(total_tests, count, fails))
+        testResults =  False
+    sys.stdout = old_stdout
+    result_string = print_out.getvalue()
     results = {}
-    results['status'] = False
-    results['total'] = 0
-    results['pass'] = 0
-    results['fails'] = 0
-    results['output'] = "TestCrypto stub"
+    results['status'] = testResults
+    results['total'] = total_tests
+    results['pass'] = count
+    results['fails'] = fails
+    results['output'] = result_string
     return results
 
 def TestFolder(verbose):

@@ -36,7 +36,7 @@ def main(argv):
             assert False, "unhandled option"
     if (test):
         testResult = plumb.TestCrypto(verbose)
-        print(testResult)
+        print(testResult['output'])
         exit()
     if (info):
         if (symbol == ""):
