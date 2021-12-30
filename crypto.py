@@ -13,7 +13,7 @@ def main(argv):
     quote = False
     symbol = ""
     try:
-        opts, args = getopt.getopt(argv, 'hvtiq:s', ['help', 'verbose', 'test', 'info', 'quote', 'symbol='])
+        opts, args = getopt.getopt(argv, 'hvtiqs:', ['help', 'verbose', 'test', 'info', 'quote', 'symbol='])
     except getopt.GetoptError as err:
         print(err)
         usage()

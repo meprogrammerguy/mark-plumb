@@ -104,7 +104,7 @@ def main(argv):
             exit()
         balanceResult = plumb.Balance(symbol, 0, balance, verbose)
         if (balanceResult['status']):
-            print ("stock symbol: {0}, current shares: {1}".format(symbol, balanceResult['shares']))
+            print ("stock symbol: {0}, balance: {1}, new shares: {2}".format(symbol, balanceResult['balance'], balanceResult['shares']))
         else:
             print ("failed.")
         exit()
@@ -114,7 +114,7 @@ def main(argv):
             exit()
         balanceResult = plumb.Balance(symbol, 1, balance, verbose)
         if (balanceResult['status']):
-            print ("crypto symbol: {0}, current shares: {1}".format(symbol, balanceResult['shares']))
+            print ("crypto symbol: {0}, balance: {1}, new shares: {2}".format(symbol, balanceResult['balance'], balanceResult['shares']))
         else:
             print ("failed.")
         exit()
@@ -124,7 +124,7 @@ def main(argv):
             exit()
         sharesResult = plumb.Shares(symbol, 0, shares, verbose)
         if (sharesResult['status']):
-            print ("stock symbol: {0}, current balance: {1}".format(symbol, sharesResult['balance']))
+            print ("stock symbol: {0}, shares: {1}, new balance: {2}".format(symbol, sharesResult['shares'], sharesResult['balance']))
         else:
             print ("failed.")
         exit()
@@ -134,7 +134,7 @@ def main(argv):
             exit()
         sharesResult = plumb.Shares(symbol, 1, shares, verbose)
         if (sharesResult['status']):
-            print ("crypto symbol: {0}, current balance: {1}".format(symbol, sharesResult['balance']))
+            print ("crypto symbol: {0}, shares: {1}, new balance: {2}".format(symbol, sharesResult['shares'], sharesResult['balance']))
         else:
             print ("failed.")
         exit()

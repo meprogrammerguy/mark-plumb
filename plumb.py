@@ -575,10 +575,10 @@ def Add(symbol, exchange, verbose):
         else:
             errors.append("Success")
             if (exchange =="coinbase"):
-                Price(symbol, 1, quote, verbose)
+                Price(symbol, 1, quote[0]["price"], verbose)
                 Shares(symbol, 1, None, verbose)
             else:
-                Price(symbol, 0, quote, verbose)
+                Price(symbol, 0, quote[0]["price"], verbose)
                 Shares(symbol, 0, None, verbose)
     if (verbose):
         print ("***\n")
@@ -609,29 +609,27 @@ def Remove(symbol, exchange, verbose):
         print ("***\n")
     return True
 
-def Price(symbol, crypto, quote, verbose):
+def Price(symbol, crypto, price, verbose):
     db_file = GetDB(verbose)
     if (verbose):
         print ("***")
         print ("Price(1) symbol: {0}".format(symbol))
         print ("Price(2) crypto: {0}".format(crypto))
-        print ("Price(3) price: {0}".format(quote['price']))
-        print ("Price(4) quote: {0}".format(quote['quote']))
-        print ("Price(5) dbase: {0}".format(db_file))
+        print ("Price(3) price: {0}".format(price))
+        print ("Price(4) dbase: {0}".format(db_file))
     result = CreateFolder(symbol, crypto, verbose)
     if (result):
         try:
             conn = sqlite3.connect(db_file)
             if (verbose):
-                print("Price(6) sqlite3: {0}".format(sqlite3.version))
+                print("Price(5) sqlite3: {0}".format(sqlite3.version))
         except Error as e:
-            print("Price(7) {0}".format(e))
+            print("Price(6) {0}".format(e))
             return False
         c = conn.cursor()
-        c.execute("UPDATE folder SET price = ? WHERE symbol = (?) and crypto = ?", (quote['price'], symbol,crypto,))
-        c.execute("UPDATE folder SET quote = ? WHERE symbol = (?) and crypto = ?", (quote['quote'], symbol,crypto,))
+        c.execute("UPDATE folder SET price = ? WHERE symbol = (?) and crypto = ?", (price, symbol, crypto, ))
         dt = datetime.datetime.now()
-        c.execute("UPDATE folder SET update_time = (?) WHERE symbol = (?) and crypto = ?", (dt.strftime("%m/%d/%y %H:%M"), symbol,crypto,))
+        c.execute("UPDATE folder SET update_time = (?) WHERE symbol = (?) and crypto = ?", (dt.strftime("%m/%d/%y %H:%M"), symbol ,crypto, ))
         conn.commit()
         conn.close()
     if (verbose):
@@ -757,6 +755,11 @@ def Shares(symbol, crypto, shares, verbose):
         return result
     folder = GetFolder(verbose)
     price = GetFolderValue(symbol, crypto, "price", folder)
+    balance = 0
+    if (price is None):
+        price = 0
+    if price > 0:
+        balance = shares * price
     try:
         conn = sqlite3.connect(db_file)
         if (verbose):
@@ -777,6 +780,8 @@ def Shares(symbol, crypto, shares, verbose):
         print ("***\n")
     result['status'] = True
     result['balance'] = balance
+    result['shares'] = shares
+    result['price'] = price
     return result
 
 def Balance(symbol, crypto, balance, verbose):
@@ -807,6 +812,11 @@ def Balance(symbol, crypto, balance, verbose):
         return result
     folder = GetFolder(verbose)
     price = GetFolderValue(symbol, crypto, "price", folder)
+    shares = 0
+    if (price is None):
+        price = 0
+    if price > 0:
+        shares = balance / price
     try:
         conn = sqlite3.connect(db_file)
         if (verbose):
@@ -818,11 +828,6 @@ def Balance(symbol, crypto, balance, verbose):
         result['exception'] = e
         return result
     c = conn.cursor()
-    shares = 0
-    if (price is None):
-        price = 0
-    if price > 0:
-        shares = balance / price
     c.execute("UPDATE folder SET shares = ? WHERE symbol = (?) and crypto = ?", (shares, symbol,crypto,))
     c.execute("UPDATE folder SET balance = ? WHERE symbol = (?) and crypto = ?", (balance, symbol,crypto,))
     conn.commit()
@@ -831,6 +836,8 @@ def Balance(symbol, crypto, balance, verbose):
         print ("***\n")
     result['status'] = True
     result['shares'] = shares
+    result['balance'] = balance
+    result['price'] = price
     return result
 
 def Update(market_open, verbose):
@@ -883,14 +890,14 @@ def Update(market_open, verbose):
         for row in rows:
             for quote in quotes1:
                 if (row[0] == quote["symbol"] and row[1] == 1):
-                    result = Price(row[0], row[1], quote, verbose)
+                    result = Price(row[0], row[1], quote["price"], verbose)
                     result = Shares(row[0], row[1], str(row[2]), verbose)
                     if (result['status'] == True):
                         if (verbose):
                             print ("crypto symbol: {0}, current shares: {1}, previous balance: {2}, current balance: {3}".format(row[0], row[2], row[3], result['balance']))
             for quote in quotes0:
                 if (row[0] == quote["symbol"] and row[1] == 0):
-                    result = Price(row[0], row[1], quote, verbose)
+                    result = Price(row[0], row[1], quote["price"], verbose)
                     result = Shares(row[0], row[1], str(row[2]), verbose)
                     if (result['status'] == True):
                         if (verbose):
@@ -1722,9 +1729,9 @@ def PrintAIM(printyear, verbose):
 #endregion aim
 #region tests
 def TestDefaults(verbose):
-    old_stdout = sys.stdout
-    print_out = StringIO()
-    sys.stdout = print_out
+    #old_stdout = sys.stdout
+    #print_out = StringIO()
+    #sys.stdout = print_out
     count = 0
     fails = 0
     total_tests = 26
@@ -1870,11 +1877,8 @@ def TestDefaults(verbose):
             print ("\tfail.")
         fails += 1
     if (verbose):
-        print ("Test #{0} - Price('AAPL', 0, quote, verbose)".format(count + 1))
-    quote = {}
-    quote['price'] = 50.55
-    quote['quote'] = "test"
-    result = Price("AAPL", 0, quote, verbose)
+        print ("Test #{0} - Price('AAPL', 0, 50.55, verbose)".format(count + 1))
+    result = Price("AAPL", 0, 50.55, verbose)
     if (result):
         if (verbose):
             print ("\tpass.")
@@ -1889,7 +1893,7 @@ def TestDefaults(verbose):
     print (result)
     if result != []:
         for item in result:
-            if item['symbol'] == "AAPL":
+            if item['symbol'] == "AAPL" and item['crypto'] == 0:
                 if item['price'] == 50.55 and item['quote'] == "test":
                     if (verbose):
                         print ("\tpass.")
