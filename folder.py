@@ -56,8 +56,8 @@ def main(argv):
         else:
             assert False, "unhandled option"
     if (test):
-        testResult = plumb.TestFolder(verbose)
-        print(testResult['output'])
+        testResult = plumb.TestFolder(False, verbose)
+        print(testResult)
         exit()
     defaults, types = plumb.GetDefaults(verbose)
     if defaults['folder name'] is None:

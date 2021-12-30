@@ -1868,7 +1868,7 @@ def TestDefaults(saved, verbose):
         if (verbose):
             print ("\tpass.")
         count += 1
-    elif ("Success" in result) and (result[2] == "3M Co"):
+    elif ("Success" in result) and (result[2] == "Apple Inc"):
         if (verbose):
             print ("\tpass.")
         count += 1
@@ -2077,7 +2077,7 @@ def TestFolder(saved, verbose):
         if (verbose):
             print ("\tpass.")
         count += 1
-    elif ("Success" in result) and (result[2] == "3M Co"):
+    elif ("Success" in result) and (result[2] == "Apple Inc"):
         if (verbose):
             print ("\tpass.")
         count += 1
@@ -2234,10 +2234,10 @@ def TestAIM(location, saved, verbose):
         sys.stdout = print_out
     count = 0
     fails = 0
+    total_tests = 455
     defaults, types = GetDefaults(False)
     status, keys, rows = LoadTest(location, verbose)
     if (status and (defaults is not None)):
-        total_tests = 4
         if (verbose):
             print ("Test #{0} - UpdateDefaultItem('folder name', 'Test Aim', verbose)".format(count + 1))
         result = UpdateDefaultItem("folder name", "Test Aim", verbose)
@@ -2249,44 +2249,6 @@ def TestAIM(location, saved, verbose):
             if (verbose):
                 print ("\tfail.")
             fails += 1
-        if (verbose):
-            print ("Test #{0} - Balance('$', 0, '5000', verbose)".format(count + 1))
-        result = Balance( "$", 0, "5000", verbose)
-        if (result):
-            if (verbose):
-                print ("\tpass.")
-            count += 1
-        else:
-            if (verbose):
-                print ("\tfail.")
-            fails += 1
-        if (verbose):
-            print ("Test #{0} - Add('AAPL', 'NASDAQ', verbose)".format(count + 1))
-        result = Add( "AAPL", "NASDAQ", verbose)
-        if ("Invalid Access Token" in result):
-            if (verbose):
-                print ("\tpass.")
-            count += 1
-        elif ("Success" in result) and (result[2] == "3M Co"):
-            if (verbose):
-                print ("\tpass.")
-            count += 1
-        if (verbose):
-            print ("Test #{0} - DeleteName('Test Aim', verbose)".format(count + 1))
-        result = DeleteName("Test Aim", verbose)
-        if (result):
-            if (verbose):
-                print ("\tpass.")
-            count += 1
-        else:
-            if (verbose):
-                print ("\tfail.")
-            fails += 1
-    else:
-        total_tests = 457
-        if (verbose):
-            print ("\tfail.")
-        fails += 1
         if (verbose):
             print ("Test #{0} - Balance('$', 0, '5000', verbose)".format(count + 1))
         result = Balance( "$", 0, "5000", verbose)
@@ -2478,7 +2440,7 @@ def TestHistory(saved, verbose):
         if (verbose):
             print ("\tpass.")
         count += 1
-    elif ("Success" in result) and (result[2] == "3M Co"):
+    elif ("Success" in result) and (result[2] == "Apple Inc"):
         if (verbose):
             print ("\tpass.")
         count += 1
