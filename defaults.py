@@ -67,8 +67,8 @@ def main(argv):
         else:
             assert False, "unhandled option"
     if (test):
-        testResult = plumb.TestDefaults(verbose)
-        print (testResult['output'])
+        testResult = plumb.TestDefaults(False, verbose)
+        print (testResult)
         exit()
     if (key > "" and item > ""):
         if item > "":

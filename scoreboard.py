@@ -296,37 +296,37 @@ def render_tests():
     count_failures = 0
     count_total = 0
 
-    testDefaults = plumb.TestDefaults(True)
+    testDefaults = plumb.TestDefaults(True, True)
     count_pass += testDefaults['pass']
     count_failures += testDefaults['fails']
     count_total += testDefaults['total']
     test_defaults = testDefaults['output']
 
-    testFolder = plumb.TestFolder(True)
+    testFolder = plumb.TestFolder(True, True)
     count_pass += testFolder['pass']
     count_failures += testFolder['fails']
     count_total += testFolder['total']
     test_folder = testFolder['output']
 
-    testCrypto = plumb.TestCrypto(True)
+    testCrypto = plumb.TestCrypto(True, True)
     count_pass += testCrypto['pass']
     count_failures += testCrypto['fails']
     count_total += testCrypto['total']
     test_crypto = testCrypto['output']
 
-    testHistory = plumb.TestHistory(True)
+    testHistory = plumb.TestHistory(True, True)
     count_pass += testHistory['pass']
     count_failures += testHistory['fails']
     count_total += testHistory['total']
     test_history = testHistory['output']
 
-    testAIM = plumb.TestAIM("aim", True)
+    testAIM = plumb.TestAIM("aim", True, True)
     count_pass += testAIM['pass']
     count_failures += testAIM['fails']
     count_total += testAIM['total']
     test_aim = testAIM['output']
 
-    testLow = plumb.TestLow(True)
+    testLow = plumb.TestLow(True, True)
     count_pass += testLow['pass']
     count_failures += testLow['fails']
     count_total += testLow['total']

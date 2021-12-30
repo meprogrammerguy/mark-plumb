@@ -247,6 +247,7 @@ def Company(ticker, verbose):
             raise
     returnCompany = json.loads(str(soup.text))
     if (verbose):
+        print (returnCompany)
         print ("***\n")
     return returnCompany
 
@@ -295,13 +296,14 @@ def CryptoCompany(ticker, verbose):
         answer["companyName"] = returnCompany['status']['error_message']
         answer['error_code'] = returnCompany['status']['error_code']
         return answer
-    if (verbose):
-        print ("***\n")
     returnCompany['description'] =  returnCompany['data'][ticker.upper()]['description']
     returnCompany['symbol'] =  returnCompany['data'][ticker.upper()]['symbol']
     returnCompany['companyName'] =  returnCompany['data'][ticker.upper()]['name']
     returnCompany['website'] =  returnCompany['data'][ticker.upper()]['urls']['website']
     returnCompany['exchange'] =  "coinbase"
+    if (verbose):
+        print (returnCompany)
+        print ("***\n")
     return returnCompany
 
 def UpdateDefaultItem(key, item, verbose):
@@ -571,10 +573,11 @@ def Add(symbol, exchange, verbose):
             quote = QuoteCrypto(symbol, verbose)
         else:
             quote = QuoteTradier(symbol, verbose)
-        errors = [symbol, quote[0]['url'], quote[0]['description']]
+        errors = [symbol, quote[0]['url']]
         if ("Error Message" in quote[0]):
             errors.append(quote[0]["Error Message"])
         else:
+            errors.append(quote[0]['description'])
             errors.append("Success")
             if (exchange =="coinbase"):
                 Price(symbol, 1, quote[0]["price"], verbose)
@@ -583,6 +586,7 @@ def Add(symbol, exchange, verbose):
                 Price(symbol, 0, quote[0]["price"], verbose)
                 Shares(symbol, 0, None, verbose)
     if (verbose):
+        print (errors)
         print ("***\n")
     return errors
 
@@ -1730,10 +1734,11 @@ def PrintAIM(printyear, verbose):
     return table.__html__(), export_options
 #endregion aim
 #region tests
-def TestDefaults(verbose):
-    #old_stdout = sys.stdout
-    #print_out = StringIO()
-    #sys.stdout = print_out
+def TestDefaults(saved, verbose):
+    if (saved):
+        old_stdout = sys.stdout
+        print_out = StringIO()
+        sys.stdout = print_out
     count = 0
     fails = 0
     total_tests = 26
@@ -1859,7 +1864,11 @@ def TestDefaults(verbose):
     if (verbose):
         print ("Test #{0} - Add('AAPL', 'NASDAQ', verbose)".format(count + 1))
     result = Add( "AAPL", "NASDAQ", verbose)
-    if ("Invalid Access Token" in result) or ("Success" in result):
+    if ("Invalid Access Token" in result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    elif ("Success" in result) and (result[2] == "3M Co"):
         if (verbose):
             print ("\tpass.")
         count += 1
@@ -1892,11 +1901,10 @@ def TestDefaults(verbose):
     if (verbose):
         print ("Test #{0} - GetFolder(verbose)".format(count + 1))
     result = GetFolder(verbose)
-    print (result)
     if result != []:
         for item in result:
             if item['symbol'] == "AAPL" and item['crypto'] == 0:
-                if item['price'] == 50.55 and item['quote'] == "test":
+                if item['price'] == 50.55 and item['quote'] == None:
                     if (verbose):
                         print ("\tpass.")
                     count += 1
@@ -1942,8 +1950,10 @@ def TestDefaults(verbose):
     else:
         print ("test count expected {0} passes, received {1}, failures {2}".format(total_tests, count, fails))
         testResults =  False
-    sys.stdout = old_stdout
-    result_string = print_out.getvalue()
+    result_string = ""
+    if (saved):
+        sys.stdout = old_stdout
+        result_string = print_out.getvalue()
     results = {}
     results['status'] = testResults
     results['total'] = total_tests
@@ -1952,10 +1962,11 @@ def TestDefaults(verbose):
     results['output'] = result_string
     return results
 
-def TestCrypto(verbose):
-   # old_stdout = sys.stdout
-    #print_out = StringIO()
-    #sys.stdout = print_out
+def TestCrypto(saved, verbose):
+    if (saved):
+        old_stdout = sys.stdout
+        print_out = StringIO()
+        sys.stdout = print_out
     count = 0
     fails = 0
     total_tests = 5
@@ -2027,8 +2038,10 @@ def TestCrypto(verbose):
     else:
         print ("test count expected {0} passes, received {1}, failures {2}".format(total_tests, count, fails))
         testResults =  False
-    sys.stdout = old_stdout
-    result_string = print_out.getvalue()
+    result_string = ""
+    if (saved):
+        sys.stdout = old_stdout
+        result_string = print_out.getvalue()
     results = {}
     results['status'] = testResults
     results['total'] = total_tests
@@ -2037,10 +2050,11 @@ def TestCrypto(verbose):
     results['output'] = result_string
     return results
 
-def TestFolder(verbose):
-    old_stdout = sys.stdout
-    print_out = StringIO()
-    sys.stdout = print_out
+def TestFolder(saved, verbose):
+    if (saved):
+        old_stdout = sys.stdout
+        print_out = StringIO()
+        sys.stdout = print_out
     count = 0
     fails = 0
     total_tests = 13
@@ -2059,7 +2073,11 @@ def TestFolder(verbose):
     if (verbose):
         print ("Test #{0} - Add('AAPL', 'NASDAQ', verbose)".format(count + 1))
     result = Add( "AAPL", "NASDAQ", verbose)
-    if ("Invalid Access Token" in result) or ("Success" in result):
+    if ("Invalid Access Token" in result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    elif ("Success" in result) and (result[2] == "3M Co"):
         if (verbose):
             print ("\tpass.")
         count += 1
@@ -2197,8 +2215,10 @@ def TestFolder(verbose):
     else:
         print ("test count expected {0} passes, received {1}, failures {2}".format(total_tests, count, fails))
         testResults =  False
-    sys.stdout = old_stdout
-    result_string = print_out.getvalue()
+    result_string = ""
+    if (saved):
+        sys.stdout = old_stdout
+        result_string = print_out.getvalue()
     results = {}
     results['status'] = testResults
     results['total'] = total_tests
@@ -2207,16 +2227,17 @@ def TestFolder(verbose):
     results['output'] = result_string
     return results
 
-def TestAIM(location, verbose):
-    old_stdout = sys.stdout
-    print_out = StringIO()
-    sys.stdout = print_out
+def TestAIM(location, saved, verbose):
+    if (saved):
+        old_stdout = sys.stdout
+        print_out = StringIO()
+        sys.stdout = print_out
     count = 0
     fails = 0
-    total_tests = 457
     defaults, types = GetDefaults(False)
     status, keys, rows = LoadTest(location, verbose)
     if (status and (defaults is not None)):
+        total_tests = 4
         if (verbose):
             print ("Test #{0} - UpdateDefaultItem('folder name', 'Test Aim', verbose)".format(count + 1))
         result = UpdateDefaultItem("folder name", "Test Aim", verbose)
@@ -2242,7 +2263,18 @@ def TestAIM(location, verbose):
         if (verbose):
             print ("Test #{0} - Add('AAPL', 'NASDAQ', verbose)".format(count + 1))
         result = Add( "AAPL", "NASDAQ", verbose)
-        if ("Invalid Access Token" in result) or ("Success" in result):
+        if ("Invalid Access Token" in result):
+            if (verbose):
+                print ("\tpass.")
+            count += 1
+        elif ("Success" in result) and (result[2] == "3M Co"):
+            if (verbose):
+                print ("\tpass.")
+            count += 1
+        if (verbose):
+            print ("Test #{0} - DeleteName('Test Aim', verbose)".format(count + 1))
+        result = DeleteName("Test Aim", verbose)
+        if (result):
             if (verbose):
                 print ("\tpass.")
             count += 1
@@ -2250,6 +2282,11 @@ def TestAIM(location, verbose):
             if (verbose):
                 print ("\tfail.")
             fails += 1
+    else:
+        total_tests = 457
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
         if (verbose):
             print ("Test #{0} - Balance('$', 0, '5000', verbose)".format(count + 1))
         result = Balance( "$", 0, "5000", verbose)
@@ -2365,8 +2402,10 @@ def TestAIM(location, verbose):
     else:
         print ("test count expected {0} passes, received {1}, failures {2}".format(total_tests, count, fails))
         testResults =  False
-    sys.stdout = old_stdout
-    result_string = print_out.getvalue()
+    result_string = ""
+    if (saved):
+        sys.stdout = old_stdout
+        result_string = print_out.getvalue()
     results = {}
     results['status'] = testResults
     results['total'] = total_tests
@@ -2375,14 +2414,15 @@ def TestAIM(location, verbose):
     results['output'] = result_string
     return results
 
-def TestHistory(verbose):
+def TestHistory(saved, verbose):
     results = {}
     db_file = GetDB(verbose)
     username = getpass.getuser()
     Path(username + "/").mkdir(parents=True, exist_ok=True) 
-    old_stdout = sys.stdout
-    print_out = StringIO()
-    sys.stdout = print_out
+    if (saved):
+        old_stdout = sys.stdout
+        print_out = StringIO()
+        sys.stdout = print_out
     count = 0
     fails = 0
     total_tests = 31
@@ -2434,7 +2474,11 @@ def TestHistory(verbose):
     if (verbose):
         print ("Test #{0} - Add('AAPL', 'NASDAQ', verbose)".format(count + 1))
     result = Add( "AAPL", "NASDAQ", verbose)
-    if ("Invalid Access Token" in result) or ("Success" in result):
+    if ("Invalid Access Token" in result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    elif ("Success" in result) and (result[2] == "3M Co"):
         if (verbose):
             print ("\tpass.")
         count += 1
@@ -2757,8 +2801,10 @@ def TestHistory(verbose):
     else:
         print ("test count expected {0} passes, received {1}, failures {2}".format(total_tests, count, fails))
         testResults =  False
-    sys.stdout = old_stdout
-    result_string = print_out.getvalue()
+    result_string = ""
+    if (saved):
+        sys.stdout = old_stdout
+        result_string = print_out.getvalue()
     results['status'] = testResults
     results['total'] = total_tests
     results['pass'] = count
@@ -2766,11 +2812,12 @@ def TestHistory(verbose):
     results['output'] = result_string
     return results
 
-def TestLow(verbose):
+def TestLow(saved, verbose):
     results = {}
-    old_stdout = sys.stdout
-    print_out = StringIO()
-    sys.stdout = print_out
+    if (saved):
+        old_stdout = sys.stdout
+        print_out = StringIO()
+        sys.stdout = print_out
     count = 0
     fails = 0
     total_tests = 9
@@ -2883,8 +2930,10 @@ def TestLow(verbose):
     else:
         print ("test count expected {0} passes, received {1}, failures {2}".format(total_tests, count, fails))
         testResults =  False
-    sys.stdout = old_stdout
-    result_string = print_out.getvalue()
+    result_string = ""
+    if (saved):
+        sys.stdout = old_stdout
+        result_string = print_out.getvalue()
     results['status'] = testResults
     results['total'] = total_tests
     results['pass'] = count
