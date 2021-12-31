@@ -52,36 +52,25 @@ def QuoteTradier(quotes, verbose):
     try:
         response = connection.getresponse()
         content = response.read()
-        if (verbose):
-            pprint.pprint(content)
-            print ("***\n")
-        if (b"Invalid Access Token" in content):
-            answer = {}
-            answer['url'] = url
-            answer["Error Message"] = "Invalid Access Token"
-            answers.append(answer)
-            return answers
-        if (b'Invalid Parameter: symbols' in content):
-            answer = {}
-            answer['url'] = url
-            answer["Error Message"] = "Invalid Parameter: symbols"
-            answers.append(answer)
-            return answers
+        content = content.decode("utf-8")
     except http.client.HTTPException as e:
         answer = {}
         answer['url'] = url
         answer["Error Message"] = e
-        answers.append(answer)
-        return answers
-    returnContent = json.loads(content.decode('utf-8'))
+        return answer
     if (verbose):
         pprint.pprint(content)
         print ("***\n")
-    if "quote" in returnContent['quotes']:
-        for itm in returnContent['quotes']['quote']:
+    if ("Invalid Access Token" in content):
+        answer = {}
+        answer['url'] = url
+        answer["Error Message"] = "Invalid Access Token"
+        return answer
+    if "quote" in content['quotes']:
+        for itm in content['quotes']['quote']:
             answer = {}
             if (itm == "symbol"):
-                row = returnContent['quotes']['quote']
+                row = content['quotes']['quote']
             else:
                 row = itm
             answer['symbol'] = row['symbol']
@@ -97,7 +86,7 @@ def QuoteTradier(quotes, verbose):
             if (itm == "symbol"):
                 break
     else:
-        answers.append(returnContent)
+        answers.append(content)
     return answers
 
 def QuoteCrypto(quotes, verbose):
@@ -119,42 +108,36 @@ def QuoteCrypto(quotes, verbose):
     try:
         response = connection.getresponse()
         content = response.read()
-        if (b"Invalid Access Token" in content):
-            answer = {}
-            answer['url'] = url
-            answer["Error Message"] = "Invalid Access Token"
-            answers.append(answer)
-            return answers
-        returnContent = json.loads(content.decode('utf-8'))
+        content = content.decode("utf-8")
+        content = json.loads(content)
     except http.client.HTTPException as e:
         answer = {}
         answer['url'] = url
         answer["Error Message"] = e
-        answers.append(answer)
-        return answers
+        return answer
     if (verbose):
-        pprint.pprint(returnContent)
+        pprint.pprint(content)
         print ("***\n")
-    if (returnContent['status']['error_code'] != 0):
+    if (content['status']['error_code'] != 0):
         answer = {}
         answer['url'] = url
-        answer["Error Message"] = returnContent['status']['error_message']
-        answers.append(answer)
-        return answers
+        answer["Error Message"] = content['status']['error_message']
+        return answer
     for itm in  quotes.upper().split(","):
-        if itm in returnContent['data']:
-            row = returnContent['data'][itm]["quote"]["USD"]
+        if itm in content['data']:
+            row = content['data'][itm]["quote"]["USD"]
             answer = {}
-            answer['symbol'] = returnContent['data'][itm]["symbol"]
+            answer['symbol'] = content['data'][itm]["symbol"]
             answer['quote'] = "last"
             answer['price'] = row['price']
             answer['url'] = url
-            answer['description'] = row['description']
+            answer['description'] = content['data'][itm]["name"]
             answers.append(answer)
         else:
             answer = {}
             answer['url'] = url
-            answers.append(returnContent)
+            answer['content'] = content
+            answers.append(answer)
     return answers
 
 def Holiday(verbose):
@@ -573,17 +556,21 @@ def Add(symbol, exchange, verbose):
             quote = QuoteCrypto(symbol, verbose)
         else:
             quote = QuoteTradier(symbol, verbose)
-        errors = [symbol, quote[0]['url']]
-        if ("Error Message" in quote[0]):
-            errors.append(quote[0]["Error Message"])
+        errors = []
+        errors.append(symbol)
+        errors.append(exchange)
+        if ("Error Message" in quote):
+            errors.append(quote["url"])
+            errors.append(quote["Error Message"])
         else:
-            errors.append(quote[0]['description'])
+            errors.append(quote["url"])
+            errors.append(quote['description'])
             errors.append("Success")
             if (exchange =="coinbase"):
-                Price(symbol, 1, quote[0]["price"], verbose)
+                Price(symbol, 1, quote["price"], verbose)
                 Shares(symbol, 1, None, verbose)
             else:
-                Price(symbol, 0, quote[0]["price"], verbose)
+                Price(symbol, 0, quote["price"], verbose)
                 Shares(symbol, 0, None, verbose)
     if (verbose):
         print (errors)
@@ -888,9 +875,9 @@ def Update(market_open, verbose):
     if (quote1_list != ""):
         quotes1 = QuoteCrypto(quote1_list, verbose)
     errors = []
-    if (quotes1 != []) and ("Error Message" in quotes1[0]):
+    if (quotes1 != []) and ("Error Message" in quotes1):
         errors.append(quotes1)
-    if (quotes0 != []) and ("Error Message" in quotes0[0]):
+    if (quotes0 != []) and ("Error Message" in quotes0):
         errors.append(quotes0)
     if errors == []:
         for row in rows:
@@ -1879,7 +1866,7 @@ def TestDefaults(saved, verbose):
     if (verbose):
         print ("Test #{0} - QuoteTradier('AAPL', verbose)".format(count + 1))
     result = QuoteTradier("AAPL", verbose)
-    if (result[0]['Error Message'] == "Invalid Access Token"):
+    if (result['Error Message'] == "Invalid Access Token"):
         if (verbose):
             print ("\tpass.")
         count += 1
@@ -1969,11 +1956,22 @@ def TestCrypto(saved, verbose):
         sys.stdout = print_out
     count = 0
     fails = 0
-    total_tests = 5
+    total_tests = 15
     defaults, types = GetDefaults(verbose)
     if (verbose):
         print ("Test #{0} - UpdateDefaultItem('folder name', 'Test Crypto', verbose)".format(count + 1))
     result = UpdateDefaultItem("folder name", "Test Crypto", verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+    if (verbose):
+        print ("Test #{0} - Balance('$', 0, '5000', verbose)".format(count + 1))
+    result = Balance( "$", 0, "5000", verbose)
     if (result):
         if (verbose):
             print ("\tpass.")
@@ -1998,8 +1996,34 @@ def TestCrypto(saved, verbose):
             print ("\tfail.")
         fails += 1
     if (verbose):
-        print ("Test #{0} - Balance('$', 0, '5000', verbose)".format(count + 1))
-    result = Balance( "$", 0, "5000", verbose)
+        print ("Test #{0} - Balance('MMM', 0, '2500', verbose)".format(count + 1))
+    result = Balance( "MMM", 0, "2500", verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+    if (verbose):
+        print ("Test #{0} - Add('MMM', 'coinbase', verbose)".format(count + 1))
+    result = Add( "MMM", "coinbase", verbose)
+    if ("This API Key is invalid." in result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    elif ("Success" in result) and (result[2] == "MultiMillion"):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+    if (verbose):
+        print ("Test #{0} - Balance('MMM', 1, '2500', verbose)".format(count + 1))
+    result = Balance( "MMM", 1, "2500", verbose)
     if (result):
         if (verbose):
             print ("\tpass.")
@@ -2011,7 +2035,7 @@ def TestCrypto(saved, verbose):
     if (verbose):
         print ("Test #{0} - GetFolderCount(verbose)".format(count + 1))
     result = GetFolderCount(verbose)
-    if (result > 0):
+    if (result == 3):
         if (verbose):
             print ("\tpass.")
         count += 1
@@ -2019,7 +2043,86 @@ def TestCrypto(saved, verbose):
         if (verbose):
             print ("\tfail.")
         fails += 1
-
+    if (verbose):
+        print ("Test #{0} - Shares('MMM', 0, '50', verbose)".format(count + 1))
+    result = Shares("MMM", 0, "50", verbose)
+    if (result['status']):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+    if (verbose):
+        print ("Test #{0} - Shares('MMM', 1, '50', verbose)".format(count + 1))
+    result = Shares("MMM", 1, "50", verbose)
+    if (result['status']):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+    folder = GetFolder(verbose)
+    if (verbose):
+        print ("Test #{0} - GetFolderValue('MMM', 0, 'price', folder)".format(count + 1))
+    result0 = GetFolderValue("MMM", 0, "price", folder)
+    if (result0 >= 0):
+        if (verbose):
+            print (result0)
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+    if (verbose):
+        print ("Test #{0} - GetFolderValue('MMM', 1, 'price', folder)".format(count + 1))
+    result1 = GetFolderValue("MMM", 1, "price", folder)
+    if (result1 >= 0):
+        if (verbose):
+            print (result1)
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+    if (verbose):
+        print ("Test #{0} - Remove('MMM', 'NASDAQ', verbose)".format(count + 1))
+    result = Remove("MMM", "NASDAQ", verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+    if (verbose):
+        print ("Test #{0} - Remove('MMM', 'coinbase', verbose)".format(count + 1))
+    result = Remove("MMM", "coinbase", verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+    if (verbose):
+        print ("Test #{0} - GetFolderCount(verbose)".format(count + 1))
+    result = GetFolderCount(verbose)
+    if (result == 1):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
     if (verbose):
         print ("Test #{0} - DeleteName('Test Crypto', verbose)".format(count + 1))
     result = DeleteName("Test Crypto", verbose)
@@ -2185,7 +2288,6 @@ def TestFolder(saved, verbose):
         if (verbose):
             print ("\tfail.")
         fails += 1
-    username = getpass.getuser()
     if (verbose):
         print ("Test #{0} - UpdateDefaultItem('folder name', 'Test Folder', verbose)".format(count + 1))
     result = UpdateDefaultItem("folder name", defaults['folder name'], verbose)
@@ -2334,7 +2436,6 @@ def TestAIM(location, saved, verbose):
                 if (verbose):
                     print ("\tPortfolioValue({0}) - expected: {1}, calculated: {2}, fail.".format(index, curr['Portfolio Value'], result))
                 fails += 1
-        username = getpass.getuser()
         if (verbose):
             print ("Test #{0} - UpdateDefaultItem('folder name', '<reset back to what it was>', verbose)".format(count + 1))
         result = UpdateDefaultItem("folder name", defaults['folder name'], verbose)
