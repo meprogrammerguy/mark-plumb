@@ -53,6 +53,7 @@ def QuoteTradier(quotes, verbose):
         response = connection.getresponse()
         content = response.read()
         content = content.decode("utf-8")
+        content = json.loads(content)
     except http.client.HTTPException as e:
         answer = {}
         answer['url'] = url
@@ -563,6 +564,7 @@ def Add(symbol, exchange, verbose):
             errors.append(quote["url"])
             errors.append(quote["Error Message"])
         else:
+            quote = quote[0]
             errors.append(quote["url"])
             errors.append(quote['description'])
             errors.append("Success")
@@ -1956,7 +1958,7 @@ def TestCrypto(saved, verbose):
         sys.stdout = print_out
     count = 0
     fails = 0
-    total_tests = 15
+    total_tests = 16
     defaults, types = GetDefaults(verbose)
     if (verbose):
         print ("Test #{0} - UpdateDefaultItem('folder name', 'Test Crypto', verbose)".format(count + 1))
@@ -1987,7 +1989,7 @@ def TestCrypto(saved, verbose):
         if (verbose):
             print ("\tpass.")
         count += 1
-    elif ("Success" in result) and (result[2] == "3M Co"):
+    elif ("Success" in result) and (result[3] == "3M Co"):
         if (verbose):
             print ("\tpass.")
         count += 1
@@ -2013,7 +2015,7 @@ def TestCrypto(saved, verbose):
         if (verbose):
             print ("\tpass.")
         count += 1
-    elif ("Success" in result) and (result[2] == "MultiMillion"):
+    elif ("Success" in result) and (result[3] == "MultiMillion"):
         if (verbose):
             print ("\tpass.")
         count += 1
@@ -2065,13 +2067,24 @@ def TestCrypto(saved, verbose):
         if (verbose):
             print ("\tfail.")
         fails += 1
+    if (verbose):
+        print ("Test #{0} - Update(True, verbose)".format(count + 1))
+    result = Update(True, verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
     folder = GetFolder(verbose)
     if (verbose):
         print ("Test #{0} - GetFolderValue('MMM', 0, 'price', folder)".format(count + 1))
     result0 = GetFolderValue("MMM", 0, "price", folder)
     if (result0 >= 0):
         if (verbose):
-            print (result0)
+            print ("*** Price is: {0} ***".format(result0))
             print ("\tpass.")
         count += 1
     else:
@@ -2083,7 +2096,7 @@ def TestCrypto(saved, verbose):
     result1 = GetFolderValue("MMM", 1, "price", folder)
     if (result1 >= 0):
         if (verbose):
-            print (result1)
+            print ("*** Price is: {0} ***".format(result1))
             print ("\tpass.")
         count += 1
     else:
