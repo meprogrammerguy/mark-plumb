@@ -53,7 +53,6 @@ def QuoteTradier(quotes, verbose):
         response = connection.getresponse()
         content = response.read()
         content = content.decode("utf-8")
-        content = json.loads(content)
     except http.client.HTTPException as e:
         answer = {}
         answer['url'] = url
@@ -67,6 +66,7 @@ def QuoteTradier(quotes, verbose):
         answer['url'] = url
         answer["Error Message"] = "Invalid Access Token"
         return answer
+    content = json.loads(content)
     if "quote" in content['quotes']:
         for itm in content['quotes']['quote']:
             answer = {}
@@ -1857,7 +1857,7 @@ def TestDefaults(saved, verbose):
         if (verbose):
             print ("\tpass.")
         count += 1
-    elif ("Success" in result) and (result[2] == "Apple Inc"):
+    elif ("Success" in result) and (result[3] == "Apple Inc"):
         if (verbose):
             print ("\tpass.")
         count += 1
@@ -2193,7 +2193,7 @@ def TestFolder(saved, verbose):
         if (verbose):
             print ("\tpass.")
         count += 1
-    elif ("Success" in result) and (result[2] == "Apple Inc"):
+    elif ("Success" in result) and (result[3] == "Apple Inc"):
         if (verbose):
             print ("\tpass.")
         count += 1
@@ -2554,7 +2554,7 @@ def TestHistory(saved, verbose):
         if (verbose):
             print ("\tpass.")
         count += 1
-    elif ("Success" in result) and (result[2] == "Apple Inc"):
+    elif ("Success" in result) and (result[3] == "Apple Inc"):
         if (verbose):
             print ("\tpass.")
         count += 1
