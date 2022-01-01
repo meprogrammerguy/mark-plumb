@@ -1088,7 +1088,7 @@ def PrintFolder(verbose):
                     col_list.append(as_currency(row[i]))
             else:
                 if (keys[i] == "balance"):
-                    col_list.append(as_currency(row[i]))
+                    col_list.append(as_balance(row[i]))
                     if (keys[i] == "balance"):
                         amount_option = []
                         amount_option.append(row[keys.index("symbol")])
@@ -3939,12 +3939,20 @@ def as_currency(amount):
     if (amount is None):
         amount = 0
     if amount >= 0:
+        return '${:,.8f}'.format(amount)
+    else:
+        return '(${:,.8f})'.format(-amount)
+
+def as_balance(amount):
+    if (amount is None):
+        amount = 0
+    if amount >= 0:
         return '${:,.2f}'.format(amount)
     else:
         return '(${:,.2f})'.format(-amount)
 
 def as_shares(amount):
-    return '\r{:.4f}'.format(amount)
+    return '\r{:.8f}'.format(amount)
 
 def as_percent(amount):
     if amount >= 0:
