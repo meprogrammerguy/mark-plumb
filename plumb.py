@@ -1085,10 +1085,10 @@ def PrintFolder(verbose):
                 if row[0] == "$":
                     col_list.append("")
                 else:
-                    col_list.append(as_currency(row[i]))
+                    col_list.append(as_big(row[i]))
             else:
                 if (keys[i] == "balance"):
-                    col_list.append(as_balance(row[i]))
+                    col_list.append(as_currency(row[i]))
                     if (keys[i] == "balance"):
                         amount_option = []
                         amount_option.append(row[keys.index("symbol")])
@@ -1555,13 +1555,13 @@ def Look(verbose):
     pv = PortfolioValue(cash, stock, verbose)
     values = []
     values.append(cd.strftime("%b, %d"))
-    values.append(as_currency(stock))
+    values.append(as_big(stock))
     values.append(safe)
-    values.append(as_currency(cash))
-    values.append(as_currency(pc))
-    values.append(as_currency(bsa))
-    values.append(as_currency(mo))
-    values.append(as_currency(pv))
+    values.append(as_big(cash))
+    values.append(as_big(pc))
+    values.append(as_big(bsa))
+    values.append(as_big(mo))
+    values.append(as_big(pv))
     values_db = []
     values_db.append(cd.strftime("%Y/%m/%d"))
     values_db.append(stock)
@@ -1582,8 +1582,8 @@ def Look(verbose):
     table = TableCls(items, html_attrs = {'width':'100%','border-spacing':0})
     pct_cash = cash / pv * 100.
     pct_stock = stock / pv * 100.
-    pretty['initial value'] = as_currency(first['portfolio value'])
-    pretty['profit value'] = as_currency(pv - first['portfolio value'])
+    pretty['initial value'] = as_big(first['portfolio value'])
+    pretty['profit value'] = as_big(pv - first['portfolio value'])
     pretty['profit percent'] = as_percent((pv - first['portfolio value']) / first['portfolio value'] * 100.)
     pretty['percent list'] = "<li>Cash {0}</li><li>Stock {1}</li>".format(as_percent(pct_cash), as_percent(pct_stock))
     return pretty, table.__html__(), answer_db
@@ -1701,13 +1701,13 @@ def PrintAIM(printyear, verbose):
                 if (keys[i] == "post date"):
                     col_list.append(dt.strftime("%b, %d"))
                 elif (keys[i] == "stock value"):
-                    col_list.append(as_currency(row[i]))
+                    col_list.append(as_big(row[i]))
                     stock = math.ceil(row[keys.index("stock value")] -.4)
                     safe = Safe(stock, verbose)
                     col_list.append(safe)
                 else:
                     if (keys_db.index("json string") != i):
-                        col_list.append(as_currency(row[i]))
+                        col_list.append(as_big(row[i]))
             answer = dict(zip(keys, col_list))
             items.append(answer)
     table = TableCls(items, html_attrs = {'width':'100%','border-spacing':0})
@@ -2920,8 +2920,8 @@ def TestLow(saved, verbose):
             print ("\tfail.")
             fails += 1
     if (verbose):
-        print ("Test #{0} - as_currency(-80000.5)".format(count + 1))
-    result  = as_currency(-80000.5)
+        print ("Test #{0} - as_big(-80000.5)".format(count + 1))
+    result  = as_big(-80000.5)
     if (result == "($80,000.50)"):
         if (verbose):
             print ("\tpass.")
@@ -3153,12 +3153,12 @@ def ActivitySheet(filename, verbose):
             keys = row.keys()
             header = False
             csvwriter.writerow(keys)
-        row['stock value'] = as_currency(row['stock value'])
-        row['cash'] = as_currency(row['cash'])
-        row['portfolio control'] = as_currency(row['portfolio control'])
-        row['buy sell advice'] = as_currency(row['buy sell advice'])
-        row['market order'] = as_currency(row['market order'])
-        row['portfolio value'] = as_currency(row['portfolio value'])
+        row['stock value'] = as_big(row['stock value'])
+        row['cash'] = as_big(row['cash'])
+        row['portfolio control'] = as_big(row['portfolio control'])
+        row['buy sell advice'] = as_big(row['buy sell advice'])
+        row['market order'] = as_big(row['market order'])
+        row['portfolio value'] = as_big(row['portfolio value'])
         values = row.values()
         csvwriter.writerow(values)
     sheet.close()  
@@ -3176,9 +3176,9 @@ def FolderSheet(filename, verbose):
             keys = row.keys()
             header = False
             csvwriter.writerow(keys)
-        row['balance'] = as_currency(row['balance'])
+        row['balance'] = as_big(row['balance'])
         row['shares'] = as_shares(row['shares'])
-        row['price'] = as_currency(row['price'])
+        row['price'] = as_big(row['price'])
         values = row.values()
         csvwriter.writerow(values)
     sheet.close()  
@@ -3196,7 +3196,7 @@ def WorkSheet(filename, verbose):
             keys = row.keys()
             header = False
             csvwriter.writerow(keys)
-        row['adjust amount'] = as_currency(row['adjust amount'])
+        row['adjust amount'] = as_big(row['adjust amount'])
         if (row['symbol'] == "$"):
             row['shares'] = ""
         else:
@@ -3230,7 +3230,7 @@ def ArchiveSheet(filename, verbose):
                     keys = row.keys()
                     header = False
                     csvwriter.writerow(keys)
-                row['initial'] = as_currency(row['initial'])
+                row['initial'] = as_big(row['initial'])
                 row['profit percent'] = as_percent(row['profit percent'])
                 values = row.values()
                 csvwriter.writerow(values)
@@ -3242,12 +3242,12 @@ def ArchiveSheet(filename, verbose):
                 keys = row.keys()
                 header = False
                 csvwriter.writerow(keys)
-            row['stock value'] = as_currency(row['stock value'])
-            row['cash'] = as_currency(row['cash'])
-            row['portfolio control'] = as_currency(row['portfolio control'])
-            row['buy sell advice'] = as_currency(row['buy sell advice'])
-            row['market order'] = as_currency(row['market order'])
-            row['portfolio value'] = as_currency(row['portfolio value'])
+            row['stock value'] = as_big(row['stock value'])
+            row['cash'] = as_big(row['cash'])
+            row['portfolio control'] = as_big(row['portfolio control'])
+            row['buy sell advice'] = as_big(row['buy sell advice'])
+            row['market order'] = as_big(row['market order'])
+            row['portfolio value'] = as_big(row['portfolio value'])
             values = row.values()
             csvwriter.writerow(values)
     csvwriter.writerow(" ")
@@ -3258,7 +3258,7 @@ def ArchiveSheet(filename, verbose):
                 keys = row.keys()
                 header = False
                 csvwriter.writerow(keys)
-            row['balance'] = as_currency(row['balance'])
+            row['balance'] = as_big(row['balance'])
             row['shares'] = as_shares(row['shares'])
             values = row.values()
             csvwriter.writerow(values)
@@ -3270,7 +3270,7 @@ def ArchiveSheet(filename, verbose):
                 keys = row.keys()
                 header = False
                 csvwriter.writerow(keys)
-            row['adjust amount'] = as_currency(row['adjust amount'])
+            row['adjust amount'] = as_big(row['adjust amount'])
             if row['symbol'] == "$":
                 row['shares'] = ""
             else:
@@ -3708,7 +3708,7 @@ def PrintSummary(verbose):
         col_list = []
         for i in range(len(keys)):
             if keys[i] == "initial":
-                col_list.append(as_currency(row[i]))
+                col_list.append(as_big(row[i]))
             elif keys[i] == "profit percent":
                 col_list.append(as_percent(row[i]))
             else:
@@ -3935,7 +3935,7 @@ def to_number(string, verbose):
         print ("***\n")
     return clean_number
 
-def as_currency(amount):
+def as_big(amount):
     if (amount is None):
         amount = 0
     if amount >= 0:
@@ -3943,7 +3943,7 @@ def as_currency(amount):
     else:
         return '(${:,.8f})'.format(-amount)
 
-def as_balance(amount):
+def as_currency(amount):
     if (amount is None):
         amount = 0
     if amount >= 0:
@@ -4222,9 +4222,9 @@ def PrintWorksheet(verbose):
                         col_list.append(as_shares(abs(row[index])))
                 elif key == "adjust amount":
                     if (symbol == "$"):
-                        col_list.append(as_currency(row[index]))
+                        col_list.append(as_big(row[index]))
                     else:
-                        col_list.append(as_currency(abs(row[index])))
+                        col_list.append(as_big(abs(row[index])))
                 else:
                     col_list.append(row[index])
         answer = dict(zip(keys, col_list))
@@ -4236,18 +4236,18 @@ def PrintWorksheet(verbose):
     if (allocate == 0):
         worksheet_warning = "You are good to go"
     elif (allocate > 0):
-        worksheet_warning = "You still have {0} yet to allocate".format(as_currency(abs(allocate)))
+        worksheet_warning = "You still have {0} yet to allocate".format(as_big(abs(allocate)))
     else:
-        worksheet_warning = "You have allocated {0} more than {1}".format(as_currency(abs(allocate)), as_currency(abs(market['market order'])))
+        worksheet_warning = "You have allocated {0} more than {1}".format(as_big(abs(allocate)), as_big(abs(market['market order'])))
     if (verbose):
         print ("***\n")
     return input_box_table, worksheet_warning
 
 def AddInputBox(table, market):
     if (market['market order'] < 0):
-        table = table.replace("</tr></thead>", "<th>Signal to Sell {0} at Market</th></tr></thead>".format(as_currency(-market['market order'])), 1)
+        table = table.replace("</tr></thead>", "<th>Signal to Sell {0} at Market</th></tr></thead>".format(as_big(-market['market order'])), 1)
     else:
-        table = table.replace("</tr></thead>", "<th>Signal to Buy {0} at Market</th></tr></thead>".format(as_currency(market['market order'])), 1)
+        table = table.replace("</tr></thead>", "<th>Signal to Buy {0} at Market</th></tr></thead>".format(as_big(market['market order'])), 1)
     pattern = "<tr><td>"
     index = 0
     done = False
