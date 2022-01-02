@@ -111,7 +111,7 @@ def folder():
                     else:
                         chunks = request.form['symbol'].split(',')
                         plumb.Shares(chunks[0], chunks[1], request.form['balance'], False)
-                        log =  "company {0}, shares are now {1}".format(chunks[0], round(plumb.to_number(request.form['balance'], False), 4))
+                        log =  "company {0}, shares are now {1}".format(chunks[0], round(plumb.to_number(request.form['balance'], False), 8))
                         return(render_folder("display: none;", log, "", ""))
                 else:
                     if (request.form['balance'] == ""):
