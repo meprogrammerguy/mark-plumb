@@ -83,64 +83,72 @@ def folder():
                         for f in folder:
                             value = {}
                             if (f['symbol'] != "$"):
-                                theText = 'box_{0}'.format(f['symbol'])
+                                theText = 'box_{0}:{1}'.format(f['symbol'], f['crypto'])
                                 value['symbol'] = f['symbol']
+                                value['crypto'] = f['crypto']
                                 value['adjust'] = request.form[theText]
                                 values.append(value)
                         plumb.CalculateWorksheet(values, False)
                     else:
                         log = "Warning: Portfolio not found, cannot recalculate"
-                return(render_folder("display: none;", log, ""))
+                return(render_folder("display: none;", log, "", ""))
             if (request.form['action'] == "adjust"):
                 if (request.form['options'] == "calculations"):
                     plumb.PostWorksheet(False)
                     log =  "adjusted portfolio based on worksheet calculations"
-                    return(render_folder("display: none;", log, ""))
+                    return(render_folder("display: none;", log, "", ""))
                 elif (request.form['options'] == "balance"):
                     if (request.form['balance'] == ""):
-                        return(render_folder("display: none;", "balance is blank, cannot adjust.", ""))
+                        return(render_folder("display: none;", "balance is blank, cannot adjust.", "", ""))
                     else:
-                        plumb.Balance(request.form['symbol'], request.form['balance'], False)
-                        log =  "company {0}, balance is now {1}".format(request.form['symbol'], plumb.as_currency(plumb.to_number(request.form['balance'], False)))
-                        return(render_folder("display: none;", log, ""))
+                        chunks = request.form['symbol'].split(',')
+                        plumb.Balance(chunks[0], chunks[1], request.form['balance'], False)
+                        log =  "company {0}, balance is now {1}".format(chunks[0], plumb.as_currency(plumb.to_number(request.form['balance'], False)))
+                        return(render_folder("display: none;", log, "", ""))
                 elif (request.form['options'] == "shares"):
                     if (request.form['balance'] == ""):
-                        return(render_folder("display: none;", "shares are blank, cannot adjust.", ""))
+                        return(render_folder("display: none;", "shares are blank, cannot adjust.", "", ""))
                     else:
-                        plumb.Shares(request.form['symbol'], request.form['balance'], False)
-                        log =  "company {0}, shares are now {1}".format(request.form['symbol'], round(plumb.to_number(request.form['balance'], False), 4))
-                        return(render_folder("display: none;", log, ""))
+                        chunks = request.form['symbol'].split(',')
+                        plumb.Shares(chunks[0], chunks[1], request.form['balance'], False)
+                        log =  "company {0}, shares are now {1}".format(chunks[0], round(plumb.to_number(request.form['balance'], False), 8))
+                        return(render_folder("display: none;", log, "", ""))
                 else:
                     if (request.form['balance'] == ""):
-                        return(render_folder("display: none;", "amount is blank, cannot adjust.", ""))
+                        return(render_folder("display: none;", "amount is blank, cannot adjust.", "", ""))
                     else:
-                        curr_balance = CurrentBalance(request.form['symbol'], request.form['amount'])
+                        chunks = request.form['symbol'].split(',')
+                        curr_balance = CurrentBalance(chunks[0], chunks[1], request.form['amount'])
                         balance = curr_balance + plumb.to_number(request.form['balance'], False)
-                        log = "company {0}, balance {1}, adjusted by {2}.".format(request.form['symbol'], plumb.as_currency(curr_balance), plumb.as_currency(plumb.to_number(request.form['balance'], False)))
-                        plumb.Balance(request.form['symbol'], str(balance), False)
-                        return(render_folder("display: none;", log, ""))
+                        log = "company {0}, balance {1}, adjusted by {2}.".format(chunks[0], plumb.as_currency(curr_balance), plumb.as_currency(plumb.to_number(request.form['balance'], False)))
+                        plumb.Balance(chunks[0], chunks[1], str(balance), False)
+                        return(render_folder("display: none;", log, "", ""))
             elif (request.form['action'] == "remove"):
-                plumb.Remove(request.form['remove_symbol'], False)
+                s = request.form['remove_symbol']
+                e = request.form['remove_type']
+                plumb.Remove(s, e, False)
                 log =  "company {0} has been removed from portfolio.".format(request.form['remove_symbol'])
-                return(render_folder("display: none;", log, ""))
+                return(render_folder("display: none;", log, "", ""))
             elif (request.form['action'] == "add"):
                 s = request.form['add_symbol']
-                plumb.Add(s, False)
+                e = request.form['add_type']
+                plumb.Add(s, e, False)
                 log =  "company {0} has been added to portfolio.".format(s)
-                return(render_folder("display: none;", log, ""))
+                return(render_folder("display: none;", log, "", ""))
             elif (request.form['action'] == "refresh"):
-                plumb.Update(False)
-                return(render_folder("display: none;", "prices updated.", ""))
-            elif (request.form['action'] != "Ticker symbol"):
+                plumb.Update(True, False)
+                return(render_folder("display: none;", "prices updated.", "", ""))
+            elif (request.form['action'] != "symbol"):
                 s = request.form['action']
-                return(render_folder("display: block;", "", s))
-
+                flag = request.form['symbol']
+                return(render_folder("display: block;", "", s, flag))
+ 
     except Exception as e:
-        return (render_folder("display: none;", e, ""))
+        return (render_folder("display: none;", e, "", ""))
 
-    return(render_folder("display: none;", "", ""))
+    return(render_folder("display: none;", "", "", ""))
 
-def render_folder(ticker_style, feedback, symbol):
+def render_folder(ticker_style, feedback, symbol, flag):
     defaults, types = plumb.GetDefaults(False)
     folder_name = "folder"
     if ("folder name" in defaults):
@@ -149,7 +157,10 @@ def render_folder(ticker_style, feedback, symbol):
     notes, initialize_day = plumb.GetAIMNotes(10, False)
     co = {}
     if (symbol > ""):
-        co = plumb.Company(symbol, False)
+        if (flag == "stock"):
+            co = plumb.Company(symbol, False)
+        if (flag == "crypto"):
+            co = plumb.CryptoCompany(symbol, False)
         if not co:
             feedback = "symbol not found."
             ticker_style = "display: none;"
@@ -201,11 +212,15 @@ def render_defaults(feedback):
     tradier_key_warning = ""
     if ("tradier key" in defaults):
         if (defaults['tradier key'] == "" or defaults['tradier key'] == "demo"):
-            tradier_key_warning = "Remember to obtain your lifetime API key from tradier, this is needed for getting the market calendar and stock quotes"
+            tradier_key_warning = "Remember to obtain your lifetime API key from tradier, this is needed for getting the market calendar and quotes"
     IEX_key_warning = ""
     if ("IEX key" in defaults):
         if (defaults['IEX key'] == "" or defaults['IEX key'] == "demo"):
             IEX_key_warning = "Remember to obtain your lifetime API key from IEX cloud, this is needed for getting company ticker information"
+    coin_key_warning = ""
+    if ("coin key" in defaults):
+        if (defaults['coin key'] == "" or defaults['coin key'] == "demo"):
+            coin_key_warning = "Remember to obtain your lifetime API key from coin market cap, this is needed for getting cryptocoin information"
     table, column_options, name_options, folder_options = plumb.PrintDefaults(False)
     hide_folder = ""
     if (name_options == ""):
@@ -235,7 +250,7 @@ def render_defaults(feedback):
             daemon_info = "{0}, Last active status: {1}".format(checkOpen['description'], status)
     return (render_template('defaults.html', table = table, feedback = feedback, column_options = column_options, notes = notes,
         daemon_table = daemon_table, daemon_check = daemon_check, daemon_color = daemon_color, daemon_info = daemon_info, daemon_action = daemon_action,
-        name_options = name_options, folder_options = folder_options, hide_folder = hide_folder, tradier_key_warning = tradier_key_warning, IEX_key_warning = IEX_key_warning))
+        name_options = name_options, folder_options = folder_options, hide_folder = hide_folder, tradier_key_warning = tradier_key_warning, IEX_key_warning = IEX_key_warning, coin_key_warning = coin_key_warning))
 
 @app.route('/history/', methods=["GET","POST"])
 def history():
@@ -281,31 +296,37 @@ def render_tests():
     count_failures = 0
     count_total = 0
 
-    testDefaults = plumb.TestDefaults(True)
+    testDefaults = plumb.TestDefaults(True, True)
     count_pass += testDefaults['pass']
     count_failures += testDefaults['fails']
     count_total += testDefaults['total']
     test_defaults = testDefaults['output']
 
-    testFolder = plumb.TestFolder(True)
+    testFolder = plumb.TestFolder(True, True)
     count_pass += testFolder['pass']
     count_failures += testFolder['fails']
     count_total += testFolder['total']
     test_folder = testFolder['output']
 
-    testHistory = plumb.TestHistory(True)
+    testCrypto = plumb.TestCrypto(True, True)
+    count_pass += testCrypto['pass']
+    count_failures += testCrypto['fails']
+    count_total += testCrypto['total']
+    test_crypto = testCrypto['output']
+
+    testHistory = plumb.TestHistory(True, True)
     count_pass += testHistory['pass']
     count_failures += testHistory['fails']
     count_total += testHistory['total']
     test_history = testHistory['output']
 
-    testAIM = plumb.TestAIM("aim", True)
+    testAIM = plumb.TestAIM("aim", True, True)
     count_pass += testAIM['pass']
     count_failures += testAIM['fails']
     count_total += testAIM['total']
     test_aim = testAIM['output']
 
-    testLow = plumb.TestLow(True)
+    testLow = plumb.TestLow(True, True)
     count_pass += testLow['pass']
     count_failures += testLow['fails']
     count_total += testLow['total']
@@ -315,16 +336,16 @@ def render_tests():
     test_color = "green;"
     if (count_failures > 0):
         test_color = "red;"
-    return render_template('tests.html', test_defaults = test_defaults, test_folder = test_folder, test_history = test_history, test_aim = test_aim, test_results = test_results,
+    return render_template('tests.html', test_defaults = test_defaults, test_folder = test_folder, test_crypto = test_crypto, test_history = test_history, test_aim = test_aim, test_results = test_results,
         test_color = test_color, test_low = test_low)
 
 @app.errorhandler(404)
 def page_not_found(e):
     return render_template('404.html'), 404
 
-def CurrentBalance(symbol, string):
+def CurrentBalance(symbol, crypto, string):
     amounts_list = ast.literal_eval(string)
-    result = [element[1] for element in amounts_list if element[0] == symbol]
+    result = [element[2] for element in amounts_list if (element[0] == symbol) and (element[1] == int(crypto))]
     return result[0]
 
 if __name__ == "__main__":

@@ -15,16 +15,17 @@ def main(argv):
     key = ""
     item = ""
     printout = False
-    defaults = False
+    zap = False
     log = ""
     when = False
     get = False
     run = False
-    check = False
+    daemon = False
     kill = False
+    crypto = False
     try:
-        opts, args = getopt.getopt(argv, "rckgwl:dpi:k:hvts:q:", ["help", "verbose", "test", "quote=", "key=", "symbol=", "item=",
-            "print", "defaults", "log=", "when", "get", "run", "check", "kill"])
+        opts, args = getopt.getopt(argv, "rdkgwl:zcpi:k:hvts:q:", ["help", "verbose", "test", "quote=", "key=", "symbol=", "item=",
+            "print", "zap", "log=", "when", "get", "run", "daemon", "kill", "crypto"])
     except getopt.GetoptError as err:
         print(err)
         usage()
@@ -38,14 +39,16 @@ def main(argv):
             get = True
         elif o in ("-r", "--run"):
             run = True
-        elif o in ("-c", "--check"):
-            check = True
+        elif o in ("-d", "--daemon"):
+            daemon = True
+        elif o in ("-c", "--crypto"):
+            crypto = True
         elif o in ("-k", "--kill"):
             kill = True            
         elif o in ("-w", "--when"):
             when = True
-        elif o in ("-d", "--defaults"):
-            defaults = True
+        elif o in ("-z", "--zap"):
+            zap = True
         elif o in ("-p", "--print"):
             printout = True
         elif o in ("-h", "--help"):
@@ -64,8 +67,8 @@ def main(argv):
         else:
             assert False, "unhandled option"
     if (test):
-        testResult = plumb.TestDefaults(verbose)
-        print (testResult['output'])
+        testResult = plumb.TestDefaults(False, verbose)
+        print (testResult)
         exit()
     if (key > "" and item > ""):
         if item > "":
@@ -77,12 +80,20 @@ def main(argv):
         else:
             print ("you must use --item switch with the --key switch")
         exit()
-    if (quote > ""):
+    if (quote > "" and not crypto):
         quoteResult = plumb.QuoteTradier(quote, verbose)
         pprint.pprint(quoteResult)
         exit()
-    if (symbol > ""):
+    if (symbol > "" and not crypto):
         companyResult = plumb.Company(symbol, verbose)
+        pprint.pprint(companyResult)
+        exit()
+    if (quote > "" and crypto):
+        quoteResult = plumb.QuoteCrypto(quote, verbose)
+        pprint.pprint(quoteResult)
+        exit()
+    if (symbol > "" and crypto):
+        companyResult = plumb.CryptoCompany(symbol, verbose)
         pprint.pprint(companyResult)
         exit()
     if (printout):
@@ -92,7 +103,7 @@ def main(argv):
         pprint.pprint(folder_options)
         pprint.pprint(name_options)
         exit()
-    if (defaults):
+    if (zap):
         endResult = plumb.ResetDefaults(verbose)
         if (endResult):
             print ("saved.")
@@ -105,7 +116,7 @@ def main(argv):
         else:
             runResult = plumb.run_script("./folder_daemon.py")
         exit()
-    if (check):
+    if (daemon):
         if os.name == 'nt':
             checkResult = plumb.get_pid("poll_stocks.py")
         else:
@@ -165,6 +176,7 @@ def usage():
     -h  --help          prints this help
     -v  --verbose       increases the information level
     -t  --test          tests the default routines
+    -c  --crypto        use crypto-coin API (used with --symbol or --quote)
 
     -s  --symbol        retrieves company data from ticker symbol
     -q  --quote         get stock quote from ticker symbol(s)
@@ -176,7 +188,7 @@ def usage():
     -i  --item          item value to update (used with --key switch)
 
     -p  --print         print out the defaults database (in HTML table format)
-    -d  --defaults      reset user back to standard defaults
+    -z  --zap           zap user back to standard defaults
     -g  --get           Gets/Shows all default fields
 
     -l  --log           show daemon log

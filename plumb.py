@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import sys
 import pdb
 from bs4 import BeautifulSoup
 import html5lib
@@ -51,27 +52,26 @@ def QuoteTradier(quotes, verbose):
     try:
         response = connection.getresponse()
         content = response.read()
-        if (b"Invalid Access Token" in content):
-            answer = {}
-            answer['url'] = url
-            answer["Error Message"] = "Invalid Access Token"
-            answers.append(answer)
-            return answers
-        returnContent = json.loads(content.decode('utf-8'))
+        content = content.decode("utf-8")
     except http.client.HTTPException as e:
         answer = {}
         answer['url'] = url
         answer["Error Message"] = e
-        answers.append(answer)
-        return answers
+        return answer
     if (verbose):
-        pprint.pprint(returnContent)
+        pprint.pprint(content)
         print ("***\n")
-    if "quote" in returnContent['quotes']:
-        for itm in returnContent['quotes']['quote']:
+    if ("Invalid Access Token" in content):
+        answer = {}
+        answer['url'] = url
+        answer["Error Message"] = "Invalid Access Token"
+        return answer
+    content = json.loads(content)
+    if "quote" in content['quotes']:
+        for itm in content['quotes']['quote']:
             answer = {}
             if (itm == "symbol"):
-                row = returnContent['quotes']['quote']
+                row = content['quotes']['quote']
             else:
                 row = itm
             answer['symbol'] = row['symbol']
@@ -81,12 +81,64 @@ def QuoteTradier(quotes, verbose):
             else:
                 answer['quote'] = "close"
                 answer['price'] = row['close']
-                answer['url'] = url
+            answer['url'] = url
+            answer['description'] = row['description']
             answers.append(answer)
             if (itm == "symbol"):
                 break
     else:
-        answers.append(returnContent)
+        answers.append(content)
+    return answers
+
+def QuoteCrypto(quotes, verbose):
+    answers = []
+    defaults, types = GetDefaults(verbose)
+    url = "/v1/cryptocurrency/quotes/latest?symbol={0}&convert=USD".format(quotes)
+    if (verbose):
+        print ("***")
+        print ("QuoteCrypto(1) URL: {0}".format(url))
+        print ("QuoteCrypto(2) token: {0}".format(defaults["coin key"]))
+    connection = http.client.HTTPSConnection('pro-api.coinmarketcap.com', 443, timeout = 30)
+
+    headers = {}
+    headers["Accepts"] = "application/json"
+    headers["X-CMC_PRO_API_KEY"] = defaults["coin key"]
+    headers["connection"] = "close"
+
+    connection.request('GET', url, None, headers)
+    try:
+        response = connection.getresponse()
+        content = response.read()
+        content = content.decode("utf-8")
+        content = json.loads(content)
+    except http.client.HTTPException as e:
+        answer = {}
+        answer['url'] = url
+        answer["Error Message"] = e
+        return answer
+    if (verbose):
+        pprint.pprint(content)
+        print ("***\n")
+    if (content['status']['error_code'] != 0):
+        answer = {}
+        answer['url'] = url
+        answer["Error Message"] = content['status']['error_message']
+        return answer
+    for itm in  quotes.upper().split(","):
+        if itm in content['data']:
+            row = content['data'][itm]["quote"]["USD"]
+            answer = {}
+            answer['symbol'] = content['data'][itm]["symbol"]
+            answer['quote'] = "last"
+            answer['price'] = row['price']
+            answer['url'] = url
+            answer['description'] = content['data'][itm]["name"]
+            answers.append(answer)
+        else:
+            answer = {}
+            answer['url'] = url
+            answer['content'] = content
+            answers.append(answer)
     return answers
 
 def Holiday(verbose):
@@ -179,6 +231,62 @@ def Company(ticker, verbose):
             raise
     returnCompany = json.loads(str(soup.text))
     if (verbose):
+        print (returnCompany)
+        print ("***\n")
+    return returnCompany
+
+def CryptoCompany(ticker, verbose):
+    defaults, types = GetDefaults(verbose)
+    url = "/v1/cryptocurrency/info?symbol={0}".format(ticker)
+    headers = {}
+    headers["Accepts"] = "application/json"
+    headers["X-CMC_PRO_API_KEY"] = defaults["coin key"]
+    headers["connection"] = "close"
+    connection = http.client.HTTPSConnection('pro-api.coinmarketcap.com', 443, timeout = 30)
+    connection.request('GET', url, None, headers)
+    if (verbose):
+        print ("***")
+        print ("CryptoCompany(1) ticker: {0}".format(ticker))
+        print ("CryptoCompany(2) URL: {0}".format(url))
+        print ("CryptoCompany(3) token: {0}".format(defaults["coin key"]))
+    try:
+        response = connection.getresponse()
+        page = response.read()
+        soup = BeautifulSoup(page, "html5lib")
+    except urllib.error.HTTPError as err:
+        if err.code == 404:
+            if (verbose):
+                print ("CryptoCompany(4) page not found for {0}".format(ticker))
+                print ("***\n")
+            answer = {}
+            answer['url'] = url
+            answer["companyName"] = "page not found"
+            return answer
+        if err.code == 403:
+            if (verbose):
+                print ("CryptoCompany(4) forbidden {0}".format(ticker))
+                print ("***\n")
+            answer = {}
+            answer['url'] = url
+            answer["companyName"] = "forbidden"
+            return answer
+        else:
+            raise
+    returnCompany = json.loads(str(soup.text))
+    if (returnCompany['status']['error_code'] != 0):
+        answer = {}
+        answer['symbol'] = ticker
+        answer['url'] = url
+        answer["companyName"] = returnCompany['status']['error_message']
+        answer['error_code'] = returnCompany['status']['error_code']
+        return answer
+    returnCompany['description'] =  returnCompany['data'][ticker.upper()]['description']
+    returnCompany['symbol'] =  returnCompany['data'][ticker.upper()]['symbol']
+    returnCompany['companyName'] =  returnCompany['data'][ticker.upper()]['name']
+    returnCompany['website'] =  returnCompany['data'][ticker.upper()]['urls']['website']
+    returnCompany['exchange'] =  "coinbase"
+    if (verbose):
+        print (returnCompany)
         print ("***\n")
     return returnCompany
 
@@ -250,6 +358,7 @@ def ResetDefaults(verbose):
         c = conn.cursor()
         c.execute("UPDATE defaults SET tradier_key = (?) WHERE username = (?)", ("demo", username,))
         c.execute("UPDATE defaults SET IEX_key = (?) WHERE username = (?)", ("demo", username,))
+        c.execute("UPDATE defaults SET coin_key = (?) WHERE username = (?)", ("demo", username,))
         c.execute("UPDATE defaults SET poll_minutes = ? WHERE username = (?)", (10, username,))
         c.execute("UPDATE defaults SET open = (?) WHERE username = (?)", (opentime, username,))
         c.execute("UPDATE defaults SET close = (?) WHERE username = (?)", (closetime, username,))
@@ -324,7 +433,7 @@ def CreateDefaults(verbose):
         print("CreateDefaults(3) {0}".format(e))
         return False
     c = conn.cursor()
-    c.execute("CREATE TABLE if not exists 'defaults' ( `username` TEXT NOT NULL UNIQUE, `folder_name` NUMERIC, `snap_shot` INTEGER, `open` TEXT, `close` TEXT, `poll_minutes` INTEGER, `test_root` TEXT, `export_dir` TEXT, `tradier_key` TEXT, `IEX_key` TEXT, `market_status` TEXT, PRIMARY KEY(`username`) )")
+    c.execute("CREATE TABLE if not exists 'defaults' ( `username` TEXT NOT NULL UNIQUE, `folder_name` NUMERIC, `snap_shot` INTEGER, `open` TEXT, `close` TEXT, `poll_minutes` INTEGER, `test_root` TEXT, `export_dir` TEXT, `tradier_key` TEXT, `IEX_key` TEXT, `coin_key` TEXT, `market_status` TEXT, PRIMARY KEY(`username`) )")
     c.execute( "INSERT OR IGNORE INTO defaults(username) VALUES((?))", (username,))
     conn.commit()
     conn.close()
@@ -378,6 +487,11 @@ def PrintDefaults(verbose):
                     col_list.append(row[i])
                 else:
                     col_list.append("[key]")
+            elif (keys[i] == "coin key"):
+                if row[i] == "demo" or row[i] == "" or row[i] == "TEST":
+                    col_list.append(row[i])
+                else:
+                    col_list.append("[key]")
             elif (keys[i] == "market status"):
                 js = json.loads(row[i])
                 if js:
@@ -404,72 +518,101 @@ def PrintDefaults(verbose):
     return table.__html__(), column_options, name_options, folder_options
 #endregion defaults
 #region folder
-def Add(symbol, verbose):
+def Add(symbol, exchange, verbose):
     db_file = GetDB(verbose)
     if (verbose):
         print ("***")
         print ("Add(1) symbol: {0}".format(symbol))
-        print ("Add(2) dbase: {0}".format(db_file))
-    result = CreateFolder(symbol, verbose)
+        print ("Add(2) exchange: {0}".format(exchange))
+        print ("Add(3) dbase: {0}".format(db_file))
+
+    crypto = 0
+    if (exchange =="coinbase"):
+        crypto = 1
+        
+    result = CreateFolder(symbol, crypto, verbose)
     if (result):
         try:
             conn = sqlite3.connect(db_file)
             if (verbose):
-                print("Add(3) sqlite3: {0}".format(sqlite3.version))
+                print("Add(4) sqlite3: {0}".format(sqlite3.version))
         except Error as e:
-            print("Add(4) {0}".format(e))
+            print("Add(5) {0}".format(e))
             return False
-        json_data = Company(symbol, verbose)
+        crypto = 0
+        if (exchange =="coinbase"):
+            json_data = CryptoCompany(symbol, verbose)
+            crypto = 1
+        else:
+            json_data = Company(symbol, verbose)
         json_string = json.dumps(json_data)
         c = conn.cursor()
-        c.execute("UPDATE folder SET json_string = (?) WHERE symbol = (?)", (json_string, symbol,))
+        c.execute("INSERT OR IGNORE INTO folder (symbol, crypto) VALUES ((?),?)", (symbol, crypto,))
+        c.execute("UPDATE folder SET json_string = (?) WHERE symbol = (?) and crypto = ?", (json_string, symbol, crypto,))
         dt = datetime.datetime.now()
-        c.execute("UPDATE folder SET update_time = (?) WHERE symbol = (?)", (dt.strftime("%m/%d/%y %H:%M"), symbol,))
+        c.execute("UPDATE folder SET update_time = (?) WHERE symbol = (?) and crypto = ?", (dt.strftime("%m/%d/%y %H:%M"), symbol, crypto,))
         conn.commit()
         conn.close()
-        quote = QuoteTradier(symbol, verbose)
-        errors = []
-        if ("Error Message" in quote[0]):
-            errors.append([symbol, quote[0]['url'], quote[0]["Error Message"]])
+        if (exchange =="coinbase"):
+            quote = QuoteCrypto(symbol, verbose)
         else:
-            Price(symbol, quote[0], verbose)
-            Shares(symbol, None, verbose)
+            quote = QuoteTradier(symbol, verbose)
+        errors = []
+        errors.append(symbol)
+        errors.append(exchange)
+        if ("Error Message" in quote):
+            errors.append(quote["url"])
+            errors.append(quote["Error Message"])
+        else:
+            quote = quote[0]
+            errors.append(quote["url"])
+            errors.append(quote['description'])
+            errors.append("Success")
+            if (exchange =="coinbase"):
+                Price(symbol, 1, quote["price"], verbose)
+                Shares(symbol, 1, None, verbose)
+            else:
+                Price(symbol, 0, quote["price"], verbose)
+                Shares(symbol, 0, None, verbose)
     if (verbose):
-        if (errors):
-            pprint.pprint(errors)
+        print (errors)
         print ("***\n")
-    return True
+    return errors
 
-def Remove(symbol, verbose):
+def Remove(symbol, exchange, verbose):
     db_file = GetDB(verbose)
     if (verbose):
         print ("***")
         print ("Remove(1) symbol: {0}".format(symbol))
-        print ("Remove(2) dbase: {0}".format(db_file))
+        print ("Remove(2) exchange: {0}".format(exchange))
+        print ("Remove(3) dbase: {0}".format(db_file))
     try:
         conn = sqlite3.connect(db_file)
         if (verbose):
-            print("Remove(3) sqlite3: {0}".format(sqlite3.version))
+            print("Remove(4) sqlite3: {0}".format(sqlite3.version))
     except Error as e:
-        print("Remove(4) {0}".format(e))
+        print("Remove(5) {0}".format(e))
         return False
     c = conn.cursor()
-    c.execute("DELETE FROM folder WHERE symbol=(?)", (symbol,))
+    if (exchange == "coinbase"):
+        c.execute("DELETE FROM folder WHERE symbol=(?) and crypto = 1", (symbol,))
+    else:
+        c.execute("DELETE FROM folder WHERE symbol=(?) and crypto = 0", (symbol,))
     conn.commit()
     conn.close()
     if (verbose):
         print ("***\n")
     return True
 
-def Price(symbol, quote, verbose):
+def Price(symbol, crypto, price, verbose):
     db_file = GetDB(verbose)
     if (verbose):
         print ("***")
         print ("Price(1) symbol: {0}".format(symbol))
-        print ("Price(2) price: {0}".format(quote['price']))
-        print ("Price(3) quote: {0}".format(quote['quote']))
+        print ("Price(2) crypto: {0}".format(crypto))
+        print ("Price(3) price: {0}".format(price))
         print ("Price(4) dbase: {0}".format(db_file))
-    result = CreateFolder(symbol, verbose)
+    result = CreateFolder(symbol, crypto, verbose)
     if (result):
         try:
             conn = sqlite3.connect(db_file)
@@ -479,10 +622,9 @@ def Price(symbol, quote, verbose):
             print("Price(6) {0}".format(e))
             return False
         c = conn.cursor()
-        c.execute("UPDATE folder SET price = ? WHERE symbol = (?)", (quote['price'], symbol,))
-        c.execute("UPDATE folder SET quote = ? WHERE symbol = (?)", (quote['quote'], symbol,))
+        c.execute("UPDATE folder SET price = ? WHERE symbol = (?) and crypto = ?", (price, symbol, crypto, ))
         dt = datetime.datetime.now()
-        c.execute("UPDATE folder SET update_time = (?) WHERE symbol = (?)", (dt.strftime("%m/%d/%y %H:%M"), symbol,))
+        c.execute("UPDATE folder SET update_time = (?) WHERE symbol = (?) and crypto = ?", (dt.strftime("%m/%d/%y %H:%M"), symbol ,crypto, ))
         conn.commit()
         conn.close()
     if (verbose):
@@ -496,7 +638,7 @@ def Cash(balance, verbose):
         print ("***")
         print ("Cash(1) balance: {0}".format(balance))
         print ("Cash(2) dbase: {0}".format(db_file))
-    result = CreateFolder("$", verbose)
+    result = CreateFolder("$", 0, verbose)
     if (result):
         try:
             conn = sqlite3.connect(db_file)
@@ -506,14 +648,15 @@ def Cash(balance, verbose):
             print("Cash(4) {0}".format(e))
             return False
         c = conn.cursor()
-        c.execute("UPDATE folder SET balance = ? WHERE symbol = '$'", (round(float(balance), 2),))
+        c.execute("UPDATE folder SET balance = ? WHERE symbol = '$' and crypto = 0", (round(float(balance), 2),))
         dict_string = {'companyName': 'CASH', 'description': 'Cash Account', 'symbol': '$'}
         json_string = json.dumps(dict_string)
-        c.execute("UPDATE folder SET json_string = (?) WHERE symbol = '$'", (json_string,))
-        c.execute("UPDATE folder SET shares = ? WHERE symbol = '$'", (round(float(balance), 4),))
+        c.execute("UPDATE folder SET json_string = (?) WHERE symbol = '$' and crypto = 0", (json_string,))
+        c.execute("UPDATE folder SET shares = ? WHERE symbol = '$' and crypto = 0", (round(float(balance), 4),))
         dt = datetime.datetime.now()
-        c.execute("UPDATE folder SET update_time = (?) WHERE symbol = '$'", (dt.strftime("%m/%d/%y %H:%M"),))
-        c.execute("UPDATE folder SET price = 1.00 WHERE symbol = '$'")
+        c.execute("UPDATE folder SET update_time = (?) WHERE symbol = '$' and crypto = 0", (dt.strftime("%m/%d/%y %H:%M"),))
+        c.execute("UPDATE folder SET price = 1.00 WHERE symbol = '$' and crypto = 0")
+        c.execute("UPDATE folder SET crypto = 0 WHERE symbol = '$' and crypto = 0")
         conn.commit()
         conn.close()
     if (verbose):
@@ -553,7 +696,7 @@ def GetFolderCount(verbose):
         print ("***\n")
     return len(results)
 
-def CreateFolder(key, verbose):
+def CreateFolder(symbol, crypto, verbose):
     db_file = GetDB(verbose)
     username = getpass.getuser()
     Path(username + "/").mkdir(parents=True, exist_ok=True) 
@@ -568,18 +711,18 @@ def CreateFolder(key, verbose):
         print("CreateFolder(3) {0}".format(e))
         return False
     c = conn.cursor()
-    c.execute("CREATE TABLE if not exists 'folder' ( `symbol` TEXT NOT NULL UNIQUE, `balance` REAL, `shares` REAL, `price` NUMERIC, `quote` TEXT, `update_time` TEXT, `json_string` TEXT, PRIMARY KEY(`symbol`) )")
-    c.execute( "INSERT OR IGNORE INTO folder(symbol) VALUES((?))", (key,))
+    c.execute("CREATE TABLE if not exists 'folder' ( `symbol` TEXT NOT NULL, `balance` REAL, `shares` REAL, `price` NUMERIC, `crypto` INTEGER, `quote` TEXT, `update_time` TEXT, `json_string` TEXT, PRIMARY KEY(`crypto`,`symbol`) )")
+    c.execute( "INSERT OR IGNORE INTO folder(symbol, crypto) VALUES((?),?)", (symbol,crypto,))
     conn.commit()
     conn.close()
     count = GetFolderCount(verbose)
-    if (count == 1 and key != "$"):
+    if (count == 1 and symbol != "$"):
         Cash("0", verbose)
     if (verbose):
         print ("***\n")
     return True
 
-def Shares(symbol, shares, verbose):
+def Shares(symbol, crypto, shares, verbose):
     result = {}
     if shares is None:
         shares = "0"
@@ -595,8 +738,9 @@ def Shares(symbol, shares, verbose):
     if (verbose):
         print ("***")
         print ("Shares(1) symbol: {0}".format(symbol))
-        print ("Shares(2) shares: {0}".format(shares))
-        print ("Shares(3) dbase: {0}".format(db_file))
+        print ("Shares(2) crypto: {0}".format(crypto))
+        print ("Shares(3) shares: {0}".format(shares))
+        print ("Shares(4) dbase: {0}".format(db_file))
     if (symbol == ""):
         e = "Error: symbol cannot be blank"
         print (e)
@@ -605,30 +749,37 @@ def Shares(symbol, shares, verbose):
         result['exception'] = e
         return result
     folder = GetFolder(verbose)
-    price = GetFolderValue(symbol, "price", folder)
+    price = GetFolderValue(symbol, crypto, "price", folder)
+    balance = 0
+    if (price is None):
+        price = 0
+    if price > 0:
+        balance = shares * price
     try:
         conn = sqlite3.connect(db_file)
         if (verbose):
-            print("Shares(4) sqlite3: {0}".format(sqlite3.version))
+            print("Shares(5) sqlite3: {0}".format(sqlite3.version))
     except Error as e:
-        print("Shares(5) {0}".format(e))
+        print("Shares(6) {0}".format(e))
         result['status'] = False
         result['balance'] = 0
         result['exception'] = e
         return result
     c = conn.cursor()
-    c.execute("UPDATE folder SET shares = ? WHERE symbol = (?)", (shares, symbol,))
+    c.execute("UPDATE folder SET shares = ? WHERE symbol = (?) and crypto = ?", (shares, symbol, crypto,))
     balance = shares * price
-    c.execute("UPDATE folder SET balance = ? WHERE symbol = (?)", (balance, symbol,))
+    c.execute("UPDATE folder SET balance = ? WHERE symbol = (?) and crypto = ?", (balance, symbol, crypto,))
     conn.commit()
     conn.close()
     if (verbose):
         print ("***\n")
     result['status'] = True
     result['balance'] = balance
+    result['shares'] = shares
+    result['price'] = price
     return result
 
-def Balance(symbol, balance, verbose):
+def Balance(symbol, crypto, balance, verbose):
     result = {}
     if (balance is None):
         balance = "0"
@@ -644,8 +795,9 @@ def Balance(symbol, balance, verbose):
     if (verbose):
         print ("***")
         print ("Balance(1) symbol: {0}".format(symbol))
-        print ("Balance(2) balance: {0}".format(balance))
-        print ("Balance(3) dbase: {0}".format(db_file))
+        print ("Balance(2) crypto: {0}".format(crypto))
+        print ("Balance(3) balance: {0}".format(balance))
+        print ("Balance(4) dbase: {0}".format(db_file))
     if (symbol == ""):
         e = "Error: symbol cannot be blank"
         print (e)
@@ -654,73 +806,97 @@ def Balance(symbol, balance, verbose):
         result['exception'] = e
         return result
     folder = GetFolder(verbose)
-    price = GetFolderValue(symbol, "price", folder)
-    try:
-        conn = sqlite3.connect(db_file)
-        if (verbose):
-            print("Balance(4) sqlite3: {0}".format(sqlite3.version))
-    except Error as e:
-        print("Balance(5) {0}".format(e))
-        result['status'] = False
-        result['shares'] = 0
-        result['exception'] = e
-        return result
-    c = conn.cursor()
+    price = GetFolderValue(symbol, crypto, "price", folder)
     shares = 0
     if (price is None):
         price = 0
     if price > 0:
         shares = balance / price
-    c.execute("UPDATE folder SET shares = ? WHERE symbol = (?)", (shares, symbol,))
-    c.execute("UPDATE folder SET balance = ? WHERE symbol = (?)", (balance, symbol,))
+    try:
+        conn = sqlite3.connect(db_file)
+        if (verbose):
+            print("Balance(5) sqlite3: {0}".format(sqlite3.version))
+    except Error as e:
+        print("Balance(6) {0}".format(e))
+        result['status'] = False
+        result['shares'] = 0
+        result['exception'] = e
+        return result
+    c = conn.cursor()
+    c.execute("UPDATE folder SET shares = ? WHERE symbol = (?) and crypto = ?", (shares, symbol,crypto,))
+    c.execute("UPDATE folder SET balance = ? WHERE symbol = (?) and crypto = ?", (balance, symbol,crypto,))
     conn.commit()
     conn.close()
     if (verbose):
         print ("***\n")
     result['status'] = True
     result['shares'] = shares
+    result['balance'] = balance
+    result['price'] = price
     return result
 
-def Update(verbose):
+def Update(market_open, verbose):
     db_file = GetDB(verbose)
     username = getpass.getuser()
     Path(username + "/").mkdir(parents=True, exist_ok=True) 
     if (verbose):
         print ("***")
-        print ("Update(1) dbase: {0}".format(db_file))
+        print ("Update(1) Is the stock market open? : {0}".format(market_open))
+        print ("Update(2) dbase: {0}".format(db_file))
     try:
         conn = sqlite3.connect(db_file)
         if (verbose):
-            print("Update(2) sqlite3: {0}".format(sqlite3.version))
+            print("Update(3) sqlite3: {0}".format(sqlite3.version))
     except Error as e:
-        print("Update(3) dbase: {0}, {1}".format(db_file, e))
+        print("Update(4) dbase: {0}, {1}".format(db_file, e))
         return False, e
     c = conn.cursor()
     try:
-        c.execute("SELECT symbol, shares, balance FROM folder where symbol != '$' order by symbol")
+        c.execute("SELECT symbol, crypto, shares, balance FROM folder where symbol != '$' order by crypto,symbol")
     except Error as e:
-        print("Update(4) dbase: {0}, {1}".format(db_file, e))
+        print("Update(5) dbase: {0}, {1}".format(db_file, e))
         return False, e
     rows = c.fetchall()
     conn.commit()
     conn.close()
-    quote_list = ""
+    quote1_list = ""
+    quote0_list = ""
+    quote1 = []
+    quote0 = []
+    quotes0 = []
+    quotes1 = []
     for row in rows:
-        quote_list += row[0] + ","
-    quote_list = quote_list[:-1]
-    quotes = QuoteTradier(quote_list, verbose)
+        if (row[1] == 1):
+            quote1_list += row[0] + ","
+        if (row[1] == 0):
+            quote0_list += row[0] + ","
+    quote1_list = quote1_list[:-1]
+    quote0_list = quote0_list[:-1]
+    if (market_open == True) and (quote0_list != ""):
+        quotes0 = QuoteTradier(quote0_list, verbose)
+    if (quote1_list != ""):
+        quotes1 = QuoteCrypto(quote1_list, verbose)
     errors = []
-    if ("Error Message" in quotes[0]):
-        errors.append(quotes)
+    if (quotes1 != []) and ("Error Message" in quotes1):
+        errors.append(quotes1)
+    if (quotes0 != []) and ("Error Message" in quotes0):
+        errors.append(quotes0)
     if errors == []:
         for row in rows:
-            for quote in quotes:
-                if row[0] == quote["symbol"]:
-                    result = Price(row[0], quote, verbose)
-                    result = Shares(row[0], str(row[1]), verbose)
-                    if (result['status']):
+            for quote in quotes1:
+                if (row[0] == quote["symbol"] and row[1] == 1):
+                    result = Price(row[0], row[1], quote["price"], verbose)
+                    result = Shares(row[0], row[1], str(row[2]), verbose)
+                    if (result['status'] == True):
                         if (verbose):
-                            print ("symbol: {0}, current shares: {1}, previous balance: {2}, current balance: {3}".format(row[0], row[1], row[2], result['balance']))
+                            print ("crypto symbol: {0}, current shares: {1}, previous balance: {2}, current balance: {3}".format(row[0], row[2], row[3], result['balance']))
+            for quote in quotes0:
+                if (row[0] == quote["symbol"] and row[1] == 0):
+                    result = Price(row[0], row[1], quote["price"], verbose)
+                    result = Shares(row[0], row[1], str(row[2]), verbose)
+                    if (result['status'] == True):
+                        if (verbose):
+                            print ("stock symbol: {0}, current shares: {1}, previous balance: {2}, current balance: {3}".format(row[0], row[2], row[3], result['balance']))
     if (verbose):
         if (errors):
             pprint.pprint(errors)
@@ -812,11 +988,11 @@ def GetFolder(verbose):
                 answers.append(js)
     return answers
 
-def GetFolderValue(symbol, key, folder_list):
+def GetFolderValue(symbol, crypto, key, folder_list):
     value = None
     if folder_list != []:
         for row in folder_list:
-            if row['symbol'] == symbol:
+            if (row['symbol'] == symbol) and (row['crypto'] == int(crypto)):
                 if row[key] == None:
                     return 0
                 else:
@@ -830,7 +1006,8 @@ def GetFolderStockValue(verbose):
     answer = 0
     for item in folder:
         if item['symbol'] != "$":
-            answer += item['balance']
+            if (item['balance'] != None):
+                answer += item['balance']
     return answer
 
 def PrintFolder(verbose):
@@ -890,7 +1067,7 @@ def PrintFolder(verbose):
         for value in f.values():
             row.append(value)
         row = row[:1] + [''] + row[1:-1]
-        symbol_options += '<option value="{0}">{1}</option>'.format(row[keys.index("symbol")], row[keys.index("symbol")])
+        symbol_options += '<option value="{0},{1}">{2}</option>'.format(row[keys.index("symbol")], row[keys.index("crypto")], row[keys.index("symbol")])
         json_string = f['json string']
         col_list = []
         for i in range(len(keys)):
@@ -908,13 +1085,14 @@ def PrintFolder(verbose):
                 if row[0] == "$":
                     col_list.append("")
                 else:
-                    col_list.append(as_currency(row[i]))
+                    col_list.append(as_big(row[i]))
             else:
                 if (keys[i] == "balance"):
                     col_list.append(as_currency(row[i]))
                     if (keys[i] == "balance"):
                         amount_option = []
                         amount_option.append(row[keys.index("symbol")])
+                        amount_option.append(row[keys.index("crypto")])
                         amount_option.append(row[i])
                         amount_option.append(row[keys.index("shares")])
                         amount_options.append(amount_option)
@@ -939,10 +1117,16 @@ def AddRemoveButtons(table):
         if start == -1:
             done = True
             continue
+        matches = re.finditer("<td>", table)
+        matches_positions = [match.start() for match in matches]
+        match_index = matches_positions.index(start + 4)
         symbol = table[start + 8 :table.find("</td>", start + 8)]
-        row += 1
+        crypto = table[matches_positions[match_index + 5] + 4 :table.find("</td>", matches_positions[match_index + 5] + 4)]
         if (symbol != "$"):
-            r_button = '<tr><td><form action="#" method="post"><input class="submit" type="submit" name="action" value="remove"/><input hidden type="text" name="remove_symbol" value="{0}"/></form></td><td>'.format(symbol)
+            exchange = ""
+            if (crypto == "1"):
+                    exchange = "coinbase"
+            r_button = '<tr><td><form action="#" method="post"><input class="submit" type="submit" name="action" value="remove"/><input hidden type="text" name="remove_symbol" value="{0}"/><input hidden type="text" name="remove_type" value="{1}"/></form></td><td>'.format(symbol, exchange)
             table = table[0 : start] + table[start:].replace(pattern, r_button, 1)
         else:
             table = table[0 : start] + table[start:].replace(pattern, "<tr><td></td><td>", 1)
@@ -995,18 +1179,18 @@ def AllocationTrends(verbose):
     for row in rows:
         pst = 0
         if (row['symbol'] != "$"):
-            if (row['balance'] is not None):
+            if (row['balance'] is not None) and (total != 0):
                 pst = row['balance'] / total * 100.
             allocation = allocation + "<li>{0} {1}</li>".format(row['symbol'], as_percent(pst))
     trends = []
     for row in rows:
         for col in last_list:
             if (row['symbol'] != "$"):
-                if (row['symbol'] == col['symbol']):
+                if (row['symbol'] == col['symbol'] and row['crypto'] == col['crypto']):
                     pst = 0
                     test = 0
                     trend = {}
-                    if (row['price'] is not None):
+                    if (col['price'] is not None) and (col['price'] != 0):
                         pst = (row['price'] - col['price']) / col['price'] * 100.
                         if pst == 0:
                             trend['arrow'] = "flat"
@@ -1021,11 +1205,11 @@ def AllocationTrends(verbose):
     life_trends = []
     for row in rows:
         for col in first_list:
-            if (row['symbol'] == col['symbol']):
+            if (row['symbol'] == col['symbol'] and row['crypto'] == col['crypto']):
                 pst = 0
                 test = 0
                 trend = {}
-                if (row['balance'] is not None):
+                if (col['balance'] is not None) and (col['balance'] != 0):
                     pst = (row['balance'] - col['balance']) / col['balance'] * 100.
                     if pst == 0:
                         trend['arrow'] = "flat"
@@ -1445,11 +1629,12 @@ def GetCurrentStockList(stock_list, verbose):
     for item in stock_list:
         ds = {}
         ds['symbol'] = item[0]
-        ds['balance'] = round(item[1], 2)
-        ds['shares'] = round(item[2], 4)
+        ds['crypto'] = item[1]
+        ds['balance'] = round(item[2], 2)
+        ds['shares'] = round(item[3], 4)
         if folder != []:
             for f in folder:
-                if item[0] == f['symbol']:
+                if (item[0] == f['symbol']) and (f['crypto'] == int(item[1])):
                     ds['price'] = f['price']
         dl.append(ds)
     return dl
@@ -1538,13 +1723,14 @@ def PrintAIM(printyear, verbose):
     return table.__html__(), export_options
 #endregion aim
 #region tests
-def TestDefaults(verbose):
-    old_stdout = sys.stdout
-    print_out = StringIO()
-    sys.stdout = print_out
+def TestDefaults(saved, verbose):
+    if (saved):
+        old_stdout = sys.stdout
+        print_out = StringIO()
+        sys.stdout = print_out
     count = 0
     fails = 0
-    total_tests = 23
+    total_tests = 26
     defaults, types =  GetDefaults(False)
     if defaults == {}:
         result = ResetDefaults(verbose)
@@ -1610,6 +1796,17 @@ def TestDefaults(verbose):
             print ("\tfail.")
         fails += 1
     if (verbose):
+        print ("Test #{0} - UpdateDefaultItem('coin key', 'TEST', verbose)".format(count + 1))
+    result = UpdateDefaultItem("coin key", "TEST", verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+    if (verbose):
         print ("Test #{0} - UpdateDefaultItem('poll minutes', 10, False)".format(count + 1))
     result = UpdateDefaultItem('poll minutes', 10, verbose)
     if (result):
@@ -1654,9 +1851,13 @@ def TestDefaults(verbose):
             print ("\tfail.")
         fails += 1
     if (verbose):
-        print ("Test #{0} - Add('AAPL', verbose)".format(count + 1))
-    result = Add( "AAPL", verbose)
-    if (result):
+        print ("Test #{0} - Add('AAPL', 'NASDAQ', verbose)".format(count + 1))
+    result = Add( "AAPL", "NASDAQ", verbose)
+    if ("Invalid Access Token" in result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    elif ("Success" in result) and (result[3] == "Apple Inc"):
         if (verbose):
             print ("\tpass.")
         count += 1
@@ -1667,7 +1868,7 @@ def TestDefaults(verbose):
     if (verbose):
         print ("Test #{0} - QuoteTradier('AAPL', verbose)".format(count + 1))
     result = QuoteTradier("AAPL", verbose)
-    if (result[0]['Error Message'] == "Invalid Access Token"):
+    if (result['Error Message'] == "Invalid Access Token"):
         if (verbose):
             print ("\tpass.")
         count += 1
@@ -1676,11 +1877,8 @@ def TestDefaults(verbose):
             print ("\tfail.")
         fails += 1
     if (verbose):
-        print ("Test #{0} - Price('AAPL', quote, verbose)".format(count + 1))
-    quote = {}
-    quote['price'] = 50.55
-    quote['quote'] = "test"
-    result = Price("AAPL", quote, verbose)
+        print ("Test #{0} - Price('AAPL', 0, 50.55, verbose)".format(count + 1))
+    result = Price("AAPL", 0, 50.55, verbose)
     if (result):
         if (verbose):
             print ("\tpass.")
@@ -1692,11 +1890,10 @@ def TestDefaults(verbose):
     if (verbose):
         print ("Test #{0} - GetFolder(verbose)".format(count + 1))
     result = GetFolder(verbose)
-    print (result)
     if result != []:
         for item in result:
-            if item['symbol'] == "AAPL":
-                if item['price'] == 50.55 and item['quote'] == "test":
+            if item['symbol'] == "AAPL" and item['crypto'] == 0:
+                if item['price'] == 50.55 and item['quote'] == None:
                     if (verbose):
                         print ("\tpass.")
                     count += 1
@@ -1742,8 +1939,10 @@ def TestDefaults(verbose):
     else:
         print ("test count expected {0} passes, received {1}, failures {2}".format(total_tests, count, fails))
         testResults =  False
-    sys.stdout = old_stdout
-    result_string = print_out.getvalue()
+    result_string = ""
+    if (saved):
+        sys.stdout = old_stdout
+        result_string = print_out.getvalue()
     results = {}
     results['status'] = testResults
     results['total'] = total_tests
@@ -1752,10 +1951,226 @@ def TestDefaults(verbose):
     results['output'] = result_string
     return results
 
-def TestFolder(verbose):
-    old_stdout = sys.stdout
-    print_out = StringIO()
-    sys.stdout = print_out
+def TestCrypto(saved, verbose):
+    if (saved):
+        old_stdout = sys.stdout
+        print_out = StringIO()
+        sys.stdout = print_out
+    count = 0
+    fails = 0
+    total_tests = 16
+    defaults, types = GetDefaults(verbose)
+    if (verbose):
+        print ("Test #{0} - UpdateDefaultItem('folder name', 'Test Crypto', verbose)".format(count + 1))
+    result = UpdateDefaultItem("folder name", "Test Crypto", verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+    if (verbose):
+        print ("Test #{0} - Balance('$', 0, '5000', verbose)".format(count + 1))
+    result = Balance( "$", 0, "5000", verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+    if (verbose):
+        print ("Test #{0} - Add('MMM', 'NASDAQ', verbose)".format(count + 1))
+    result = Add( "MMM", "NASDAQ", verbose)
+    if ("Invalid Access Token" in result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    elif ("Success" in result) and (result[3] == "3M Co"):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+    if (verbose):
+        print ("Test #{0} - Balance('MMM', 0, '2500', verbose)".format(count + 1))
+    result = Balance( "MMM", 0, "2500", verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+    if (verbose):
+        print ("Test #{0} - Add('MMM', 'coinbase', verbose)".format(count + 1))
+    result = Add( "MMM", "coinbase", verbose)
+    if ("This API Key is invalid." in result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    elif ("Success" in result) and (result[3] == "MultiMillion"):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+    if (verbose):
+        print ("Test #{0} - Balance('MMM', 1, '2500', verbose)".format(count + 1))
+    result = Balance( "MMM", 1, "2500", verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+    if (verbose):
+        print ("Test #{0} - GetFolderCount(verbose)".format(count + 1))
+    result = GetFolderCount(verbose)
+    if (result == 3):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+    if (verbose):
+        print ("Test #{0} - Shares('MMM', 0, '50', verbose)".format(count + 1))
+    result = Shares("MMM", 0, "50", verbose)
+    if (result['status']):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+    if (verbose):
+        print ("Test #{0} - Shares('MMM', 1, '50', verbose)".format(count + 1))
+    result = Shares("MMM", 1, "50", verbose)
+    if (result['status']):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+    if (verbose):
+        print ("Test #{0} - Update(True, verbose)".format(count + 1))
+    result = Update(True, verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+    folder = GetFolder(verbose)
+    if (verbose):
+        print ("Test #{0} - GetFolderValue('MMM', 0, 'price', folder)".format(count + 1))
+    result0 = GetFolderValue("MMM", 0, "price", folder)
+    if (result0 >= 0):
+        if (verbose):
+            print ("*** Price is: {0} ***".format(result0))
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+    if (verbose):
+        print ("Test #{0} - GetFolderValue('MMM', 1, 'price', folder)".format(count + 1))
+    result1 = GetFolderValue("MMM", 1, "price", folder)
+    if (result1 >= 0):
+        if (verbose):
+            print ("*** Price is: {0} ***".format(result1))
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+    if (verbose):
+        print ("Test #{0} - Remove('MMM', 'NASDAQ', verbose)".format(count + 1))
+    result = Remove("MMM", "NASDAQ", verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+    if (verbose):
+        print ("Test #{0} - Remove('MMM', 'coinbase', verbose)".format(count + 1))
+    result = Remove("MMM", "coinbase", verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+    if (verbose):
+        print ("Test #{0} - GetFolderCount(verbose)".format(count + 1))
+    result = GetFolderCount(verbose)
+    if (result == 1):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+    if (verbose):
+        print ("Test #{0} - DeleteName('Test Crypto', verbose)".format(count + 1))
+    result = DeleteName("Test Crypto", verbose)
+    if (result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+        fails += 1
+    testResults = False
+    if (fails == 0 and count == total_tests):
+        print ("ran {0} tests, all pass".format(total_tests))
+        testResults = True
+    else:
+        print ("test count expected {0} passes, received {1}, failures {2}".format(total_tests, count, fails))
+        testResults =  False
+    result_string = ""
+    if (saved):
+        sys.stdout = old_stdout
+        result_string = print_out.getvalue()
+    results = {}
+    results['status'] = testResults
+    results['total'] = total_tests
+    results['pass'] = count
+    results['fails'] = fails
+    results['output'] = result_string
+    return results
+
+def TestFolder(saved, verbose):
+    if (saved):
+        old_stdout = sys.stdout
+        print_out = StringIO()
+        sys.stdout = print_out
     count = 0
     fails = 0
     total_tests = 13
@@ -1772,9 +2187,13 @@ def TestFolder(verbose):
             print ("\tfail.")
         fails += 1
     if (verbose):
-        print ("Test #{0} - Add('AAPL', verbose)".format(count + 1))
-    result = Add( "AAPL", verbose)
-    if (result):
+        print ("Test #{0} - Add('AAPL', 'NASDAQ', verbose)".format(count + 1))
+    result = Add( "AAPL", "NASDAQ", verbose)
+    if ("Invalid Access Token" in result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    elif ("Success" in result) and (result[3] == "Apple Inc"):
         if (verbose):
             print ("\tpass.")
         count += 1
@@ -1783,8 +2202,8 @@ def TestFolder(verbose):
             print ("\tfail.")
         fails += 1
     if (verbose):
-        print ("Test #{0} - Balance('$', '5000', verbose)".format(count + 1))
-    result = Balance( "$", "5000", verbose)
+        print ("Test #{0} - Balance('$', 0, '5000', verbose)".format(count + 1))
+    result = Balance( "$", 0, "5000", verbose)
     if (result):
         if (verbose):
             print ("\tpass.")
@@ -1816,8 +2235,8 @@ def TestFolder(verbose):
             print ("\tfail.")
         fails += 1
     if (verbose):
-        print ("Test #{0} - Balance('AAPL', '5000', verbose)".format(count + 1))
-    result = Balance("AAPL", "5000", verbose)
+        print ("Test #{0} - Balance('AAPL', 0, '5000', verbose)".format(count + 1))
+    result = Balance("AAPL", 0, "5000", verbose)
     if (result['status']):
         if (verbose):
             print ("\tpass.")
@@ -1827,8 +2246,8 @@ def TestFolder(verbose):
             print ("\tfail.")
         fails += 1
     if (verbose):
-        print ("Test #{0} - Shares('AAPL', '50', verbose)".format(count + 1))
-    result = Shares("AAPL", "50", verbose)
+        print ("Test #{0} - Shares('AAPL', 0, '50', verbose)".format(count + 1))
+    result = Shares("AAPL", 0, "50", verbose)
     if (result['status']):
         if (verbose):
             print ("\tpass.")
@@ -1839,8 +2258,8 @@ def TestFolder(verbose):
         fails += 1
     folder = GetFolder(verbose)
     if (verbose):
-        print ("Test #{0} - GetFolderValue('AAPL', 'price', folder)".format(count + 1))
-    result = GetFolderValue("AAPL", "price", folder)
+        print ("Test #{0} - GetFolderValue('AAPL', 0, 'price', folder)".format(count + 1))
+    result = GetFolderValue("AAPL", 0, "price", folder)
     if (result >= 0):
         if (verbose):
             print ("\tpass.")
@@ -1861,8 +2280,8 @@ def TestFolder(verbose):
             print ("\tfail.")
         fails += 1
     if (verbose):
-        print ("Test #{0} - Update(verbose)".format(count + 1))
-    result = Update(verbose)
+        print ("Test #{0} - Update(True, verbose)".format(count + 1))
+    result = Update(True, verbose)
     if (result):
         if (verbose):
             print ("\tpass.")
@@ -1872,8 +2291,8 @@ def TestFolder(verbose):
             print ("\tfail.")
         fails += 1
     if (verbose):
-        print ("Test #{0} - Remove('AAPL', verbose)".format(count + 1))
-    result = Remove("AAPL", verbose)
+        print ("Test #{0} - Remove('AAPL', 'NASDAQ', verbose)".format(count + 1))
+    result = Remove("AAPL", "NASDAQ", verbose)
     if (result):
         if (verbose):
             print ("\tpass.")
@@ -1882,7 +2301,6 @@ def TestFolder(verbose):
         if (verbose):
             print ("\tfail.")
         fails += 1
-    username = getpass.getuser()
     if (verbose):
         print ("Test #{0} - UpdateDefaultItem('folder name', 'Test Folder', verbose)".format(count + 1))
     result = UpdateDefaultItem("folder name", defaults['folder name'], verbose)
@@ -1912,8 +2330,10 @@ def TestFolder(verbose):
     else:
         print ("test count expected {0} passes, received {1}, failures {2}".format(total_tests, count, fails))
         testResults =  False
-    sys.stdout = old_stdout
-    result_string = print_out.getvalue()
+    result_string = ""
+    if (saved):
+        sys.stdout = old_stdout
+        result_string = print_out.getvalue()
     results = {}
     results['status'] = testResults
     results['total'] = total_tests
@@ -1922,13 +2342,14 @@ def TestFolder(verbose):
     results['output'] = result_string
     return results
 
-def TestAIM(location, verbose):
-    old_stdout = sys.stdout
-    print_out = StringIO()
-    sys.stdout = print_out
+def TestAIM(location, saved, verbose):
+    if (saved):
+        old_stdout = sys.stdout
+        print_out = StringIO()
+        sys.stdout = print_out
     count = 0
     fails = 0
-    total_tests = 457
+    total_tests = 455
     defaults, types = GetDefaults(False)
     status, keys, rows = LoadTest(location, verbose)
     if (status and (defaults is not None)):
@@ -1944,30 +2365,8 @@ def TestAIM(location, verbose):
                 print ("\tfail.")
             fails += 1
         if (verbose):
-            print ("Test #{0} - Balance('$', '5000', verbose)".format(count + 1))
-        result = Balance( "$", "5000", verbose)
-        if (result):
-            if (verbose):
-                print ("\tpass.")
-            count += 1
-        else:
-            if (verbose):
-                print ("\tfail.")
-            fails += 1
-        if (verbose):
-            print ("Test #{0} - Add('AAPL', verbose)".format(count + 1))
-        result = Add( "AAPL", verbose)
-        if (result):
-            if (verbose):
-                print ("\tpass.")
-            count += 1
-        else:
-            if (verbose):
-                print ("\tfail.")
-            fails += 1
-        if (verbose):
-            print ("Test #{0} - Balance('$', '5000', verbose)".format(count + 1))
-        result = Balance( "$", "5000", verbose)
+            print ("Test #{0} - Balance('$', 0, '5000', verbose)".format(count + 1))
+        result = Balance( "$", 0, "5000", verbose)
         if (result):
             if (verbose):
                 print ("\tpass.")
@@ -2050,7 +2449,6 @@ def TestAIM(location, verbose):
                 if (verbose):
                     print ("\tPortfolioValue({0}) - expected: {1}, calculated: {2}, fail.".format(index, curr['Portfolio Value'], result))
                 fails += 1
-        username = getpass.getuser()
         if (verbose):
             print ("Test #{0} - UpdateDefaultItem('folder name', '<reset back to what it was>', verbose)".format(count + 1))
         result = UpdateDefaultItem("folder name", defaults['folder name'], verbose)
@@ -2080,8 +2478,10 @@ def TestAIM(location, verbose):
     else:
         print ("test count expected {0} passes, received {1}, failures {2}".format(total_tests, count, fails))
         testResults =  False
-    sys.stdout = old_stdout
-    result_string = print_out.getvalue()
+    result_string = ""
+    if (saved):
+        sys.stdout = old_stdout
+        result_string = print_out.getvalue()
     results = {}
     results['status'] = testResults
     results['total'] = total_tests
@@ -2090,14 +2490,15 @@ def TestAIM(location, verbose):
     results['output'] = result_string
     return results
 
-def TestHistory(verbose):
+def TestHistory(saved, verbose):
     results = {}
     db_file = GetDB(verbose)
     username = getpass.getuser()
     Path(username + "/").mkdir(parents=True, exist_ok=True) 
-    old_stdout = sys.stdout
-    print_out = StringIO()
-    sys.stdout = print_out
+    if (saved):
+        old_stdout = sys.stdout
+        print_out = StringIO()
+        sys.stdout = print_out
     count = 0
     fails = 0
     total_tests = 31
@@ -2136,8 +2537,8 @@ def TestHistory(verbose):
             print ("\tfail.")
         fails += 1
     if (verbose):
-        print ("Test #{0} - Balance('$', '5000', verbose)".format(count + 1))
-    result = Balance( "$", "5000", verbose)
+        print ("Test #{0} - Balance('$', 0, '5000', verbose)".format(count + 1))
+    result = Balance( "$", 0, "5000", verbose)
     if (result):
         if (verbose):
             print ("\tpass.")
@@ -2147,9 +2548,13 @@ def TestHistory(verbose):
             print ("\tfail.")
         fails += 1
     if (verbose):
-        print ("Test #{0} - Add('AAPL', verbose)".format(count + 1))
-    result = Add( "AAPL", verbose)
-    if (result):
+        print ("Test #{0} - Add('AAPL', 'NASDAQ', verbose)".format(count + 1))
+    result = Add( "AAPL", "NASDAQ", verbose)
+    if ("Invalid Access Token" in result):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    elif ("Success" in result) and (result[3] == "Apple Inc"):
         if (verbose):
             print ("\tpass.")
         count += 1
@@ -2158,8 +2563,8 @@ def TestHistory(verbose):
             print ("\tfail.")
         fails += 1
     if (verbose):
-        print ("Test #{0} - Balance('AAPL', '5000', verbose)".format(count + 1))
-    result = Balance("AAPL", "5000", verbose)
+        print ("Test #{0} - Balance('AAPL', 0, '5000', verbose)".format(count + 1))
+    result = Balance("AAPL", 0, "5000", verbose)
     if (result):
         if (verbose):
             print ("\tpass.")
@@ -2411,8 +2816,8 @@ def TestHistory(verbose):
             print ("\tfail.")
             fails += 1
     if (verbose):
-        print ("Test #{0} - Remove('AAPL', verbose)".format(count + 1))
-    result = Remove("AAPL", verbose)
+        print ("Test #{0} - Remove('AAPL', 'NASDAQ', verbose)".format(count + 1))
+    result = Remove("AAPL", "NASDAQ", verbose)
     if (result):
         if (verbose):
             print ("\tpass.")
@@ -2472,8 +2877,10 @@ def TestHistory(verbose):
     else:
         print ("test count expected {0} passes, received {1}, failures {2}".format(total_tests, count, fails))
         testResults =  False
-    sys.stdout = old_stdout
-    result_string = print_out.getvalue()
+    result_string = ""
+    if (saved):
+        sys.stdout = old_stdout
+        result_string = print_out.getvalue()
     results['status'] = testResults
     results['total'] = total_tests
     results['pass'] = count
@@ -2481,14 +2888,15 @@ def TestHistory(verbose):
     results['output'] = result_string
     return results
 
-def TestLow(verbose):
+def TestLow(saved, verbose):
     results = {}
-    old_stdout = sys.stdout
-    print_out = StringIO()
-    sys.stdout = print_out
+    if (saved):
+        old_stdout = sys.stdout
+        print_out = StringIO()
+        sys.stdout = print_out
     count = 0
     fails = 0
-    total_tests = 9
+    total_tests = 10
     if (verbose):
         print ("Test #{0} - noteDate('2017/09/29')".format(count + 1))
     result  = noteDate('2017/09/29')
@@ -2512,6 +2920,17 @@ def TestLow(verbose):
             print ("\tfail.")
             fails += 1
     if (verbose):
+        print ("Test #{0} - as_big(-80000.5)".format(count + 1))
+    result  = as_big(-80000.5)
+    if (result == "($80,000.50000000)"):
+        if (verbose):
+            print ("\tpass.")
+        count += 1
+    else:
+        if (verbose):
+            print ("\tfail.")
+            fails += 1
+    if (verbose):
         print ("Test #{0} - as_currency(-80000.5)".format(count + 1))
     result  = as_currency(-80000.5)
     if (result == "($80,000.50)"):
@@ -2525,7 +2944,7 @@ def TestLow(verbose):
     if (verbose):
         print ("Test #{0} - as_shares(23.4)".format(count + 1))
     result  = as_shares(23.4)
-    if (result == "\r23.4000"):
+    if (result == "\r23.40000000"):
         if (verbose):
             print ("\tpass.")
         count += 1
@@ -2598,8 +3017,10 @@ def TestLow(verbose):
     else:
         print ("test count expected {0} passes, received {1}, failures {2}".format(total_tests, count, fails))
         testResults =  False
-    sys.stdout = old_stdout
-    result_string = print_out.getvalue()
+    result_string = ""
+    if (saved):
+        sys.stdout = old_stdout
+        result_string = print_out.getvalue()
     results['status'] = testResults
     results['total'] = total_tests
     results['pass'] = count
@@ -2768,7 +3189,7 @@ def FolderSheet(filename, verbose):
             csvwriter.writerow(keys)
         row['balance'] = as_currency(row['balance'])
         row['shares'] = as_shares(row['shares'])
-        row['price'] = as_currency(row['price'])
+        row['price'] = as_big(row['price'])
         values = row.values()
         csvwriter.writerow(values)
     sheet.close()  
@@ -2786,7 +3207,7 @@ def WorkSheet(filename, verbose):
             keys = row.keys()
             header = False
             csvwriter.writerow(keys)
-        row['adjust amount'] = as_currency(row['adjust amount'])
+        row['adjust amount'] = as_big(row['adjust amount'])
         if (row['symbol'] == "$"):
             row['shares'] = ""
         else:
@@ -2820,7 +3241,7 @@ def ArchiveSheet(filename, verbose):
                     keys = row.keys()
                     header = False
                     csvwriter.writerow(keys)
-                row['initial'] = as_currency(row['initial'])
+                row['initial'] = as_big(row['initial'])
                 row['profit percent'] = as_percent(row['profit percent'])
                 values = row.values()
                 csvwriter.writerow(values)
@@ -2860,7 +3281,7 @@ def ArchiveSheet(filename, verbose):
                 keys = row.keys()
                 header = False
                 csvwriter.writerow(keys)
-            row['adjust amount'] = as_currency(row['adjust amount'])
+            row['adjust amount'] = as_big(row['adjust amount'])
             if row['symbol'] == "$":
                 row['shares'] = ""
             else:
@@ -2999,6 +3420,8 @@ def BumpSnap(verbose):
             c.execute("UPDATE key SET tradier_key = (?) WHERE key = ?", (d['tradier key'], 1,))
         if ("IEX key" in d):
             c.execute("UPDATE key SET IEX_key = (?) WHERE key = ?", (d['IEX key'], 1,))
+        if ("coin key" in d):
+            c.execute("UPDATE key SET coin_key = (?) WHERE key = ?", (d['coin key'], 1,))
     conn.commit()
     conn.close()
     if (verbose):
@@ -3044,19 +3467,19 @@ def SnapTables(verbose):
         for j in i['json string']:
             if ("symbol" in j):
                 if ("shares" in j):
-                    c.execute( "INSERT OR IGNORE INTO shares VALUES(?, (?), (?), ?, ?)", (snap, i['post date'], j['symbol'], j['balance'], j['shares'],))
+                    c.execute( "INSERT OR IGNORE INTO shares VALUES(?, (?), (?), ?, ?, ?)", (snap, i['post date'], j['symbol'], j['crypto'], j['balance'], j['shares'],))
                 else:
-                    c.execute( "INSERT OR IGNORE INTO shares VALUES(?, (?), (?), ?, ?)", (snap, i['post date'], j['symbol'], j['balance'], 0,))
+                    c.execute( "INSERT OR IGNORE INTO shares VALUES(?, (?), (?), ?, ?, ?)", (snap, i['post date'], j['symbol'], j['crypto'], j['balance'], 0,))
     dt = datetime.datetime.now()
     for f in folder:
         if ("symbol" in f):
             if ("shares" in f):
-                c.execute( "INSERT OR IGNORE INTO shares VALUES(?, (?), (?), ?, ?)", (snap, dt.strftime('%Y/%m/%d'), f['symbol'], f['balance'], f['shares'],))
+                c.execute( "INSERT OR IGNORE INTO shares VALUES(?, (?), (?), ?, ?, ?)", (snap, dt.strftime('%Y/%m/%d'), f['symbol'], f['crypto'], f['balance'], f['shares'],))
             else:
-                c.execute( "INSERT OR IGNORE INTO shares VALUES(?, (?), (?), ?, ?)", (snap, dt.strftime('%Y/%m/%d'), f['symbol'], f['balance'], 0,))
+                c.execute( "INSERT OR IGNORE INTO shares VALUES(?, (?), (?), ?, ?, ?)", (snap, dt.strftime('%Y/%m/%d'), f['symbol'], f['crypto'], f['balance'], 0,))
     if worksheet != []:
         for w in worksheet:
-            c.execute( "INSERT OR IGNORE INTO worksheet VALUES(?, (?), (?), ?, ?)", (snap, w['plan date'], w['symbol'], w['shares'], w['adjust amount'],))
+            c.execute( "INSERT OR IGNORE INTO worksheet VALUES(?, (?), (?), ?, ?, ?)", (snap, w['plan date'], w['symbol'], f['crypto'], w['shares'], w['adjust amount'],))
     conn.commit()
     conn.close()
     if (verbose):
@@ -3179,12 +3602,12 @@ def CreateArchive(verbose):
         print("CreateArchive(3) {0}".format(e))
         return False
     c = conn.cursor()
-    c.execute("CREATE TABLE if not exists `key` ( `key` INTEGER NOT NULL UNIQUE, `last_snap` INTEGER, `tradier_key` TEXT, `IEX_key` TEXT )")
-    c.execute( "INSERT OR IGNORE INTO key(key, last_snap, tradier_key, IEX_key) VALUES(?, ?, ?, ?)", (1,0,"","",))
+    c.execute("CREATE TABLE if not exists `key` ( `key` INTEGER NOT NULL UNIQUE, `last_snap` INTEGER, `tradier_key` TEXT, `IEX_key` TEXT, `coin_key` TEXT )")
+    c.execute( "INSERT OR IGNORE INTO key(key, last_snap, tradier_key, IEX_key, coin_key) VALUES(?, ?, ?, ?, ?)", (1,0,"","","",))
     c.execute("CREATE TABLE if not exists 'summary' ( `snap_date` TEXT NOT NULL, `folder_name` TEXT NOT NULL, `snapshot` INTEGER NOT NULL, `aim_rows` INTEGER, `shares_rows` INTEGER, `worksheet_rows` INTEGER, `initial` REAL, `profit_percent` INTEGER, PRIMARY KEY(`snap_date`,`folder_name`,`snapshot`) )")
     c.execute("CREATE TABLE if not exists 'aim' ( `snapshot` INTEGER NOT NULL, `post_date` TEXT NOT NULL, `stock_value` REAL, `cash` REAL, `portfolio_control` REAL, `buy_sell_advice` REAL, `market_order` REAL, `portfolio_value` REAL, PRIMARY KEY(`snapshot`,`post_date`) )")
-    c.execute("CREATE TABLE if not exists 'shares' ( `snapshot` INTEGER NOT NULL, `post_date` TEXT NOT NULL, `symbol` TEXT NOT NULL, `balance` REAL, `shares` REAL, PRIMARY KEY(`snapshot`,`post_date`,`symbol`) )")
-    c.execute("CREATE TABLE if not exists `worksheet` ( `snapshot` INTEGER NOT NULL, `plan_date` TEXT NOT NULL, `symbol` TEXT NOT NULL, `shares` REAL, `adjust_amount` REAL, PRIMARY KEY(`snapshot`,`plan_date`,`symbol`) )")
+    c.execute("CREATE TABLE if not exists 'shares' ( `snapshot` INTEGER NOT NULL, `post_date` TEXT NOT NULL, `symbol` TEXT NOT NULL, `crypto` INTEGER, `balance` REAL, `shares` REAL, PRIMARY KEY(`snapshot`,`post_date`,`crypto`,`symbol`) )")
+    c.execute("CREATE TABLE if not exists `worksheet` ( `snapshot` INTEGER NOT NULL, `plan_date` TEXT NOT NULL, `symbol` TEXT NOT NULL, `crypto` INTEGER, `shares` REAL, `adjust_amount` REAL, PRIMARY KEY(`snapshot`,`plan_date`,`crypto`,`symbol`) )")
     conn.commit()
     conn.close()
     if (verbose):
@@ -3296,7 +3719,7 @@ def PrintSummary(verbose):
         col_list = []
         for i in range(len(keys)):
             if keys[i] == "initial":
-                col_list.append(as_currency(row[i]))
+                col_list.append(as_big(row[i]))
             elif keys[i] == "profit percent":
                 col_list.append(as_percent(row[i]))
             else:
@@ -3523,6 +3946,14 @@ def to_number(string, verbose):
         print ("***\n")
     return clean_number
 
+def as_big(amount):
+    if (amount is None):
+        amount = 0
+    if amount >= 0:
+        return '${:,.8f}'.format(amount)
+    else:
+        return '(${:,.8f})'.format(-amount)
+
 def as_currency(amount):
     if (amount is None):
         amount = 0
@@ -3532,7 +3963,7 @@ def as_currency(amount):
         return '(${:,.2f})'.format(-amount)
 
 def as_shares(amount):
-    return '\r{:.4f}'.format(amount)
+    return '\r{:.8f}'.format(amount)
 
 def as_percent(amount):
     if amount >= 0:
@@ -3665,7 +4096,7 @@ def CreateWorksheet(verbose):
         return False
     c = conn.cursor()
     c.execute("CREATE TABLE if not exists 'market' ( `key` INTEGER NOT NULL UNIQUE, `market_order` REAL, `post_date` TEXT, `actual_amount` REAL, `posted` TEXT, PRIMARY KEY(`key`) )")
-    c.execute("CREATE TABLE if not exists `worksheet` ( `plan_date` TEXT NOT NULL, `symbol` TEXT NOT NULL, `shares` REAL, `adjust_amount` REAL, PRIMARY KEY(`plan_date`,`symbol`) )")
+    c.execute("CREATE TABLE if not exists `worksheet` ( `plan_date` TEXT NOT NULL, `symbol` TEXT NOT NULL, `crypto` INTEGER, `shares` REAL, `adjust_amount` REAL, PRIMARY KEY(`plan_date`,`crypto`,`symbol`) )")
     c.execute( "INSERT OR IGNORE INTO market(key) VALUES(?)", (1,))
     conn.commit()
     conn.close()
@@ -3703,7 +4134,7 @@ def BeginWorksheet(market_order, verbose):
         c.execute("UPDATE market SET post_date = ? WHERE key = ?", (today, 1,))
         c.execute("UPDATE market SET posted = (?) WHERE key = ?", ("no", 1,))
         for f in folder:
-            c.execute( "INSERT OR IGNORE INTO worksheet VALUES((?),(?),?,?)", (today, f['symbol'], 0, 0,))
+            c.execute( "INSERT OR IGNORE INTO worksheet VALUES((?),(?),?, ?,?)", (today, f['symbol'], f['crypto'], 0, 0,))
         conn.commit()
         conn.close()
     else:
@@ -3802,9 +4233,9 @@ def PrintWorksheet(verbose):
                         col_list.append(as_shares(abs(row[index])))
                 elif key == "adjust amount":
                     if (symbol == "$"):
-                        col_list.append(as_currency(row[index]))
+                        col_list.append(as_big(row[index]))
                     else:
-                        col_list.append(as_currency(abs(row[index])))
+                        col_list.append(as_big(abs(row[index])))
                 else:
                     col_list.append(row[index])
         answer = dict(zip(keys, col_list))
@@ -3876,29 +4307,31 @@ def CalculateWorksheet(adjust, verbose):
     for a in adjust:
         for w in worksheet:
             if (w['symbol'] != "$"):
-                if (w['symbol'] == a['symbol']):
+                if (w['symbol'] == a['symbol']) and (w['crypto'] == a['crypto']):
                     a['amount'] = abs(w['adjust amount']) + to_number(a['adjust'], verbose)
                     if (a['amount'] < 0):
                         a['amount'] = 0
                     if (negative):
                         a['amount'] = -a['amount']
-                    c.execute("UPDATE worksheet SET adjust_amount = ? WHERE plan_date = (?) and symbol = (?)", (a['amount'], today, a['symbol'],))
+                    c.execute("UPDATE worksheet SET adjust_amount = ? WHERE plan_date = (?) and symbol = (?) and crypto = ?", 
+                        (a['amount'], today, a['symbol'], a['crypto'],))
     cash = 0
     total = 0
     for a in adjust:
         cash = cash + a['amount']
         total = total + a['amount']
     cash = -cash
-    c.execute("UPDATE worksheet SET adjust_amount = ? WHERE plan_date = (?) and symbol = (?)", (cash, today, "$",))
+    c.execute("UPDATE worksheet SET adjust_amount = ? WHERE plan_date = (?) and symbol = (?) and crypto = 0", (cash, today, "$",))
     c.execute("UPDATE market SET actual_amount = ? WHERE key = ?", (total, 1,))
     for a in adjust:
         for f in folder:
             if (f['symbol'] != "$"):
-                if (f['symbol'] == a['symbol']):
+                if (f['symbol'] == a['symbol']) and (f['crypto'] == a['crypto']):
                     shares = 0.0
                     if (f['price'] > 0):
                         shares = a['amount'] / f['price']
-                        c.execute("UPDATE worksheet SET shares = ? WHERE plan_date = (?) and symbol = (?)", (shares, today, a['symbol'],))
+                        c.execute("UPDATE worksheet SET shares = ? WHERE plan_date = (?) and symbol = (?) and crypto = ?", 
+                            (shares, today, a['symbol'], a['crypto'],))
     conn.commit()
     conn.close()
     if (verbose):
@@ -3910,7 +4343,7 @@ def PostWorksheet(verbose):
     if (verbose):
         print ("***")
         print ("PostWorksheet(1) dbase: {0}".format(db_file))
-    result = CreateFolder("$", verbose)
+    result = CreateFolder("$", 0, verbose)
     if (result):
         try:
             conn = sqlite3.connect(db_file)
@@ -3932,13 +4365,13 @@ def PostWorksheet(verbose):
         c = conn.cursor()
         for w in worksheet:
             for f in folder:
-                if (w['symbol'] == f['symbol']):
+                if (w['symbol'] == f['symbol']) and (w['crypto'] == f['crypto']):
                     if (w['symbol'] == "$"):
                         amount = f['balance'] + w['adjust amount']
-                        c.execute("UPDATE folder SET balance = ? WHERE symbol = '$'", (amount,))
+                        c.execute("UPDATE folder SET balance = ? WHERE symbol = '$' and crypto = 0", (amount,))
                     else:
                         amount = f['shares'] + w['shares']
-                        c.execute("UPDATE folder SET shares = ? WHERE symbol = (?)", (amount, w['symbol'],))
+                        c.execute("UPDATE folder SET shares = ? WHERE symbol = (?) and crypto = ?", (amount, w['symbol'], w['crypto'],))
         c.execute("UPDATE market SET posted = (?) WHERE key = 1", ("yes",))
         c.execute("DELETE from worksheet WHERE adjust_amount = 0")
         conn.commit()

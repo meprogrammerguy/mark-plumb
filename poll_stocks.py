@@ -36,37 +36,41 @@ def do_something(verbose):
             df = plumb.GetDB(False)
         log['poll minutes'] = dm
         log['dbase name'] = df
+        market_open = False
         if plumb.DayisOpen(False) and (not plumb.DayisClosed(False)):
+            market_open = True
             log['open'] = defaults['open']
             log['final poll'] = time.ctime()
             log['status'] = 'wake'
             plumb.LogDaemon(log, False)
-            result, resultError, exceptionError = price_poll(verbose)
-            if not result:
-                if resultError > "":
-                    log['status'] = 'error'
-                    log['content'] = resultError
-                    plumb.LogDaemon(log, verbose)
-                if exceptionError > "":
-                    log['status'] = 'exception'
-                    log['content'] = exceptionError
-                    plumb.LogDaemon(log, verbose)
-            else:
-                log['status'] = 'success'
-                plumb.LogDaemon(log, verbose)
         else:
             log['status'] = 'closed'
             plumb.LogDaemon(log, verbose)
         log['status'] = 'sleep'
         plumb.LogDaemon(log, verbose)
+
+        result, resultError, exceptionError = price_poll(True, verbose )# always poll because crypto is open 24/7
+        if not result:
+            if resultError > "":
+                log['status'] = 'error'
+                log['content'] = resultError
+                plumb.LogDaemon(log, verbose)
+            if exceptionError > "":
+                log['status'] = 'exception'
+                log['content'] = exceptionError
+                plumb.LogDaemon(log, verbose)
+        else:
+            log['status'] = 'success'
+            plumb.LogDaemon(log, verbose)
+
         time.sleep(dm * 60)
 
 def run():
     do_something(True)
 
-def price_poll(verbose):
+def price_poll(market_open, verbose):
     try:
-        result, resultError = plumb.Update(verbose)
+        result, resultError = plumb.Update(market_open, verbose)
         if not result:
             return False, resultError, ""
     except Exception as e:
