@@ -652,7 +652,7 @@ def Cash(balance, verbose):
         dict_string = {'companyName': 'CASH', 'description': 'Cash Account', 'symbol': '$'}
         json_string = json.dumps(dict_string)
         c.execute("UPDATE folder SET json_string = (?) WHERE symbol = '$' and crypto = 0", (json_string,))
-        c.execute("UPDATE folder SET shares = ? WHERE symbol = '$' and crypto = 0", (round(float(balance), 4),))
+        c.execute("UPDATE folder SET shares = ? WHERE symbol = '$' and crypto = 0", (round(float(balance), 2),))
         dt = datetime.datetime.now()
         c.execute("UPDATE folder SET update_time = (?) WHERE symbol = '$' and crypto = 0", (dt.strftime("%m/%d/%y %H:%M"),))
         c.execute("UPDATE folder SET price = 1.00 WHERE symbol = '$' and crypto = 0")
@@ -1631,7 +1631,7 @@ def GetCurrentStockList(stock_list, verbose):
         ds['symbol'] = item[0]
         ds['crypto'] = item[1]
         ds['balance'] = round(item[2], 2)
-        ds['shares'] = round(item[3], 4)
+        ds['shares'] = round(item[3], 8)
         if folder != []:
             for f in folder:
                 if (item[0] == f['symbol']) and (f['crypto'] == int(item[1])):
@@ -3225,7 +3225,7 @@ def ArchiveSheet(filename, verbose):
     snap = 0
     if ("snap shot" in d):
         snap = d['snap shot']
-    if (snap < 1):
+    if (snap is None) or (snap < 1):
         if (verbose):
             print ("ArchiveSheet(2) no snapshots to export")
         return False
@@ -3361,8 +3361,13 @@ def Archive(verbose):
             print("Archive(3) {0}".format(e))
             return False
         c = conn.cursor()
+        worksheet_count = 0
+        if (checkTableExists(conn, "worksheet")):
+            c.execute("select * from worksheet where snapshot = ?", (snap,))
+            worksheet_count = c.fetchall()
+        if (worksheet_count > 0):
+            c.execute("DELETE FROM worksheet")
         c.execute("DELETE FROM aim where post_date != '1970/01/01'")
-        c.execute("DELETE FROM worksheet")
         conn.commit()
         conn.close()
         UpdateDefaultItem("snap shot", snap, verbose)
