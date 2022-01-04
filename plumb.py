@@ -492,6 +492,9 @@ def PrintDefaults(verbose):
                     col_list.append(row[i])
                 else:
                     col_list.append("[key]")
+            elif (keys[i] == "export dir"):
+                if row[i] == "/home/jsmith/Desktop":
+                    col_list.append("[desktop]")
             elif (keys[i] == "market status"):
                 js = json.loads(row[i])
                 if js:
