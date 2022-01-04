@@ -3761,7 +3761,7 @@ def PrintSummary(verbose):
         col_list = []
         for i in range(len(keys)):
             if keys[i] == "initial":
-                col_list.append(as_big(row[i]))
+                col_list.append(as_currency(row[i]))
             elif keys[i] == "profit percent":
                 col_list.append(as_percent(row[i]))
             else:
