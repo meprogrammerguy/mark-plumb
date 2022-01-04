@@ -3361,8 +3361,13 @@ def Archive(verbose):
             print("Archive(3) {0}".format(e))
             return False
         c = conn.cursor()
+        worksheet_count = 0
+        if (checkTableExists(conn, "worksheet")):
+            c.execute("select * from worksheet where snapshot = ?", (snap,))
+            worksheet_count = c.fetchall()
+        if (worksheet_count > 0):
+            c.execute("DELETE FROM worksheet")
         c.execute("DELETE FROM aim where post_date != '1970/01/01'")
-        c.execute("DELETE FROM worksheet")
         conn.commit()
         conn.close()
         UpdateDefaultItem("snap shot", snap, verbose)
