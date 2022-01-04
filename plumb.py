@@ -129,7 +129,7 @@ def QuoteCrypto(quotes, verbose):
             row = content['data'][itm]["quote"]["USD"]
             answer = {}
             answer['symbol'] = content['data'][itm]["symbol"]
-            answer['quote'] = "last"
+            answer['quote'] = "open"
             answer['price'] = row['price']
             answer['url'] = url
             answer['description'] = content['data'][itm]["name"]
@@ -572,9 +572,11 @@ def Add(symbol, exchange, verbose):
             errors.append(quote['description'])
             errors.append("Success")
             if (exchange =="coinbase"):
+                Quote(symbol, 1, None, verbose)
                 Price(symbol, 1, quote["price"], verbose)
                 Shares(symbol, 1, None, verbose)
             else:
+                Quote(symbol, 0, None, verbose)
                 Price(symbol, 0, quote["price"], verbose)
                 Shares(symbol, 0, None, verbose)
     if (verbose):
@@ -603,6 +605,31 @@ def Remove(symbol, exchange, verbose):
         c.execute("DELETE FROM folder WHERE symbol=(?) and crypto = 0", (symbol,))
     conn.commit()
     conn.close()
+    if (verbose):
+        print ("***\n")
+    return True
+
+def Quote(symbol, crypto, quote, verbose):
+    db_file = GetDB(verbose)
+    if (verbose):
+        print ("***")
+        print ("Quote(1) symbol: {0}".format(symbol))
+        print ("Quote(2) crypto: {0}".format(crypto))
+        print ("Quote(3) quote: {0}".format(quote))
+        print ("Quote(4) dbase: {0}".format(db_file))
+    result = CreateFolder(symbol, crypto, verbose)
+    if (result):
+        try:
+            conn = sqlite3.connect(db_file)
+            if (verbose):
+                print("Quote(5) sqlite3: {0}".format(sqlite3.version))
+        except Error as e:
+            print("Quote(6) {0}".format(e))
+            return False
+        c = conn.cursor()
+        c.execute("UPDATE folder SET quote = (?) WHERE symbol = (?) and crypto = ?", (quote, symbol, crypto, ))
+        conn.commit()
+        conn.close()
     if (verbose):
         print ("***\n")
     return True
@@ -888,6 +915,7 @@ def Update(market_open, verbose):
         for row in rows:
             for quote in quotes1:
                 if (row[0] == quote["symbol"] and row[1] == 1):
+                    result = Quote(row[0], row[1], quote["quote"], verbose)
                     result = Price(row[0], row[1], quote["price"], verbose)
                     result = Shares(row[0], row[1], str(row[2]), verbose)
                     if (result['status'] == True):
@@ -895,6 +923,7 @@ def Update(market_open, verbose):
                             print ("crypto symbol: {0}, current shares: {1}, previous balance: {2}, current balance: {3}".format(row[0], row[2], row[3], result['balance']))
             for quote in quotes0:
                 if (row[0] == quote["symbol"] and row[1] == 0):
+                    result = Quote(row[0], row[1], quote["quote"], verbose)
                     result = Price(row[0], row[1], quote["price"], verbose)
                     result = Shares(row[0], row[1], str(row[2]), verbose)
                     if (result['status'] == True):
@@ -1086,9 +1115,14 @@ def PrintFolder(verbose):
                         col_list.append(as_shares(row[i]))
             elif (keys[i] == "price"):
                 if row[0] == "$":
-                    col_list.append("")
+                    col_list.append("$1.00")
                 else:
                     col_list.append(as_big(row[i]))
+            elif (keys[i] == "crypto"):
+                if row[i] == 0:
+                    col_list.append("no")
+                else:
+                    col_list.append("yes")
             else:
                 if (keys[i] == "balance"):
                     col_list.append(as_currency(row[i]))
