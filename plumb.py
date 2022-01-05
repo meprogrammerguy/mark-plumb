@@ -4217,9 +4217,9 @@ def GetWorksheet(what, verbose):
         if (what == "latest" and market['post date'] is not None):
             dt = datetime.datetime.strptime(market['post date'], "%Y/%m/%d")
             theDate = dt.strftime('%Y/%m/%d')
-            c.execute("SELECT * FROM worksheet where plan_date = (?) order by symbol", (theDate,))
+            c.execute("SELECT * FROM worksheet where plan_date = (?) order by crypto, symbol", (theDate,))
         else:
-            c.execute("SELECT * FROM worksheet order by plan_date, symbol")
+            c.execute("SELECT * FROM worksheet order by plan_date, crypto, symbol")
         keys = list(map(lambda x: x[0].replace("_"," "), c.description))
         values = c.fetchall()
         conn.close()
