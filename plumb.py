@@ -1003,7 +1003,7 @@ def GetFolder(verbose):
     values = []
     if (checkTableExists(conn, "folder")):
         c = conn.cursor()
-        c.execute("SELECT * FROM folder order by symbol")
+        c.execute("SELECT * FROM folder order by balance DESC")
         keys = list(map(lambda x: x[0].replace("_"," "), c.description))
         values = c.fetchall()
     conn.close()
