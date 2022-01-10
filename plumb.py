@@ -90,6 +90,19 @@ def QuoteTradier(quotes, verbose):
         answers.append(content)
     return answers
 
+def LogoCrypto(symbol, verbose):
+    if (verbose):
+        print ("***")
+        print ("LogoCrypto(1) symbol: {0}".format(symbol))
+    folder = GetFolder(verbose)
+    json_string = GetFolderValue(symbol, 1, "json string", folder)
+    logo = json_string['data'][symbol]["logo"]
+    img = '<img src="{0}"/>'.format(logo)
+    if (verbose):
+        pprint.pprint(img)
+        print ("***\n")
+    return img
+
 def QuoteCrypto(quotes, verbose):
     answers = []
     defaults, types = GetDefaults(verbose)
@@ -1103,7 +1116,14 @@ def PrintFolder(verbose):
         json_string = f['json string']
         col_list = []
         for i in range(len(keys)):
-            if (keys[i] == "company name"):
+            if (keys[i] == "symbol"):
+                if (row[5] == 1):
+                    logo = LogoCrypto(row[i], verbose)
+                    #col_list.append(logo)
+                    col_list.append(row[i])
+                else:
+                    col_list.append(row[i])
+            elif (keys[i] == "company name"):
                 col_list.append(json_string['companyName'])
             elif (keys[i] == "shares"):
                 if (row[0] == "$"):

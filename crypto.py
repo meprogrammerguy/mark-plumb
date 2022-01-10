@@ -11,9 +11,10 @@ def main(argv):
     test = False
     info = False
     quote = False
+    logo = False
     symbol = ""
     try:
-        opts, args = getopt.getopt(argv, 'hvtiqs:', ['help', 'verbose', 'test', 'info', 'quote', 'symbol='])
+        opts, args = getopt.getopt(argv, 'hvtiqs:', ['help', 'verbose', 'test', 'info', 'quote', 'logo', 'symbol='])
     except getopt.GetoptError as err:
         print(err)
         usage()
@@ -30,6 +31,8 @@ def main(argv):
             info = True
         elif o in ("-q", "--quote"):
             quote = True
+        elif o in ("-l", "--logo"):
+            logo = True
         elif o in ("-s", "--symbol"):
             symbol = a.upper()
         else:
@@ -52,6 +55,13 @@ def main(argv):
         quoteResult = plumb.QuoteCrypto(symbol, verbose)
         pprint.pprint(quoteResult)
         exit()
+    if (logo):
+        if (symbol == ""):
+            print ("\tWarning, to get the crypto logos you also need a --symbol switch")
+            exit()
+        quoteResult = plumb.LogoCrypto(symbol, verbose)
+        pprint.pprint(quoteResult)
+        exit()
     usage()
 
 def usage():
@@ -64,10 +74,11 @@ def usage():
     -v --verbose        increases the information level
     -t --test           tests the crypto routines
 
-    -s --symbol         ticker symbol (used with --info or --quote)
+    -s --symbol         ticker symbol (used with --info or --quote or --logo)
 
     -i --info           show company info by ticker symbol (used with --symbol)
     -q --quote          show company quotes by ticker symbol (used with --symbol)
+    -l --logo           show company logo by ticker symbol (used with --symbol)
     """
 
     print (usage) 
