@@ -90,19 +90,6 @@ def QuoteTradier(quotes, verbose):
         answers.append(content)
     return answers
 
-def LogoCrypto(symbol, verbose):
-    if (verbose):
-        print ("***")
-        print ("LogoCrypto(1) symbol: {0}".format(symbol))
-    folder = GetFolder(verbose)
-    json_string = GetFolderValue(symbol, 1, "json string", folder)
-    logo = json_string['data'][symbol]["logo"]
-    img = '<img src="{0}"/>'.format(logo)
-    if (verbose):
-        pprint.pprint(img)
-        print ("***\n")
-    return img
-
 def QuoteCrypto(quotes, verbose):
     answers = []
     defaults, types = GetDefaults(verbose)
@@ -534,6 +521,48 @@ def PrintDefaults(verbose):
     return table.__html__(), column_options, name_options, folder_options
 #endregion defaults
 #region folder
+def LogoCrypto(symbol, verbose):
+    if (verbose):
+        print ("***")
+        print ("LogoCrypto(1) symbol: {0}".format(symbol))
+    folder = GetFolder(verbose)
+    json_string = GetFolderValue(symbol, 1, "json string", folder)
+    filename = json_string['data'][symbol]["logo"]
+    if (verbose):
+        pprint.pprint(filename)
+        print ("***\n")
+    return filename
+
+def GetLogo(symbol, verbose):
+    if (verbose):
+        print ("***")
+        print ("GetLogo(1) symbol: {0}".format(symbol))
+    folder = GetFolder(verbose)
+    json_string = GetFolderValue(symbol, 1, "json string", folder)
+    url = json_string['data'][symbol]["logo"]
+    filename = "static/folder/{0}.png".format(symbol)
+    if not os.path.exists('static/folder'):
+        os.makedirs('static/folder')
+    with urllib.request.urlopen(url) as response, open(filename, 'wb') as out_file:
+        data = response.read()
+        out_file.write(data)
+    if (verbose):
+        pprint.pprint(url)
+        print ("***\n")
+    return url
+
+def RemoveLogo(symbol, verbose):
+    if (verbose):
+        print ("***")
+        print ("RemoveLogo(1) symbol: {0}".format(symbol))
+    folder = GetFolder(verbose)
+    json_string = GetFolderValue(symbol, 1, "json string", folder)
+    filename = json_string['data'][symbol]["logo"]
+    if (verbose):
+        pprint.pprint(filename)
+        print ("***\n")
+    return filename
+
 def Add(symbol, exchange, verbose):
     db_file = GetDB(verbose)
     if (verbose):
@@ -570,6 +599,7 @@ def Add(symbol, exchange, verbose):
         conn.commit()
         conn.close()
         if (exchange =="coinbase"):
+            logo = GetLogo(symbol, verbose)
             quote = QuoteCrypto(symbol, verbose)
         else:
             quote = QuoteTradier(symbol, verbose)
@@ -1181,8 +1211,8 @@ def AddRemoveButtons(table):
         crypto = table[matches_positions[match_index + 5] + 4 :table.find("</td>", matches_positions[match_index + 5] + 4)]
         if (symbol != "$"):
             exchange = ""
-            if (crypto == "1"):
-                    exchange = "coinbase"
+            if (crypto == "yes"):
+                exchange = "coinbase"
             r_button = '<tr><td><form action="#" method="post"><input class="submit" type="submit" name="action" value="remove"/><input hidden type="text" name="remove_symbol" value="{0}"/><input hidden type="text" name="remove_type" value="{1}"/></form></td><td>'.format(symbol, exchange)
             table = table[0 : start] + table[start:].replace(pattern, r_button, 1)
         else:

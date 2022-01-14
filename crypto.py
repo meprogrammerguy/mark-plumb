@@ -12,9 +12,11 @@ def main(argv):
     info = False
     quote = False
     logo = False
+    get = False
+    remove = False
     symbol = ""
     try:
-        opts, args = getopt.getopt(argv, 'hvtiqs:', ['help', 'verbose', 'test', 'info', 'quote', 'logo', 'symbol='])
+        opts, args = getopt.getopt(argv, 'hvtilgrqs:', ['help', 'verbose', 'test', 'info', 'quote', 'logo', 'get', 'remove', 'symbol='])
     except getopt.GetoptError as err:
         print(err)
         usage()
@@ -33,6 +35,10 @@ def main(argv):
             quote = True
         elif o in ("-l", "--logo"):
             logo = True
+        elif o in ("-g", "--get"):
+            get = True
+        elif o in ("-r", "--remove"):
+            remove = True
         elif o in ("-s", "--symbol"):
             symbol = a.upper()
         else:
@@ -48,6 +54,20 @@ def main(argv):
         infoResult = plumb.CryptoCompany(symbol, verbose)
         pprint.pprint(infoResult)
         exit()
+    if (get):
+        if (symbol == ""):
+            print ("\tWarning, to save the company logo you also need a --symbol switch")
+            exit()
+        getResult = plumb.GetLogo(symbol, verbose)
+        pprint.pprint(getResult)
+        exit()
+    if (remove):
+        if (symbol == ""):
+            print ("\tWarning, to remove the company logo you also need a --symbol switch")
+            exit()
+        removeResult = plumb.RemoveLogo(symbol, verbose)
+        pprint.pprint(removeResult)
+        exit()
     if (quote):
         if (symbol == ""):
             print ("\tWarning, to get the crypto quotes you also need a --symbol switch")
@@ -57,7 +77,7 @@ def main(argv):
         exit()
     if (logo):
         if (symbol == ""):
-            print ("\tWarning, to get the crypto logos you also need a --symbol switch")
+            print ("\tWarning, to get the crypto logos filename also need a --symbol switch")
             exit()
         quoteResult = plumb.LogoCrypto(symbol, verbose)
         pprint.pprint(quoteResult)
@@ -79,6 +99,8 @@ def usage():
     -i --info           show company info by ticker symbol (used with --symbol)
     -q --quote          show company quotes by ticker symbol (used with --symbol)
     -l --logo           show company logo by ticker symbol (used with --symbol)
+    -g --get            save company logo by ticker symbol (used with --symbol)
+    -r --remove         remove company logo by ticker symbol (used with --symbol)
     """
 
     print (usage) 
