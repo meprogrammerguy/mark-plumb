@@ -31,6 +31,7 @@ from tzlocal import get_localzone
 from io import StringIO
 import itertools
 import ast
+from urllib.parse import urlparse
 
 #region defaults
 def QuoteTradier(quotes, verbose):
@@ -521,6 +522,48 @@ def PrintDefaults(verbose):
     return table.__html__(), column_options, name_options, folder_options
 #endregion defaults
 #region folder
+def LogoCrypto(symbol, verbose):
+    if (verbose):
+        print ("***")
+        print ("LogoCrypto(1) symbol: {0}".format(symbol))
+    folder = GetFolder(verbose)
+    json_string = GetFolderValue(symbol, 1, "json string", folder)
+    filename = json_string['data'][symbol]["logo"]
+    if (verbose):
+        pprint.pprint(filename)
+        print ("***\n")
+    return filename
+
+def GetLogo(symbol, verbose):
+    if (verbose):
+        print ("***")
+        print ("GetLogo(1) symbol: {0}".format(symbol))
+    folder = GetFolder(verbose)
+    json_string = GetFolderValue(symbol, 1, "json string", folder)
+    url = json_string['data'][symbol]["logo"]
+    filename = "static/folder/{0}.png".format(symbol)
+    if not os.path.exists('static/folder'):
+        os.makedirs('static/folder')
+    with urllib.request.urlopen(url) as response, open(filename, 'wb') as out_file:
+        data = response.read()
+        out_file.write(data)
+    if (verbose):
+        pprint.pprint(url)
+        print ("***\n")
+    return url
+
+def RemoveLogo(symbol, verbose):
+    if (verbose):
+        print ("***")
+        print ("RemoveLogo(1) symbol: {0}".format(symbol))
+    filename = "static/folder/{0}.png".format(symbol)
+    if os.path.isfile(filename):
+        os.remove(filename)    
+    if (verbose):
+        pprint.pprint(filename)
+        print ("***\n")
+    return filename
+
 def Add(symbol, exchange, verbose):
     db_file = GetDB(verbose)
     if (verbose):
@@ -557,6 +600,7 @@ def Add(symbol, exchange, verbose):
         conn.commit()
         conn.close()
         if (exchange =="coinbase"):
+            logo = GetLogo(symbol, verbose)
             quote = QuoteCrypto(symbol, verbose)
         else:
             quote = QuoteTradier(symbol, verbose)
@@ -601,6 +645,7 @@ def Remove(symbol, exchange, verbose):
     c = conn.cursor()
     if (exchange == "coinbase"):
         c.execute("DELETE FROM folder WHERE symbol=(?) and crypto = 1", (symbol,))
+        logo = RemoveLogo(symbol, verbose)
     else:
         c.execute("DELETE FROM folder WHERE symbol=(?) and crypto = 0", (symbol,))
     conn.commit()
@@ -1003,7 +1048,7 @@ def GetFolder(verbose):
     values = []
     if (checkTableExists(conn, "folder")):
         c = conn.cursor()
-        c.execute("SELECT * FROM folder order by symbol")
+        c.execute("SELECT * FROM folder order by balance DESC")
         keys = list(map(lambda x: x[0].replace("_"," "), c.description))
         values = c.fetchall()
     conn.close()
@@ -1103,7 +1148,14 @@ def PrintFolder(verbose):
         json_string = f['json string']
         col_list = []
         for i in range(len(keys)):
-            if (keys[i] == "company name"):
+            if (keys[i] == "symbol"):
+                if (row[5] == 1):
+                    logo = LogoCrypto(row[i], verbose)
+                    #col_list.append(logo)
+                    col_list.append(row[i])
+                else:
+                    col_list.append(row[i])
+            elif (keys[i] == "company name"):
                 col_list.append(json_string['companyName'])
             elif (keys[i] == "shares"):
                 if (row[0] == "$"):
@@ -1161,8 +1213,8 @@ def AddRemoveButtons(table):
         crypto = table[matches_positions[match_index + 5] + 4 :table.find("</td>", matches_positions[match_index + 5] + 4)]
         if (symbol != "$"):
             exchange = ""
-            if (crypto == "1"):
-                    exchange = "coinbase"
+            if (crypto == "yes"):
+                exchange = "coinbase"
             r_button = '<tr><td><form action="#" method="post"><input class="submit" type="submit" name="action" value="remove"/><input hidden type="text" name="remove_symbol" value="{0}"/><input hidden type="text" name="remove_type" value="{1}"/></form></td><td>'.format(symbol, exchange)
             table = table[0 : start] + table[start:].replace(pattern, r_button, 1)
         else:
@@ -3761,7 +3813,7 @@ def PrintSummary(verbose):
         col_list = []
         for i in range(len(keys)):
             if keys[i] == "initial":
-                col_list.append(as_big(row[i]))
+                col_list.append(as_currency(row[i]))
             elif keys[i] == "profit percent":
                 col_list.append(as_percent(row[i]))
             else:
@@ -4217,9 +4269,9 @@ def GetWorksheet(what, verbose):
         if (what == "latest" and market['post date'] is not None):
             dt = datetime.datetime.strptime(market['post date'], "%Y/%m/%d")
             theDate = dt.strftime('%Y/%m/%d')
-            c.execute("SELECT * FROM worksheet where plan_date = (?) order by symbol", (theDate,))
+            c.execute("SELECT * FROM worksheet where plan_date = (?) order by crypto, symbol", (theDate,))
         else:
-            c.execute("SELECT * FROM worksheet order by plan_date, symbol")
+            c.execute("SELECT * FROM worksheet order by plan_date, crypto, symbol")
         keys = list(map(lambda x: x[0].replace("_"," "), c.description))
         values = c.fetchall()
         conn.close()
