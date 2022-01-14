@@ -31,6 +31,7 @@ from tzlocal import get_localzone
 from io import StringIO
 import itertools
 import ast
+from urllib.parse import urlparse
 
 #region defaults
 def QuoteTradier(quotes, verbose):
@@ -555,9 +556,9 @@ def RemoveLogo(symbol, verbose):
     if (verbose):
         print ("***")
         print ("RemoveLogo(1) symbol: {0}".format(symbol))
-    folder = GetFolder(verbose)
-    json_string = GetFolderValue(symbol, 1, "json string", folder)
-    filename = json_string['data'][symbol]["logo"]
+    filename = "static/folder/{0}.png".format(symbol)
+    if os.path.isfile(filename):
+        os.remove(filename)    
     if (verbose):
         pprint.pprint(filename)
         print ("***\n")
@@ -644,6 +645,7 @@ def Remove(symbol, exchange, verbose):
     c = conn.cursor()
     if (exchange == "coinbase"):
         c.execute("DELETE FROM folder WHERE symbol=(?) and crypto = 1", (symbol,))
+        logo = RemoveLogo(symbol, verbose)
     else:
         c.execute("DELETE FROM folder WHERE symbol=(?) and crypto = 0", (symbol,))
     conn.commit()
