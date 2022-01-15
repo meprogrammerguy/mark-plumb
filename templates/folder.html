@@ -90,7 +90,7 @@
                         {% set fil = "/folder/" + item['symbol'] + ".png" %}
                         {% for k, val in item.items() %}
                             {% if k == "symbol" and item['crypto'] == "yes" %}
-                                <td><img src="{{ url_for('static', filename=fil)}}", alt='{{val}} 'height=”16px” width=”16px"/>{{val}}</td>
+                            <td><img src="{{ url_for('static', filename=fil)}}", alt='{{val}}', height='32', width='32'/></br>{{val}}</td>
                             {% else %}
                                 <td>{{val}}</td>
                             {% endif %}
