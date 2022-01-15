@@ -71,6 +71,7 @@
                 <table style="width=100%; border-spacing=0;">
                     <thead>
                         <tr>
+                            <th></th>
                         {% for key in keys %}
                             <th>{{key}}</th>
                         {% endfor %}
@@ -80,6 +81,12 @@
                     <tbody>
                     {% for item in items %} 
                         <tr>
+                            <td>
+                                <form action="#" method="post"><input class="submit" type="submit" name="action" value="remove">
+                                    <input hidden type="text" name="remove_symbol" value="{{item['symbol']}}"/>
+                                    <input hidden type="text" name="remove_type" value="{{item['crypto']}}"/>
+                                </form>
+                            </td>
                         {% for k, val in item.items() %}
                             <td>{{val}}</td>
                         {% endfor %}

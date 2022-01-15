@@ -643,7 +643,7 @@ def Remove(symbol, exchange, verbose):
         print("Remove(5) {0}".format(e))
         return False
     c = conn.cursor()
-    if (exchange == "coinbase"):
+    if (exchange == "coinbase" or exchange == "yes"):
         c.execute("DELETE FROM folder WHERE symbol=(?) and crypto = 1", (symbol,))
         logo = RemoveLogo(symbol, verbose)
     else:
