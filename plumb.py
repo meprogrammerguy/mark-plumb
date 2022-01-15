@@ -571,12 +571,14 @@ def Add(symbol, exchange, verbose):
         print ("Add(1) symbol: {0}".format(symbol))
         print ("Add(2) exchange: {0}".format(exchange))
         print ("Add(3) dbase: {0}".format(db_file))
+    pdb.set_trace()
 
     crypto = 0
     if (exchange =="coinbase"):
         crypto = 1
         
     result = CreateFolder(symbol, crypto, verbose)
+    pdb.set_trace()
     if (result):
         try:
             conn = sqlite3.connect(db_file)
