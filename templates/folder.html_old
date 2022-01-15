@@ -67,27 +67,7 @@
         </div>
         <div id="content">
             <h1 class="center">{{folder_name}}</h1>
-            {% if items %}
-                <table style="width=100%; border-spacing=0;">
-                    <thead>
-                        <tr>
-                        {% for key in keys %}
-                            <th>{{key}}</th>
-                        {% endfor %}
-                        </tr>
-                    </thead>
-
-                    <tbody>
-                    {% for item in items %} 
-                        <tr>
-                        {% for k, val in item.items() %}
-                            <td>{{val}}</td>
-                        {% endfor %}
-                        </tr>
-                    {% endfor %}        
-                    </tbody>
-                 </table>
-            {% endif %}
+            {{table | safe}}
             <form action="#" method="post">
             <div class="form_settings">
                 <p><span>&nbsp;</span><input class="submit" type="submit" name="action" value="refresh" style="float: right;"/></p>
