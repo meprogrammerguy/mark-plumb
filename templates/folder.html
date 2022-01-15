@@ -82,10 +82,12 @@
                     {% for item in items %} 
                         <tr>
                             <td>
-                                <form action="#" method="post"><input class="submit" type="submit" name="action" value="remove">
-                                    <input hidden type="text" name="remove_symbol" value="{{item['symbol']}}"/>
-                                    <input hidden type="text" name="remove_type" value="{{item['crypto']}}"/>
-                                </form>
+                                {% if item['symbol'] != "$" %}
+                                    <form action="#" method="post"><input class="submit" type="submit" name="action" value="remove">
+                                        <input hidden type="text" name="remove_symbol" value="{{item['symbol']}}"/>
+                                        <input hidden type="text" name="remove_type" value="{{item['crypto']}}"/>
+                                    </form>
+                                {% endif %}
                             </td>
                         {% set fil = "/folder/" + item['symbol'] + ".png" %}
                         {% for k, val in item.items() %}
