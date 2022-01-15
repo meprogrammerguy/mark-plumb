@@ -146,7 +146,7 @@ def main(argv):
             print ("failed. Error: {0}".format(updateError))
         exit()
     if (printout):
-        printResult, symbol_options, balance_options, amount_options = plumb.PrintFolder(verbose)
+        printResult, symbol_options, balance_options, amount_options, items, keys = plumb.PrintFolder(verbose)
         if (printResult > ""):
             pprint.pprint(printResult)
         else:
@@ -161,6 +161,14 @@ def main(argv):
             print ("failed.")
         if (amount_options is not None):
             pprint.pprint(amount_options)
+        else:
+            print ("failed.")
+        if (items is not None):
+            pprint.pprint(items)
+        else:
+            print ("failed.")
+        if (keys is not None):
+            pprint.pprint(keys)
         else:
             print ("failed.")
         exit()

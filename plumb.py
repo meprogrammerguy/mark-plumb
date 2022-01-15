@@ -643,7 +643,7 @@ def Remove(symbol, exchange, verbose):
         print("Remove(5) {0}".format(e))
         return False
     c = conn.cursor()
-    if (exchange == "coinbase"):
+    if (exchange == "coinbase" or exchange == "yes"):
         c.execute("DELETE FROM folder WHERE symbol=(?) and crypto = 1", (symbol,))
         logo = RemoveLogo(symbol, verbose)
     else:
@@ -1193,7 +1193,7 @@ def PrintFolder(verbose):
     if (verbose):
         print ("***\n")
     button_table = AddRemoveButtons(table.__html__())
-    return button_table, symbol_options, balance_options, amount_options
+    return button_table, symbol_options, balance_options, amount_options, items, keys
 
 def AddRemoveButtons(table):
     table = table.replace("<thead><tr><th>", "<thead><tr><th></th><th>", 1)
@@ -1386,7 +1386,7 @@ def CreateAIM(verbose):
     dt = datetime.datetime.now()
     ds = {}
     ds['start date'] = dt.strftime("%Y/%m/%d")
-    table, symbol_options, balance_options, amount_options = PrintFolder(False)
+    table, symbol_options, balance_options, amount_options, items, keys = PrintFolder(False)
     dl = GetCurrentStockList(amount_options, verbose)
     dl.insert(0, ds)
     json_string = json.dumps(dl) 
@@ -1692,7 +1692,7 @@ def Post(verbose):
     look, table, db_values = Look(verbose)
     if (verbose):
         print("Post(5) {0}".format(look))
-    table, symbol_options, balance_options, amount_options = PrintFolder(False)
+    table, symbol_options, balance_options, amount_options, items, keys = PrintFolder(False)
     dl = GetCurrentStockList(amount_options, verbose)
     json_string = json.dumps(dl)
     c = conn.cursor()
@@ -2743,7 +2743,7 @@ def TestHistory(saved, verbose):
         if (verbose):
             print ("\tfail.")
         fails += 1
-    table, symbol_options, balance_options, amount_options = PrintFolder(verbose)
+    table, symbol_options, balance_options, amount_options, items, keys = PrintFolder(verbose)
     if (verbose):
         print ("Test #{0} - GetCurrentStockList(<amount options>, verbose)".format(count + 1))
     dl = GetCurrentStockList(amount_options, verbose)
