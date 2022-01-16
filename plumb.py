@@ -1189,38 +1189,9 @@ def PrintFolder(verbose):
                     col_list.append(row[i])
         answer = dict(zip(keys, col_list))
         items.append(answer)
-    table = TableCls(items, html_attrs = {'width':'100%','border-spacing':0})
     if (verbose):
         print ("***\n")
-    button_table = AddRemoveButtons(table.__html__())
-    return button_table, symbol_options, balance_options, amount_options, items, keys
-
-def AddRemoveButtons(table):
-    table = table.replace("<thead><tr><th>", "<thead><tr><th></th><th>", 1)
-    pattern = "<tr><td>"
-    index = 0
-    done = False
-    row = -1
-    while (not done):
-        start = table.find(pattern, index)
-        if start == -1:
-            done = True
-            continue
-        matches = re.finditer("<td>", table)
-        matches_positions = [match.start() for match in matches]
-        match_index = matches_positions.index(start + 4)
-        symbol = table[start + 8 :table.find("</td>", start + 8)]
-        crypto = table[matches_positions[match_index + 5] + 4 :table.find("</td>", matches_positions[match_index + 5] + 4)]
-        if (symbol != "$"):
-            exchange = ""
-            if (crypto == "yes"):
-                exchange = "coinbase"
-            r_button = '<tr><td><form action="#" method="post"><input class="submit" type="submit" name="action" value="remove"/><input hidden type="text" name="remove_symbol" value="{0}"/><input hidden type="text" name="remove_type" value="{1}"/></form></td><td>'.format(symbol, exchange)
-            table = table[0 : start] + table[start:].replace(pattern, r_button, 1)
-        else:
-            table = table[0 : start] + table[start:].replace(pattern, "<tr><td></td><td>", 1)
-        index = start + 1
-    return table
+    return symbol_options, balance_options, amount_options, items, keys
 
 def AllocationTrends(verbose): 
     db_file = GetDB(verbose)
@@ -1386,7 +1357,7 @@ def CreateAIM(verbose):
     dt = datetime.datetime.now()
     ds = {}
     ds['start date'] = dt.strftime("%Y/%m/%d")
-    table, symbol_options, balance_options, amount_options, items, keys = PrintFolder(False)
+    symbol_options, balance_options, amount_options, items, keys = PrintFolder(False)
     dl = GetCurrentStockList(amount_options, verbose)
     dl.insert(0, ds)
     json_string = json.dumps(dl) 
@@ -1692,7 +1663,7 @@ def Post(verbose):
     look, table, db_values = Look(verbose)
     if (verbose):
         print("Post(5) {0}".format(look))
-    table, symbol_options, balance_options, amount_options, items, keys = PrintFolder(False)
+    symbol_options, balance_options, amount_options, items, keys = PrintFolder(False)
     dl = GetCurrentStockList(amount_options, verbose)
     json_string = json.dumps(dl)
     c = conn.cursor()
@@ -2743,7 +2714,7 @@ def TestHistory(saved, verbose):
         if (verbose):
             print ("\tfail.")
         fails += 1
-    table, symbol_options, balance_options, amount_options, items, keys = PrintFolder(verbose)
+    symbol_options, balance_options, amount_options, items, keys = PrintFolder(verbose)
     if (verbose):
         print ("Test #{0} - GetCurrentStockList(<amount options>, verbose)".format(count + 1))
     dl = GetCurrentStockList(amount_options, verbose)
