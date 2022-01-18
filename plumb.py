@@ -522,18 +522,6 @@ def PrintDefaults(verbose):
     return table.__html__(), column_options, name_options, folder_options
 #endregion defaults
 #region folder
-def LogoCrypto(symbol, verbose):
-    if (verbose):
-        print ("***")
-        print ("LogoCrypto(1) symbol: {0}".format(symbol))
-    folder = GetFolder(verbose)
-    json_string = GetFolderValue(symbol, 1, "json string", folder)
-    filename = json_string['data'][symbol]["logo"]
-    if (verbose):
-        pprint.pprint(filename)
-        print ("***\n")
-    return filename
-
 def GetLogo(symbol, verbose):
     if (verbose):
         print ("***")
@@ -786,7 +774,7 @@ def CreateFolder(symbol, crypto, verbose):
         print("CreateFolder(3) {0}".format(e))
         return False
     c = conn.cursor()
-    c.execute("CREATE TABLE if not exists 'folder' ( `symbol` TEXT NOT NULL, `balance` REAL, `shares` REAL, `price` NUMERIC, `crypto` INTEGER, `quote` TEXT, `update_time` TEXT, `json_string` TEXT, PRIMARY KEY(`crypto`,`symbol`) )")
+    c.execute("CREATE TABLE if not exists 'folder' ( `symbol` TEXT NOT NULL, `balance` REAL, `shares` REAL, `price` NUMERIC, `crypto` INTEGER, `quote` TEXT, `update_time` TEXT, 'money_ticker' TEXT, 'money_name' TEXT, `json_string` TEXT, PRIMARY KEY(`crypto`,`symbol`) )")
     c.execute( "INSERT OR IGNORE INTO folder(symbol, crypto) VALUES((?),?)", (symbol,crypto,))
     conn.commit()
     conn.close()
@@ -1150,8 +1138,6 @@ def PrintFolder(verbose):
         for i in range(len(keys)):
             if (keys[i] == "symbol"):
                 if (row[5] == 1):
-                    logo = LogoCrypto(row[i], verbose)
-                    #col_list.append(logo)
                     col_list.append(row[i])
                 else:
                     col_list.append(row[i])

@@ -75,7 +75,11 @@
             <h4 class="center">Adjustments</h4>
             <form action="#" method="post">
             <div class="center">
-                <p><select id="column" name="column">{{column_options | safe}}</select>
+                <p><select id="column" name="column">
+                        {{column_options | safe}}
+                        <option value="money ticker">money ticker</option>
+                        <option value="money name">money name</option>
+                    </select>
                 <input type="text" name="value" value=""/></p>
             </div>
             <div class="form_settings">

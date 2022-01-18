@@ -71,36 +71,39 @@
                         <tr>
                             <th></th>
                         {% for key in keys %}
-                            <th>{{key}}</th>
+                            {% if key != "money ticker" and key != "money name" %}
+                                <th>{{key}}</th>
+                            {% endif %}
                         {% endfor %}
                         </tr>
                     </thead>
-
                     <tbody>
                     {% for item in items %} 
                         <tr>
                             <td>
-                                {% if item['symbol'] != "$" %}
-                                    <form action="#" method="post"><input class="submit" type="submit" name="action" value="remove">
-                                        <input hidden type="text" name="remove_symbol" value="{{item['symbol']}}"/>
-                                        <input hidden type="text" name="remove_type" value="{{item['crypto']}}"/>
-                                    </form>
-                                {% endif %}
-                            </td>
-                        {% set fil = "/folder/" + item['symbol'] + ".png" %}
-                        {% for k, val in item.items() %}
-                            {% if k == "symbol" and item['crypto'] == "yes" %}
-                                <td><img src="{{ url_for('static', filename=fil)}}", alt='{{val}} logo', height='32', width='32'/></br>{{val}}</td>
-                            {% elif k == "symbol" and item['symbol'] == "$" %}
-                                <td><img src="{{ url_for('static', filename='$.png')}}", alt='{{val}} logo', height='32', width='32'/></br></td>
-                            {% else %}
-                                <td>{{val}}</td>
+                            {% if item['symbol'] != "$" %}
+                                <form action="#" method="post"><input class="submit" type="submit" name="action" value="remove">
+                                    <input hidden type="text" name="remove_symbol" value="{{item['symbol']}}"/>
+                                    <input hidden type="text" name="remove_type" value="{{item['crypto']}}"/>
+                                </form>
                             {% endif %}
-                        {% endfor %}
+                            </td>
+                            {% set fil = "/folder/" + item['symbol'] + ".png" %}
+                            {% for k, val in item.items() %}
+                                {% if k != "money ticker" and k != "money name" %}
+                                    {% if k == "symbol" and item['crypto'] == "yes" %}
+                                        <td><img src="{{ url_for('static', filename=fil)}}", alt='{{val}} logo', height='32', width='32'/></br>{{val}}</td>
+                                    {% elif k == "symbol" and item['symbol'] == "$" %}
+                                        <td><img src="{{ url_for('static', filename='$.png')}}", alt='{{val}} logo', height='32', width='32'/></br></td>
+                                    {% else %}
+                                        <td>{{val}}</td>
+                                    {% endif %}
+                                {% endif %}
+                            {% endfor %}
                         </tr>
                     {% endfor %}        
                     </tbody>
-                 </table>
+                </table>
             {% endif %}
             <form action="#" method="post">
             <div class="form_settings">
