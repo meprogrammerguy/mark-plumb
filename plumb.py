@@ -530,9 +530,9 @@ def GetLogo(symbol, verbose):
         print ("***")
         print ("GetLogo(1) symbol: {0}".format(symbol))
     folder = GetFolder(verbose)
-    json_string = GetFolderValue(symbol, 1, "json string", folder)
+    json_string = GetFolderValue("$", 0, "json string", folder)
     url = json_string['data'][symbol]["logo"]
-    filename = "static/folder/{0}.png".format(symbol)
+    filename = "static/folder/$.png".format(symbol)
     if not os.path.exists('static/folder'):
         os.makedirs('static/folder')
     with urllib.request.urlopen(url) as response, open(filename, 'wb') as out_file:
@@ -686,11 +686,22 @@ def MoneyFields(key, value, verbose):
         except Error as e:
             print("MoneyFields(5) {0}".format(e))
             return False
+        json_string = ""
+        if key == "money_ticker":
+            json_data = CryptoCompany(value, verbose)
+            json_string = json.dumps(json_data)
         c = conn.cursor()
         sql = "UPDATE folder SET {0} = (?) WHERE symbol = '$' and crypto = 0".format(key)
         c.execute(sql, (value, ))
+        if json_string > "":
+            c.execute("UPDATE folder SET json_string = (?) WHERE symbol = '$' and crypto = 0", (json_string,))
+            j = json.loads(json_string)
+            name = j['data'][value]["name"]
+            c.execute("UPDATE folder SET money_name = (?) WHERE symbol = '$' and crypto = 0", (name,))
         conn.commit()
         conn.close()
+        if json_string > "":
+            GetLogo(value, verbose)
     if (verbose):
         print ("***\n")
     return True
