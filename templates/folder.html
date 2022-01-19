@@ -81,11 +81,14 @@
                     {% for item in items %} 
                         <tr>
                             <td>
-                            {% if item['symbol'] != "$" %}
+                            {% if item['symbol'] != "$" and  item['money ticker'] is none %}
+                                {% set money = "" %}
                                 <form action="#" method="post"><input class="submit" type="submit" name="action" value="remove">
                                     <input hidden type="text" name="remove_symbol" value="{{item['symbol']}}"/>
                                     <input hidden type="text" name="remove_type" value="{{item['crypto']}}"/>
                                 </form>
+                            {% else %}
+                                {% set money = "$" %}
                             {% endif %}
                             </td>
                             {% set fil = "/folder/" + item['symbol'] + ".png" %}
@@ -93,8 +96,8 @@
                                 {% if k != "money ticker" and k != "money name" %}
                                     {% if k == "symbol" and item['crypto'] == "yes" %}
                                         <td><img src="{{ url_for('static', filename=fil)}}", alt='{{val}} logo', height='32', width='32'/></br>{{val}}</td>
-                                    {% elif k == "symbol" and item['symbol'] == "$" %}
-                                        <td><img src="{{ url_for('static', filename='$.png')}}", alt='{{val}} logo', height='32', width='32'/></br></td>
+                                    {% elif k == "symbol" and money == "$" %}
+                                        <td><img src="{{ url_for('static', filename='$.png')}}", alt='{{val}} logo', height='32', width='32'/></br>{{val}}</td>
                                     {% else %}
                                         <td>{{val}}</td>
                                     {% endif %}

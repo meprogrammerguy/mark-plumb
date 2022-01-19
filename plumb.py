@@ -296,6 +296,9 @@ def UpdateDefaultItem(key, item, verbose):
     d, t = GetDefaults(verbose)
     if (verbose):
         print ("***")
+    if key == "money ticker" or key == "money name":
+        MoneyFields(key_db, item, verbose)
+        return True
     if (key not in d):
         if (verbose):
             print ("UpdateDefaultItem(1) Error key: {0} is not in the defaults dbase".format(key))
@@ -661,6 +664,31 @@ def Quote(symbol, crypto, quote, verbose):
             return False
         c = conn.cursor()
         c.execute("UPDATE folder SET quote = (?) WHERE symbol = (?) and crypto = ?", (quote, symbol, crypto, ))
+        conn.commit()
+        conn.close()
+    if (verbose):
+        print ("***\n")
+    return True
+
+def MoneyFields(key, value, verbose):
+    db_file = GetDB(verbose)
+    if (verbose):
+        print ("***")
+        print ("MoneyFields(1) key: {0}".format(key))
+        print ("MoneyFields(2) value: {0}".format(value))
+        print ("MoneyFields(3) dbase: {0}".format(db_file))
+    result = CreateFolder("$", 0, verbose)
+    if (result):
+        try:
+            conn = sqlite3.connect(db_file)
+            if (verbose):
+                print("MoneyFields(4) sqlite3: {0}".format(sqlite3.version))
+        except Error as e:
+            print("MoneyFields(5) {0}".format(e))
+            return False
+        c = conn.cursor()
+        sql = "UPDATE folder SET {0} = (?) WHERE symbol = '$' and crypto = 0".format(key)
+        c.execute(sql, (value, ))
         conn.commit()
         conn.close()
     if (verbose):
@@ -1140,9 +1168,15 @@ def PrintFolder(verbose):
                 if (row[5] == 1):
                     col_list.append(row[i])
                 else:
-                    col_list.append(row[i])
+                    if (row[8] is not None):
+                        col_list.append(row[8])
+                    else:
+                        col_list.append(row[i])
             elif (keys[i] == "company name"):
-                col_list.append(json_string['companyName'])
+                    if (row[9] is not None):
+                        col_list.append(row[9])
+                    else:
+                        col_list.append(json_string['companyName'])
             elif (keys[i] == "shares"):
                 if (row[0] == "$"):
                     col_list.append("")
