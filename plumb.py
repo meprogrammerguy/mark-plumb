@@ -751,9 +751,6 @@ def Cash(balance, verbose):
             return False
         c = conn.cursor()
         c.execute("UPDATE folder SET balance = ? WHERE symbol = '$' and crypto = 0", (round(float(balance), 2),))
-        dict_string = {'companyName': 'CASH', 'description': 'Cash Account', 'symbol': '$'}
-        json_string = json.dumps(dict_string)
-        c.execute("UPDATE folder SET json_string = (?) WHERE symbol = '$' and crypto = 0", (json_string,))
         c.execute("UPDATE folder SET shares = ? WHERE symbol = '$' and crypto = 0", (round(float(balance), 2),))
         dt = datetime.datetime.now()
         c.execute("UPDATE folder SET update_time = (?) WHERE symbol = '$' and crypto = 0", (dt.strftime("%m/%d/%y %H:%M"),))
