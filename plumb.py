@@ -296,6 +296,9 @@ def UpdateDefaultItem(key, item, verbose):
     d, t = GetDefaults(verbose)
     if (verbose):
         print ("***")
+    if key == "money ticker" or key == "money name":
+        MoneyFields(key_db, item, verbose)
+        return True
     if (key not in d):
         if (verbose):
             print ("UpdateDefaultItem(1) Error key: {0} is not in the defaults dbase".format(key))
@@ -522,26 +525,14 @@ def PrintDefaults(verbose):
     return table.__html__(), column_options, name_options, folder_options
 #endregion defaults
 #region folder
-def LogoCrypto(symbol, verbose):
-    if (verbose):
-        print ("***")
-        print ("LogoCrypto(1) symbol: {0}".format(symbol))
-    folder = GetFolder(verbose)
-    json_string = GetFolderValue(symbol, 1, "json string", folder)
-    filename = json_string['data'][symbol]["logo"]
-    if (verbose):
-        pprint.pprint(filename)
-        print ("***\n")
-    return filename
-
 def GetLogo(symbol, verbose):
     if (verbose):
         print ("***")
         print ("GetLogo(1) symbol: {0}".format(symbol))
     folder = GetFolder(verbose)
-    json_string = GetFolderValue(symbol, 1, "json string", folder)
+    json_string = GetFolderValue("$", 0, "json string", folder)
     url = json_string['data'][symbol]["logo"]
-    filename = "static/folder/{0}.png".format(symbol)
+    filename = "static/folder/$.png".format(symbol)
     if not os.path.exists('static/folder'):
         os.makedirs('static/folder')
     with urllib.request.urlopen(url) as response, open(filename, 'wb') as out_file:
@@ -679,6 +670,42 @@ def Quote(symbol, crypto, quote, verbose):
         print ("***\n")
     return True
 
+def MoneyFields(key, value, verbose):
+    db_file = GetDB(verbose)
+    if (verbose):
+        print ("***")
+        print ("MoneyFields(1) key: {0}".format(key))
+        print ("MoneyFields(2) value: {0}".format(value))
+        print ("MoneyFields(3) dbase: {0}".format(db_file))
+    result = CreateFolder("$", 0, verbose)
+    if (result):
+        try:
+            conn = sqlite3.connect(db_file)
+            if (verbose):
+                print("MoneyFields(4) sqlite3: {0}".format(sqlite3.version))
+        except Error as e:
+            print("MoneyFields(5) {0}".format(e))
+            return False
+        json_string = ""
+        if key == "money_ticker":
+            json_data = CryptoCompany(value, verbose)
+            json_string = json.dumps(json_data)
+        c = conn.cursor()
+        sql = "UPDATE folder SET {0} = (?) WHERE symbol = '$' and crypto = 0".format(key)
+        c.execute(sql, (value, ))
+        if json_string > "":
+            c.execute("UPDATE folder SET json_string = (?) WHERE symbol = '$' and crypto = 0", (json_string,))
+            j = json.loads(json_string)
+            name = j['data'][value]["name"]
+            c.execute("UPDATE folder SET money_name = (?) WHERE symbol = '$' and crypto = 0", (name,))
+        conn.commit()
+        conn.close()
+        if json_string > "":
+            GetLogo(value, verbose)
+    if (verbose):
+        print ("***\n")
+    return True
+
 def Price(symbol, crypto, price, verbose):
     db_file = GetDB(verbose)
     if (verbose):
@@ -786,7 +813,7 @@ def CreateFolder(symbol, crypto, verbose):
         print("CreateFolder(3) {0}".format(e))
         return False
     c = conn.cursor()
-    c.execute("CREATE TABLE if not exists 'folder' ( `symbol` TEXT NOT NULL, `balance` REAL, `shares` REAL, `price` NUMERIC, `crypto` INTEGER, `quote` TEXT, `update_time` TEXT, `json_string` TEXT, PRIMARY KEY(`crypto`,`symbol`) )")
+    c.execute("CREATE TABLE if not exists 'folder' ( `symbol` TEXT NOT NULL, `balance` REAL, `shares` REAL, `price` NUMERIC, `crypto` INTEGER, `quote` TEXT, `update_time` TEXT, 'money_ticker' TEXT, 'money_name' TEXT, `json_string` TEXT, PRIMARY KEY(`crypto`,`symbol`) )")
     c.execute( "INSERT OR IGNORE INTO folder(symbol, crypto) VALUES((?),?)", (symbol,crypto,))
     conn.commit()
     conn.close()
@@ -1150,13 +1177,17 @@ def PrintFolder(verbose):
         for i in range(len(keys)):
             if (keys[i] == "symbol"):
                 if (row[5] == 1):
-                    logo = LogoCrypto(row[i], verbose)
-                    #col_list.append(logo)
                     col_list.append(row[i])
                 else:
-                    col_list.append(row[i])
+                    if (row[8] is not None):
+                        col_list.append(row[8])
+                    else:
+                        col_list.append(row[i])
             elif (keys[i] == "company name"):
-                col_list.append(json_string['companyName'])
+                    if (row[9] is not None):
+                        col_list.append(row[9])
+                    else:
+                        col_list.append(json_string['companyName'])
             elif (keys[i] == "shares"):
                 if (row[0] == "$"):
                     col_list.append("")

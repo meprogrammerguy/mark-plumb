@@ -11,12 +11,11 @@ def main(argv):
     test = False
     info = False
     quote = False
-    logo = False
     get = False
     remove = False
     symbol = ""
     try:
-        opts, args = getopt.getopt(argv, 'hvtilgrqs:', ['help', 'verbose', 'test', 'info', 'quote', 'logo', 'get', 'remove', 'symbol='])
+        opts, args = getopt.getopt(argv, 'hvtigrqs:', ['help', 'verbose', 'test', 'info', 'quote', 'get', 'remove', 'symbol='])
     except getopt.GetoptError as err:
         print(err)
         usage()
@@ -33,8 +32,6 @@ def main(argv):
             info = True
         elif o in ("-q", "--quote"):
             quote = True
-        elif o in ("-l", "--logo"):
-            logo = True
         elif o in ("-g", "--get"):
             get = True
         elif o in ("-r", "--remove"):
@@ -75,13 +72,6 @@ def main(argv):
         quoteResult = plumb.QuoteCrypto(symbol, verbose)
         pprint.pprint(quoteResult)
         exit()
-    if (logo):
-        if (symbol == ""):
-            print ("\tWarning, to get the crypto logos filename also need a --symbol switch")
-            exit()
-        quoteResult = plumb.LogoCrypto(symbol, verbose)
-        pprint.pprint(quoteResult)
-        exit()
     usage()
 
 def usage():
@@ -98,7 +88,6 @@ def usage():
 
     -i --info           show company info by ticker symbol (used with --symbol)
     -q --quote          show company quotes by ticker symbol (used with --symbol)
-    -l --logo           show company logo by ticker symbol (used with --symbol)
     -g --get            save company logo by ticker symbol (used with --symbol)
     -r --remove         remove company logo by ticker symbol (used with --symbol)
     """
