@@ -296,7 +296,7 @@ def UpdateDefaultItem(key, item, verbose):
     d, t = GetDefaults(verbose)
     if (verbose):
         print ("***")
-    if key == "money ticker" or key == "money name":
+    if key == "money ticker":
         MoneyFields(key_db, item, verbose)
         return True
     if (key not in d):
@@ -525,19 +525,27 @@ def PrintDefaults(verbose):
     return table.__html__(), column_options, name_options, folder_options
 #endregion defaults
 #region folder
-def GetLogo(symbol, verbose):
+def GetLogo(symbol, crypto, verbose):
     if (verbose):
         print ("***")
         print ("GetLogo(1) symbol: {0}".format(symbol))
     folder = GetFolder(verbose)
-    json_string = GetFolderValue("$", 0, "json string", folder)
-    url = json_string['data'][symbol]["logo"]
-    filename = "static/folder/$.png".format(symbol)
-    if not os.path.exists('static/folder'):
-        os.makedirs('static/folder')
-    with urllib.request.urlopen(url) as response, open(filename, 'wb') as out_file:
-        data = response.read()
-        out_file.write(data)
+    if (crypto == 0):
+        json_string = GetFolderValue("$", 0, "json string", folder)
+    else:
+        json_string = GetFolderValue(symbol, 1, "json string", folder)
+    url = ""
+    if ('data' in json_string and 'logo' in json_string['data'][symbol]):
+        url = json_string['data'][symbol]["logo"]
+        if crypto == 0:
+            filename = "static/folder/$.png"
+        else:
+            filename = "static/folder/{0}.png".format(symbol)
+        if not os.path.exists('static/folder'):
+            os.makedirs('static/folder')
+        with urllib.request.urlopen(url) as response, open(filename, 'wb') as out_file:
+            data = response.read()
+            out_file.write(data)
     if (verbose):
         pprint.pprint(url)
         print ("***\n")
@@ -591,7 +599,7 @@ def Add(symbol, exchange, verbose):
         conn.commit()
         conn.close()
         if (exchange =="coinbase"):
-            logo = GetLogo(symbol, verbose)
+            logo = GetLogo(symbol, crypto, verbose)
             quote = QuoteCrypto(symbol, verbose)
         else:
             quote = QuoteTradier(symbol, verbose)
@@ -691,17 +699,20 @@ def MoneyFields(key, value, verbose):
             json_data = CryptoCompany(value, verbose)
             json_string = json.dumps(json_data)
         c = conn.cursor()
-        sql = "UPDATE folder SET {0} = (?) WHERE symbol = '$' and crypto = 0".format(key)
-        c.execute(sql, (value, ))
+        c.execute("UPDATE folder SET money_ticker = (?) WHERE symbol = '$' and crypto = 0", (None,))
+        c.execute("UPDATE folder SET money_name = (?) WHERE symbol = '$' and crypto = 0", (None,))
         if json_string > "":
             c.execute("UPDATE folder SET json_string = (?) WHERE symbol = '$' and crypto = 0", (json_string,))
             j = json.loads(json_string)
-            name = j['data'][value]["name"]
-            c.execute("UPDATE folder SET money_name = (?) WHERE symbol = '$' and crypto = 0", (name,))
+            if ('data' in j):
+                symbol = j['data'][value]["symbol"]
+                name = j['data'][value]["name"]
+                c.execute("UPDATE folder SET money_ticker = (?) WHERE symbol = '$' and crypto = 0", (symbol,))
+                c.execute("UPDATE folder SET money_name = (?) WHERE symbol = '$' and crypto = 0", (name,))
         conn.commit()
         conn.close()
         if json_string > "":
-            GetLogo(value, verbose)
+            GetLogo(symbol, 0, verbose)
     if (verbose):
         print ("***\n")
     return True
@@ -1184,7 +1195,7 @@ def PrintFolder(verbose):
                     if (row[9] is not None):
                         col_list.append(row[9])
                     else:
-                        col_list.append(json_string['companyName'])
+                        col_list.append("CASH")
             elif (keys[i] == "shares"):
                 if (row[0] == "$"):
                     col_list.append("")
