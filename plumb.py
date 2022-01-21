@@ -1195,7 +1195,10 @@ def PrintFolder(verbose):
                     if (row[9] is not None):
                         col_list.append(row[9])
                     else:
-                        col_list.append("CASH")
+                        if (row[0] == "$"):
+                            col_list.append("CASH")
+                        else:
+                            col_list.append(json_string['data'][row[0]]['name'])
             elif (keys[i] == "shares"):
                 if (row[0] == "$"):
                     col_list.append("")
