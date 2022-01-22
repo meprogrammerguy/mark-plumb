@@ -53,7 +53,17 @@
                 </ul>
                 <ul>
                     <h4>Allocation</h4>
-                    {{allocation_list | safe}}
+                    {% for percent in percents %}
+                        <li>
+                        {% for k, val in percent.items() %}
+                            {% if k =="symbol" %}
+                                {% set fil = "/folder/" + val + ".png" %}
+                                <img src="{{ url_for('static', filename=fil) }}" alt='{{val}} logo', height='32', width='32'/>
+                            {% endif %}
+                            {{val}}
+                        {% endfor %}
+                        </li>
+                    {% endfor %}
                 </ul>
             </div>
             <div class="right">
