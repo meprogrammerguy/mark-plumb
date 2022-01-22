@@ -41,7 +41,7 @@ def render_index(feedback):
         if (feedback == ""):
             feedback = "stock polling started"
     l, table, db = plumb.Look(False)
-    allocation_list, trends, lives, percents = plumb.AllocationTrends(False)
+    trends, lives, percents = plumb.AllocationTrends(False)
     notes, initialize_day = plumb.GetAIMNotes(10, False)
     post_display = "post"
     initialize_prompt = ""
@@ -66,9 +66,9 @@ def render_index(feedback):
         initial_value = l['initial value']
         profit_value = l['profit value']
         profit_percent = l['profit percent']
-    return render_template('index.html', table = table, allocation_list = allocation_list, balance_list = balance_list,
-        initial_value =  initial_value, profit_value = profit_value, profit_percent = profit_percent, notes = notes, feedback = feedback,
-        post_display = post_display, post_background = post_background, initialize_prompt = initialize_prompt, trends = trends, lives = lives, percents = percents)
+    return render_template('index.html', table = table, balance_list = balance_list, initial_value =  initial_value, profit_value = profit_value,
+        profit_percent = profit_percent, notes = notes, feedback = feedback, post_display = post_display, post_background = post_background,
+        initialize_prompt = initialize_prompt, trends = trends, lives = lives, percents = percents)
 
 @app.route('/folder/', methods=["GET","POST"])
 def folder():

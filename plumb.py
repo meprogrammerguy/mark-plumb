@@ -1277,7 +1277,6 @@ def AllocationTrends(verbose):
         if (row['symbol'] != "$"):
             if (row['balance'] is not None):
                 total = total + row['balance']
-    allocation = ""
     percents = []
     for row in rows:
         pst = 0
@@ -1285,7 +1284,6 @@ def AllocationTrends(verbose):
             percent = {}
             if (row['balance'] is not None) and (total != 0):
                 pst = row['balance'] / total * 100.
-            allocation = allocation + "<li>{0} {1}</li>".format(row['symbol'], as_percent(pst))
             percent["symbol"] = row['symbol']
             percent["percent"] = as_percent(pst)
             percents.append(percent)
@@ -1328,7 +1326,7 @@ def AllocationTrends(verbose):
                         trend['arrow'] = "down"
                         trend['percent'] = "{0} {1}".format(row['symbol'], as_percent(pst))
                     life_trends.append(trend)        
-    return allocation, trends, life_trends, percents
+    return trends, life_trends, percents
 #endregion folder
 #region aim
 def GetAIM(verbose):
