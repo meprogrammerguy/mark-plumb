@@ -71,7 +71,7 @@
                         <tr>
                             <th></th>
                         {% for key in keys %}
-                            {% if key != "money ticker" and key != "money name" %}
+                            {% if key != "money ticker" and key != "money name" and key != "quote info" %}
                                 <th>{{key}}</th>
                             {% endif %}
                         {% endfor %}
@@ -93,7 +93,7 @@
                             </td>
                             {% set fil = "/folder/" + item['symbol'] + ".png" %}
                             {% for k, val in item.items() %}
-                                {% if k != "money ticker" and k != "money name" %}
+                                {% if k != "money ticker" and k != "money name" and k != "quote info" %}
                                     {% if k == "symbol" and item['crypto'] == "yes" %}
                                         <td><img src="{{ url_for('static', filename=fil)}}", alt='{{val}} logo', height='32', width='32'/></br>{{val}}</td>
                                     {% elif k == "symbol" and money == "$" and item['money ticker'] != None %}
