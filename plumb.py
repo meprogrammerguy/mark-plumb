@@ -84,6 +84,7 @@ def QuoteTradier(quotes, verbose):
                 answer['price'] = row['close']
             answer['url'] = url
             answer['description'] = row['description']
+            answer['quote_info'] = row
             answers.append(answer)
             if (itm == "symbol"):
                 break
@@ -134,6 +135,7 @@ def QuoteCrypto(quotes, verbose):
             answer['price'] = row['price']
             answer['url'] = url
             answer['description'] = content['data'][itm]["name"]
+            answer['quote_info'] = row
             answers.append(answer)
         else:
             answer = {}
@@ -616,10 +618,12 @@ def Add(symbol, exchange, verbose):
             errors.append("Success")
             if (exchange =="coinbase"):
                 Quote(symbol, 1, None, verbose)
+                QuoteInfo(symbol, 1, quote["quote_info"], verbose)
                 Price(symbol, 1, quote["price"], verbose)
                 Shares(symbol, 1, None, verbose)
             else:
                 Quote(symbol, 0, None, verbose)
+                QuoteInfo(symbol, 0, quote["quote_info"], verbose)
                 Price(symbol, 0, quote["price"], verbose)
                 Shares(symbol, 0, None, verbose)
     if (verbose):
@@ -672,6 +676,32 @@ def Quote(symbol, crypto, quote, verbose):
             return False
         c = conn.cursor()
         c.execute("UPDATE folder SET quote = (?) WHERE symbol = (?) and crypto = ?", (quote, symbol, crypto, ))
+        conn.commit()
+        conn.close()
+    if (verbose):
+        print ("***\n")
+    return True
+
+def QuoteInfo(symbol, crypto, info, verbose):
+    db_file = GetDB(verbose)
+    info_db = json.dumps(info)
+    if (verbose):
+        print ("***")
+        print ("Quote(1) symbol: {0}".format(symbol))
+        print ("Quote(2) crypto: {0}".format(crypto))
+        print ("Quote(3) info: {0}".format(info_db))
+        print ("Quote(4) dbase: {0}".format(db_file))
+    result = CreateFolder(symbol, crypto, verbose)
+    if (result):
+        try:
+            conn = sqlite3.connect(db_file)
+            if (verbose):
+                print("Quote(5) sqlite3: {0}".format(sqlite3.version))
+        except Error as e:
+            print("Quote(6) {0}".format(e))
+            return False
+        c = conn.cursor()
+        c.execute("UPDATE folder SET quote_info = (?) WHERE symbol = (?) and crypto = ?", (info_db, symbol, crypto, ))
         conn.commit()
         conn.close()
     if (verbose):
@@ -821,7 +851,7 @@ def CreateFolder(symbol, crypto, verbose):
         print("CreateFolder(3) {0}".format(e))
         return False
     c = conn.cursor()
-    c.execute("CREATE TABLE if not exists 'folder' ( `symbol` TEXT NOT NULL, `balance` REAL, `shares` REAL, `price` NUMERIC, `crypto` INTEGER, `quote` TEXT, `update_time` TEXT, 'money_ticker' TEXT, 'money_name' TEXT, `json_string` TEXT, PRIMARY KEY(`crypto`,`symbol`) )")
+    c.execute("CREATE TABLE if not exists 'folder' ( `symbol` TEXT NOT NULL, `quote_info` TEXT, `balance` REAL, `shares` REAL, `price` NUMERIC, `crypto` INTEGER, `quote` TEXT, `update_time` TEXT, 'money_ticker' TEXT, 'money_name' TEXT, `json_string` TEXT, PRIMARY KEY(`crypto`,`symbol`) )")
     c.execute( "INSERT OR IGNORE INTO folder(symbol, crypto) VALUES((?),?)", (symbol,crypto,))
     conn.commit()
     conn.close()
@@ -996,6 +1026,7 @@ def Update(market_open, verbose):
             for quote in quotes1:
                 if (row[0] == quote["symbol"] and row[1] == 1):
                     result = Quote(row[0], row[1], quote["quote"], verbose)
+                    result = QuoteInfo(row[0], row[1], quote["quote_info"], verbose)
                     result = Price(row[0], row[1], quote["price"], verbose)
                     result = Shares(row[0], row[1], str(row[2]), verbose)
                     if (result['status'] == True):
@@ -1004,6 +1035,7 @@ def Update(market_open, verbose):
             for quote in quotes0:
                 if (row[0] == quote["symbol"] and row[1] == 0):
                     result = Quote(row[0], row[1], quote["quote"], verbose)
+                    result = QuoteInfo(row[0], row[1], quote["quote_info"], verbose)
                     result = Price(row[0], row[1], quote["price"], verbose)
                     result = Shares(row[0], row[1], str(row[2]), verbose)
                     if (result['status'] == True):
@@ -1097,7 +1129,7 @@ def GetFolder(verbose):
         if 'json string' in js:
             if js['json string'] != None:
                 js['json string'] = json.loads(js['json string'])
-                answers.append(js)
+            answers.append(js)
     return answers
 
 def GetFolderValue(symbol, crypto, key, folder_list):
@@ -1131,20 +1163,20 @@ def PrintFolder(verbose):
         if (verbose):
             print ("PrintFolder(2) {0} file is missing, cannot return the key".format(db_file))
             print ("***\n")
-        return "", "", "", ""
+        return "", "", "", "", ""
     try:
         conn = sqlite3.connect(db_file)
         if (verbose):
             print("PrintFolder(3) sqlite3: {0}".format(sqlite3.version))
     except Error as e:
         print("PrintFolder(4) {0}".format(e))
-        return "", "", "", ""
+        return "", "", "", "", ""
     if (not checkTableExists(conn, "folder")):
         Cash("0", verbose)
     conn.close()
     folder = GetFolder(verbose)
     if (folder == []):
-        return "", "", "", ""
+        return "", "", "", "", ""
     keys_dict = folder[0].keys()
     keys_raw = []
     for key in keys_dict:
@@ -1184,23 +1216,26 @@ def PrintFolder(verbose):
         col_list = []
         for i in range(len(keys)):
             if (keys[i] == "symbol"):
-                if (row[5] == 1):
+                if (row[keys.index("crypto")] == 1):
                     col_list.append(row[i])
                 else:
-                    if (row[8] is not None):
-                        col_list.append(row[8])
+                    if (row[keys.index("money ticker")] is not None):
+                        col_list.append(row[keys.index("money ticker")])
                     else:
                         col_list.append(row[i])
             elif (keys[i] == "company name"):
-                    if (row[9] is not None):
-                        col_list.append(row[9])
+                    if (row[keys.index("money name")] is not None):
+                        col_list.append(row[keys.index("money name")])
                     else:
-                        if (row[0] == "$"):
+                        if (row[keys.index("symbol")] == "$"):
                             col_list.append("CASH")
                         else:
-                            col_list.append(json_string['data'][row[0]]['name'])
+                            if ('data' in json_string):
+                                col_list.append(json_string['data'][row[keys.index("symbol")]]['name'])
+                            else:
+                                col_list.append(json_string['companyName'])
             elif (keys[i] == "shares"):
-                if (row[0] == "$"):
+                if (row[keys.index("symbol")] == "$"):
                     col_list.append("")
                 else:
                     if row[i] is None:
@@ -1208,7 +1243,7 @@ def PrintFolder(verbose):
                     else:
                         col_list.append(as_shares(row[i]))
             elif (keys[i] == "price"):
-                if row[0] == "$":
+                if row[keys.index("symbol")] == "$":
                     col_list.append("$1.00")
                 else:
                     col_list.append(as_big(row[i]))
@@ -1277,7 +1312,6 @@ def AllocationTrends(verbose):
         if (row['symbol'] != "$"):
             if (row['balance'] is not None):
                 total = total + row['balance']
-    allocation = ""
     percents = []
     for row in rows:
         pst = 0
@@ -1285,7 +1319,6 @@ def AllocationTrends(verbose):
             percent = {}
             if (row['balance'] is not None) and (total != 0):
                 pst = row['balance'] / total * 100.
-            allocation = allocation + "<li>{0} {1}</li>".format(row['symbol'], as_percent(pst))
             percent["symbol"] = row['symbol']
             percent["percent"] = as_percent(pst)
             percents.append(percent)
@@ -1328,7 +1361,7 @@ def AllocationTrends(verbose):
                         trend['arrow'] = "down"
                         trend['percent'] = "{0} {1}".format(row['symbol'], as_percent(pst))
                     life_trends.append(trend)        
-    return allocation, trends, life_trends, percents
+    return trends, life_trends, percents
 #endregion folder
 #region aim
 def GetAIM(verbose):
