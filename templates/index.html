@@ -58,7 +58,7 @@
                         {% for k, val in percent.items() %}
                             {% if k =="symbol" %}
                                 {% set fil = "/folder/" + val + ".png" %}
-                                <img src="{{ url_for('static', filename=fil) }}" alt='{{val}} logo', height='32', width='32'/>
+                                <img src="{{ url_for('static', filename=fil) }}" onerror="this.style.display = 'none'" alt='{{val}} logo', height='32', width='32'/>
                             {% endif %}
                             {{val}}
                         {% endfor %}
