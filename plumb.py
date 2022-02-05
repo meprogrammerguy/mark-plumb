@@ -1213,6 +1213,9 @@ def PrintFolder(verbose):
         row = row[:1] + [''] + row[1:-1]
         symbol_options += '<option value="{0},{1}">{2}</option>'.format(row[keys.index("symbol")], row[keys.index("crypto")], row[keys.index("symbol")])
         json_string = f['json string']
+        quote_info = f['quote info']
+        if quote_info is not None:
+            quote_info = json.loads(quote_info)
         col_list = []
         for i in range(len(keys)):
             if (keys[i] == "symbol"):
@@ -1246,7 +1249,15 @@ def PrintFolder(verbose):
                 if row[keys.index("symbol")] == "$":
                     col_list.append("$1.00")
                 else:
-                    col_list.append(as_big(row[i]))
+                    if "percent_change_24h" in quote_info:
+                        field = "{0} {1}".format(as_percent(quote_info['percent_change_24h']), as_big(row[i]))
+                        col_list.append(field)
+                    else:
+                        if "change_percentage" in quote_info:
+                            field = "{0} {1}".format(as_percent(quote_info['change_percentage']), as_big(row[i]))
+                            col_list.append(field)
+                        else:
+                            col_list.append(as_big(row[i]))
             elif (keys[i] == "crypto"):
                 if row[i] == 0:
                     col_list.append("no")
