@@ -6,7 +6,7 @@ name = "pypi"
 [packages]
 beautifulsoup4 = "*"
 html5lib = "*"
-flask = "*"
+flask = "<3"
 flask-table = "*"
 python-daemon = "*"
 pytz = "*"
