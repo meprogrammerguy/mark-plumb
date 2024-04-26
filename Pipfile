@@ -1,14 +1,11 @@
 [[source]]
-name = "pypi"
 url = "https://pypi.org/simple"
 verify_ssl = true
-
-[dev-packages]
+name = "pypi"
 
 [packages]
-
-"bs4" = "*"
-"html5lib" = "*"
+beautifulsoup4 = "*"
+html5lib = "*"
 flask = "*"
 flask-table = "*"
 python-daemon = "*"
@@ -16,7 +13,8 @@ pytz = "*"
 python-dateutil = "*"
 tzlocal = "*"
 daemon = "*"
-"pypiwin32" = {version = "*", sys_platform = "== 'win32'"}
+
+[dev-packages]
 
 [requires]
-python_version = "3.9"
+python_version = "3.12"
